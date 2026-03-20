@@ -1,0 +1,255 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+/* SUPERVISOR CARD */
+.supervisorCard {
+  background: linear-gradient(135deg, rgba(27,58,140,0.55) 0%, rgba(10,15,30,0.8) 100%);
+  border: 1px solid rgba(27,58,140,0.4);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.supTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.supLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(240,244,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 4px;
+}
+
+.supMeta {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.supPct {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.pctNum {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  color: var(--yellow);
+  line-height: 1;
+}
+
+.pctSym {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--yellow);
+  opacity: 0.7;
+}
+
+.progressTrack {
+  height: 5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
+  border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.supBottom {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.supStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+}
+
+.supStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(240,244,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.supStatVal {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.supDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* SECTION TITLE */
+.secTitle {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* SUCURSAL CARDS */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sucCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  position: relative;
+}
+.sucCard:hover {
+  background: var(--bg-card-2);
+  border-color: var(--border-active);
+}
+.sucCard:active { transform: scale(0.99); }
+
+.sucHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sucNombre {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.sucStatus {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.sucPct {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.sucPctNum {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.sucPctSym {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.noMeta {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--text-muted);
+}
+
+.sucProgressTrack {
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.sucProgressFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.sucStats {
+  display: flex;
+  gap: 0;
+}
+
+.sucStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sucStat:not(:first-child) {
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+  margin-left: 14px;
+}
+
+.sucStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.sucStatVal {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sucArrow {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  font-size: 1.3rem;
+  color: var(--text-muted);
+}

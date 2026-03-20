@@ -1,0 +1,106 @@
+/* ============================================================
+   SEGUIMIENTO DE METAS EL PECHUGÓN — Design System
+   Revolut-inspired dark mode + brand colors
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --navy: #1B3A8C;
+  --navy-light: #2048B8;
+  --red: #E8192C;
+  --red-dark: #C01020;
+  --yellow: #F5C400;
+  --yellow-dim: rgba(245, 196, 0, 0.15);
+
+  /* Dark UI */
+  --bg-base: #0A0F1E;
+  --bg-card: #111827;
+  --bg-card-2: #1a2236;
+  --bg-elevated: #1f2d47;
+  --bg-hover: rgba(255,255,255,0.04);
+
+  /* Text */
+  --text-primary: #F0F4FF;
+  --text-secondary: #8A94B0;
+  --text-muted: #4A5470;
+  --text-inverse: #0A0F1E;
+
+  /* Borders */
+  --border: rgba(255,255,255,0.07);
+  --border-active: rgba(255,255,255,0.15);
+
+  /* Status */
+  --success: #00D395;
+  --success-dim: rgba(0, 211, 149, 0.12);
+  --warning: #F5C400;
+  --warning-dim: rgba(245, 196, 0, 0.12);
+  --danger: #E8192C;
+  --danger-dim: rgba(232, 25, 44, 0.12);
+  --info: #4F8EF7;
+  --info-dim: rgba(79, 142, 247, 0.12);
+
+  /* Typography */
+  --font-display: 'Boogaloo', sans-serif;
+  --font-body: 'Barlow Condensed', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.4);
+  --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5);
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 99px; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Utility */
+.mono { font-family: var(--font-mono); }
+.display { font-family: var(--font-display); }
+
+/* Number formatting */
+.currency::before { content: '$'; font-size: 0.7em; vertical-align: super; margin-right: 1px; }

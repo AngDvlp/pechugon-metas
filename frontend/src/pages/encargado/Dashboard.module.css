@@ -1,0 +1,305 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 0;
+  font-family: var(--font-body);
+}
+
+/* META CARD */
+.metaCard {
+  background: linear-gradient(135deg, rgba(27,58,140,0.6) 0%, rgba(27,58,140,0.3) 100%);
+  border: 1px solid rgba(27,58,140,0.5);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px 14px;
+}
+
+.metaHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.metaLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(240,244,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.metaMonto {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.metaPct {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.pctNum {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: var(--yellow);
+  line-height: 1;
+}
+
+.pctSym {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--yellow);
+  opacity: 0.7;
+}
+
+.progressTrack {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
+  border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.metaFooter {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(240,244,255,0.5);
+}
+
+/* SECTION HEADER */
+.sectionHeader { margin: 4px 0 0; }
+
+.sucursalNombre {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.fechaHoy {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+
+/* FORM CARD */
+.formCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.formTitle {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.inputLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.inputWrapper:focus-within { border-color: var(--yellow); }
+
+.inputPrefix {
+  padding: 0 12px 0 14px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  padding: 13px 14px 13px 0;
+  width: 100%;
+}
+.input:focus { outline: none; }
+.input::placeholder { color: var(--text-muted); font-size: 1rem; }
+
+/* Ticket preview */
+.ticketPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--yellow-dim);
+  border: 1px solid rgba(245, 196, 0, 0.2);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+
+.ticketLabel {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ticketValue {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--yellow);
+  font-weight: 500;
+}
+
+.msg {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+}
+.ok { background: var(--success-dim); color: var(--success); }
+.error { background: var(--danger-dim); color: var(--red); }
+
+.saveBtn {
+  background: var(--yellow);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-inverse);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  padding: 14px;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-top: 4px;
+}
+.saveBtn:hover:not(:disabled) { opacity: 0.88; }
+.saveBtn:active:not(:disabled) { transform: scale(0.98); }
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* HISTORIAL */
+.section { margin-top: 4px; }
+
+.sectionTitle {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.historial {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.histRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  padding: 12px 16px;
+  gap: 12px;
+}
+.histRow:first-child { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.histRow:last-child { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+
+.histFecha {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  min-width: 80px;
+}
+
+.histData {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.histVenta {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.histPollos {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.histTicket {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--yellow);
+  background: var(--yellow-dim);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
