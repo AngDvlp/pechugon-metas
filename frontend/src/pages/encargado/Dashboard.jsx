@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from './../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import styles from './Dashboard.module.css'
