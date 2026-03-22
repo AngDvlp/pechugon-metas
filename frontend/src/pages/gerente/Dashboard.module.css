@@ -171,10 +171,61 @@
   border: 1px solid var(--border);
 }
 
+.searchWrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+.searchWrap:focus-within { border-color: var(--yellow); }
+
+.searchIcon { font-size: 1rem; flex-shrink: 0; }
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 12px 0;
+}
+.searchInput:focus { outline: none; }
+.searchInput::placeholder { color: var(--text-muted); }
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.clearBtn:hover { color: var(--text-primary); }
+
+.noResults {
+  background: var(--bg-card);
+  padding: 24px 16px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+}
+
 .sucRow {
   background: var(--bg-card);
   padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.sucRow:hover { background: var(--bg-card-2); }
 .sucRow:first-child { border-radius: var(--radius-md) var(--radius-md) 0 0; }
 .sucRow:last-child { border-radius: 0 0 var(--radius-md) var(--radius-md); }
 
@@ -185,6 +236,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.sucNombreRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sucArrow {
+  font-size: 1.2rem;
+  color: var(--text-muted);
 }
 
 .sucNombre {

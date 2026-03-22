@@ -8,6 +8,7 @@ import GerenteDashboard from './pages/gerente/Dashboard'
 import GerenteSucursales from './pages/gerente/Sucursales'
 import GerenteUsuarios from './pages/gerente/Usuarios'
 import GerenteMetas from './pages/gerente/Metas'
+import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="sucursales" element={<GerenteSucursales />} />
         <Route path="usuarios" element={<GerenteUsuarios />} />
         <Route path="metas" element={<GerenteMetas />} />
+        <Route path="sucursal/:id" element={<GerenteSucursalDetalle />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

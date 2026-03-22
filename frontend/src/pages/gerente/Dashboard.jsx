@@ -9,30 +9,20 @@ export default function GerenteDashboard() {
   const navigate = useNavigate()
   const [sucursales, setSucursales] = useState([])
   const [resumenes, setResumenes] = useState({})
-  const [supervisores, setSupervisores] = useState([])
   const [loading, setLoading] = useState(true)
+  const [busqueda, setBusqueda] = useState('')
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const [{ data: sucs }, { data: sups }] = await Promise.all([
-      supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
-      supabase.from('usuarios')
-        .select('id, nombre, supervisor_sucursales(sucursal_id)')
-        .eq('roles.nombre', 'supervisor')
-        .select(`id, nombre, supervisor_sucursales(sucursal_id), roles!inner(nombre)`)
-        .eq('roles.nombre', 'supervisor'),
-    ])
+    const { data: sucs } = await supabase
+      .from('sucursales').select('*').eq('activa', true).order('nombre')
     setSucursales(sucs ?? [])
-    setSupervisores(sups ?? [])
-
     if (!sucs?.length) { setLoading(false); return }
-
-    const resPromises = sucs.map(s =>
-      supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle()
+    const results = await Promise.all(
+      sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
     )
-    const results = await Promise.all(resPromises)
     const map = {}
     sucs.forEach((s, i) => { map[s.id] = results[i].data ?? null })
     setResumenes(map)
@@ -42,15 +32,16 @@ export default function GerenteDashboard() {
   const totalMeta = Object.values(resumenes).reduce((a, r) => a + (r?.meta_venta ?? 0), 0)
   const totalAcumulado = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
   const avanceGlobal = totalMeta > 0 ? (totalAcumulado / totalMeta) * 100 : 0
-  const conMeta = Object.values(resumenes).filter(r => r !== null).length
-  const sinMeta = sucursales.length - conMeta
+  const sinMeta = sucursales.length - Object.values(resumenes).filter(r => r !== null).length
   const encaminadas = Object.values(resumenes).filter(r => r && r.avance_porcentaje >= 70).length
+  const sucursalesFiltradas = sucursales.filter(s =>
+    s.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  )
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
   return (
     <div className={styles.page}>
-      {/* KPIs globales */}
       <div className={styles.globalCard}>
         <div className={styles.globalTop}>
           <div>
@@ -88,11 +79,10 @@ export default function GerenteDashboard() {
         </div>
       </div>
 
-      {/* Acciones rápidas */}
       <div className={styles.acciones}>
         <button className={styles.accionBtn} onClick={() => navigate('/gerente/metas')}>
           <span className={styles.accionIcon}>◎</span>
-          <span>Gestionar Metas</span>
+          <span>Metas</span>
         </button>
         <button className={styles.accionBtn} onClick={() => navigate('/gerente/sucursales')}>
           <span className={styles.accionIcon}>⊟</span>
@@ -104,11 +94,29 @@ export default function GerenteDashboard() {
         </button>
       </div>
 
-      <p className={styles.secTitle}>Todas las sucursales</p>
+      <div className={styles.searchWrap}>
+        <span className={styles.searchIcon}>🔍</span>
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="Buscar sucursal…"
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+        />
+        {busqueda && (
+          <button className={styles.clearBtn} onClick={() => setBusqueda('')}>✕</button>
+        )}
+      </div>
 
-      {/* Lista de sucursales */}
+      <p className={styles.secTitle}>
+        {busqueda ? `${sucursalesFiltradas.length} resultado${sucursalesFiltradas.length !== 1 ? 's' : ''}` : 'Todas las sucursales'}
+      </p>
+
       <div className={styles.sucList}>
-        {sucursales.map(s => {
+        {sucursalesFiltradas.length === 0 && (
+          <div className={styles.noResults}>Sin resultados para "{busqueda}"</div>
+        )}
+        {sucursalesFiltradas.map(s => {
           const r = resumenes[s.id]
           const avance = r?.avance_porcentaje ?? 0
           let barColor = 'var(--text-muted)'
@@ -119,13 +127,15 @@ export default function GerenteDashboard() {
             else if (avance >= 70) { barColor = 'var(--yellow)'; statusTag = 'En camino'; tagClass = styles.tagWarn }
             else { barColor = 'var(--red)'; statusTag = 'En riesgo'; tagClass = styles.tagDanger }
           }
-
           return (
-            <div key={s.id} className={styles.sucRow}>
+            <div key={s.id} className={styles.sucRow} onClick={() => navigate(`/gerente/sucursal/${s.id}`)}>
               <div className={styles.sucInfo}>
                 <div className={styles.sucNombreRow}>
                   <p className={styles.sucNombre}>{s.nombre}</p>
-                  <span className={`${styles.tag} ${tagClass}`}>{statusTag}</span>
+                  <div className={styles.sucNombreRight}>
+                    <span className={`${styles.tag} ${tagClass}`}>{statusTag}</span>
+                    <span className={styles.sucArrow}>›</span>
+                  </div>
                 </div>
                 {r && (
                   <div className={styles.sucTrackWrap}>

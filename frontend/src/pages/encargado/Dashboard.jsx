@@ -53,7 +53,7 @@ export default function EncargadoDashboard() {
       encargado_id: usuario.id,
       fecha: hoy,
       venta_total: parseFloat(form.venta_total),
-      pollos_vendidos: parseInt(form.pollos_vendidos),
+      pollos_vendidos: parseFloat(form.pollos_vendidos),
     }
 
     const { error } = ventaHoy
@@ -69,8 +69,8 @@ export default function EncargadoDashboard() {
     setSaving(false)
   }
 
-  const ticketCalculado = form.venta_total && form.pollos_vendidos
-    ? parseFloat(form.venta_total) / parseInt(form.pollos_vendidos)
+  const ticketCalculado = form.venta_total && form.pollos_vendidos && parseFloat(form.pollos_vendidos) > 0
+    ? parseFloat(form.venta_total) / parseFloat(form.pollos_vendidos)
     : null
 
   const avance = meta?.avance_porcentaje ?? 0
@@ -140,9 +140,9 @@ export default function EncargadoDashboard() {
               <input
                 className={styles.input}
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 min="0"
-                step="1"
+                step="0.5"
                 placeholder="0"
                 value={form.pollos_vendidos}
                 onChange={e => setForm(f => ({ ...f, pollos_vendidos: e.target.value }))}
