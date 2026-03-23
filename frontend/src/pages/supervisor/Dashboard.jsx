@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { format } from 'date-fns'
 import styles from './Dashboard.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
+const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
 export default function SupervisorDashboard() {
   const { usuario } = useAuth()
@@ -23,7 +23,6 @@ export default function SupervisorDashboard() {
 
   async function load() {
     setLoading(true)
-    // Traer sucursales del supervisor
     const { data: supSuc } = await supabase
       .from('supervisor_sucursales')
       .select('sucursal_id, sucursales(id, nombre)')
@@ -35,35 +34,28 @@ export default function SupervisorDashboard() {
 
     if (sids.length === 0) { setLoading(false); return }
 
-    // Ventas de hoy para cada sucursal
-    const { data: hoyData } = await supabase
-      .from('ventas_diarias')
-      .select('*')
-      .in('sucursal_id', sids)
-      .eq('fecha', hoy)
+    const [{ data: hoyData }, ...resResults] = await Promise.all([
+      supabase.from('ventas_diarias').select('*').in('sucursal_id', sids).eq('fecha', hoy),
+      ...sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())
+    ])
 
     const hoyMap = {}
     hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
     setVentasHoy(hoyMap)
 
-    // Resumen meta por sucursal (RPC en paralelo)
-    const resPromises = sids.map(id =>
-      supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle()
-    )
-    const resResults = await Promise.all(resPromises)
     const resMap = {}
-    sids.forEach((id, i) => {
-      resMap[id] = resResults[i].data ?? null
-    })
+    sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
     setResumenes(resMap)
     setLoading(false)
   }
 
-  // Totales del supervisor
-  const metaTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_venta ?? 0), 0)
+  const metaMensualTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_mensual ?? 0), 0)
   const acumuladoTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
   const ventaHoyTotal = Object.values(ventasHoy).reduce((a, v) => a + (v?.venta_total ?? 0), 0)
-  const avanceTotal = metaTotal > 0 ? (acumuladoTotal / metaTotal) * 100 : 0
+  const metaSemanalTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_venta ?? 0), 0)
+  const ventaSemanaTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_semana_actual ?? 0), 0)
+  const avanceMes = metaMensualTotal > 0 ? (acumuladoTotal / metaMensualTotal) * 100 : 0
+  const avanceSem = metaSemanalTotal > 0 ? (ventaSemanaTotal / metaSemanalTotal) * 100 : 0
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -73,31 +65,51 @@ export default function SupervisorDashboard() {
       <div className={styles.supervisorCard}>
         <div className={styles.supTop}>
           <div>
-            <p className={styles.supLabel}>Tu meta total</p>
-            <p className={styles.supMeta}>{fmt(metaTotal)}</p>
+            <p className={styles.supLabel}>Meta mensual</p>
+            <p className={styles.supMeta}>{fmt(metaMensualTotal)}</p>
           </div>
           <div className={styles.supPct}>
-            <span className={styles.pctNum}>{avanceTotal.toFixed(1)}</span>
+            <span className={styles.pctNum}>{avanceMes.toFixed(1)}</span>
             <span className={styles.pctSym}>%</span>
           </div>
         </div>
-        <div className={styles.progressTrack}>
-          <div className={styles.progressFill} style={{ width: `${Math.min(avanceTotal, 100)}%` }} />
+
+        {/* Barra mensual */}
+        <div className={styles.barRow}>
+          <span className={styles.barLabel}>Mes</span>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${Math.min(avanceMes, 100)}%` }} />
+          </div>
         </div>
+
+        {/* Barra semanal */}
+        <div className={styles.barRow}>
+          <span className={styles.barLabel}>Semana</span>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{
+              width: `${Math.min(avanceSem, 100)}%`,
+              background: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
+            }} />
+          </div>
+          <span className={styles.barPct} style={{
+            color: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
+          }}>{avanceSem.toFixed(0)}%</span>
+        </div>
+
         <div className={styles.supBottom}>
           <div className={styles.supStat}>
-            <span className={styles.supStatLabel}>Acumulado</span>
+            <span className={styles.supStatLabel}>Acumulado mes</span>
             <span className={styles.supStatVal}>{fmt(acumuladoTotal)}</span>
+          </div>
+          <div className={styles.supDivider} />
+          <div className={styles.supStat}>
+            <span className={styles.supStatLabel}>Esta semana</span>
+            <span className={styles.supStatVal}>{fmt(ventaSemanaTotal)}</span>
           </div>
           <div className={styles.supDivider} />
           <div className={styles.supStat}>
             <span className={styles.supStatLabel}>Hoy (todas)</span>
             <span className={styles.supStatVal}>{fmt(ventaHoyTotal)}</span>
-          </div>
-          <div className={styles.supDivider} />
-          <div className={styles.supStat}>
-            <span className={styles.supStatLabel}>Sucursales</span>
-            <span className={styles.supStatVal}>{sucursales.length}</span>
           </div>
         </div>
       </div>
@@ -112,35 +124,30 @@ export default function SupervisorDashboard() {
         {sucursales.map(s => {
           const res = resumenes[s.id]
           const hv = ventasHoy[s.id]
-          const avance = res?.avance_porcentaje ?? 0
-          const sinMeta = !res
-          const sinVenta = !hv
+          const avanceMesSuc = res?.avance_porcentaje ?? 0
+          const avanceSemSuc = res?.avance_semanal ?? 0
 
-          let statusColor = 'var(--text-muted)'
+          let barColor = 'var(--text-muted)'
           let statusLabel = 'Sin meta'
           if (res) {
-            if (avance >= 100) { statusColor = 'var(--success)'; statusLabel = '¡Meta cumplida!' }
-            else if (avance >= 70) { statusColor = 'var(--yellow)'; statusLabel = 'En camino' }
-            else { statusColor = 'var(--red)'; statusLabel = 'Por debajo' }
+            if (avanceMesSuc >= 100) { barColor = 'var(--success)'; statusLabel = '¡Meta cumplida!' }
+            else if (avanceMesSuc >= 70) { barColor = 'var(--yellow)'; statusLabel = 'En camino' }
+            else { barColor = 'var(--red)'; statusLabel = 'Por debajo' }
           }
 
           return (
-            <div
-              key={s.id}
-              className={styles.sucCard}
-              onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}
-            >
+            <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}>
               <div className={styles.sucHeader}>
                 <div>
                   <p className={styles.sucNombre}>{s.nombre}</p>
-                  <p className={styles.sucStatus} style={{ color: statusColor }}>{statusLabel}</p>
+                  <p className={styles.sucStatus} style={{ color: barColor }}>{statusLabel}</p>
                 </div>
                 <div className={styles.sucPct}>
-                  {sinMeta ? (
+                  {!res ? (
                     <span className={styles.noMeta}>—</span>
                   ) : (
                     <>
-                      <span className={styles.sucPctNum}>{avance.toFixed(0)}</span>
+                      <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
                       <span className={styles.sucPctSym}>%</span>
                     </>
                   )}
@@ -148,15 +155,26 @@ export default function SupervisorDashboard() {
               </div>
 
               {res && (
-                <div className={styles.sucProgressTrack}>
-                  <div
-                    className={styles.sucProgressFill}
-                    style={{
-                      width: `${Math.min(avance, 100)}%`,
-                      background: avance >= 100 ? 'var(--success)' : avance >= 70 ? 'var(--yellow)' : 'var(--red)'
-                    }}
-                  />
-                </div>
+                <>
+                  <div className={styles.sucBarRow}>
+                    <span className={styles.sucBarLabel}>Mes</span>
+                    <div className={styles.sucProgressTrack}>
+                      <div className={styles.sucProgressFill} style={{ width: `${Math.min(avanceMesSuc, 100)}%`, background: barColor }} />
+                    </div>
+                  </div>
+                  <div className={styles.sucBarRow}>
+                    <span className={styles.sucBarLabel}>Sem</span>
+                    <div className={styles.sucProgressTrack}>
+                      <div className={styles.sucProgressFill} style={{
+                        width: `${Math.min(avanceSemSuc, 100)}%`,
+                        background: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
+                      }} />
+                    </div>
+                    <span className={styles.sucBarPct} style={{
+                      color: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
+                    }}>{avanceSemSuc.toFixed(0)}%</span>
+                  </div>
+                </>
               )}
 
               <div className={styles.sucStats}>
@@ -165,13 +183,13 @@ export default function SupervisorDashboard() {
                   <span className={styles.sucStatVal}>{res ? fmt(res.venta_acumulada) : '—'}</span>
                 </div>
                 <div className={styles.sucStat}>
-                  <span className={styles.sucStatLabel}>Meta</span>
-                  <span className={styles.sucStatVal}>{res ? fmt(res.meta_venta) : '—'}</span>
+                  <span className={styles.sucStatLabel}>Meta mes</span>
+                  <span className={styles.sucStatVal}>{res ? fmt(res.meta_mensual ?? res.meta_venta) : '—'}</span>
                 </div>
                 <div className={styles.sucStat}>
                   <span className={styles.sucStatLabel}>Hoy</span>
-                  <span className={styles.sucStatVal} style={{ color: sinVenta ? 'var(--red)' : 'var(--success)' }}>
-                    {sinVenta ? 'Sin registro' : fmt(hv.venta_total)}
+                  <span className={styles.sucStatVal} style={{ color: !hv ? 'var(--red)' : 'var(--success)' }}>
+                    {!hv ? 'Sin registro' : fmt(hv.venta_total)}
                   </span>
                 </div>
               </div>

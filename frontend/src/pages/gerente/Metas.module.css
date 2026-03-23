@@ -224,3 +224,36 @@
   color: var(--text-muted);
   text-transform: capitalize;
 }
+
+/* MES INFO */
+.mesInfo {
+  display: flex; align-items: stretch;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); overflow: hidden;
+}
+.mesInfoItem { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 12px 10px; }
+.mesInfoDivider { width: 1px; background: var(--border); flex-shrink: 0; }
+.mesInfoLabel { font-family: var(--font-body); font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.mesInfoVal { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; color: var(--text-primary); }
+
+.formSub { font-family: var(--font-body); font-size: 0.78rem; color: var(--text-muted); margin-top: -8px; margin-bottom: 4px; }
+
+/* PREVIEW */
+.preview {
+  background: var(--yellow-dim); border: 1px solid rgba(245,196,0,0.2);
+  border-radius: var(--radius-md); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.previewRow { display: flex; align-items: center; justify-content: space-between; }
+.previewLabel { font-family: var(--font-body); font-size: 0.78rem; font-weight: 600; color: rgba(245,196,0,0.7); text-transform: uppercase; letter-spacing: 0.5px; }
+.previewVal { font-family: var(--font-mono); font-size: 0.95rem; color: var(--yellow); }
+.previewValBig { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 500; color: var(--yellow); }
+
+/* META CARD updates */
+.metaMontos { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.metaMontoSem { font-family: var(--font-mono); font-size: 0.95rem; color: var(--text-primary); }
+.metaMontoMes { font-family: var(--font-mono); font-size: 0.95rem; color: var(--yellow); }
+.metaMontoLabel { font-family: var(--font-body); font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
+.metaMontoSep { color: var(--text-muted); }
+.metaKpis { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.metaKpi { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-elevated); padding: 3px 8px; border-radius: 6px; }
