@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns'
+import { format, parseISO, startOfMonth, endOfMonth, nextMonday, previousSunday, getDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import styles from './Metas.module.css'
 
@@ -9,20 +9,29 @@ const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: '
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
-// Calcular semanas naturales de un mes
-function semanasEnMes(fecha) {
+// Primer lunes del mes (si el día 1 es lunes, ese mismo día)
+function primerLunesDelMes(fecha) {
   const inicio = startOfMonth(fecha)
+  const diaSemana = getDay(inicio) // 0=domingo, 1=lunes...
+  if (diaSemana === 1) return inicio // ya es lunes
+  if (diaSemana === 0) return nextMonday(inicio) // domingo -> siguiente lunes
+  return nextMonday(inicio) // martes-sábado -> siguiente lunes
+}
+
+// Último domingo del mes (si el último día es domingo, ese mismo día)
+function ultimoDomingoDelMes(fecha) {
   const fin = endOfMonth(fecha)
-  const semanas = new Set()
-  let d = new Date(inicio)
-  while (d <= fin) {
-    const lunes = new Date(d)
-    const dia = lunes.getDay()
-    lunes.setDate(lunes.getDate() - (dia === 0 ? 6 : dia - 1))
-    semanas.add(lunes.toISOString().split('T')[0])
-    d.setDate(d.getDate() + 1)
-  }
-  return semanas.size
+  const diaSemana = getDay(fin) // 0=domingo
+  if (diaSemana === 0) return fin // ya es domingo
+  return previousSunday(fin) // retroceder al domingo anterior
+}
+
+// Contar semanas completas lun-dom entre dos fechas
+function semanasEntreFechas(inicio, fin) {
+  const msInicio = inicio.getTime()
+  const msFin = fin.getTime()
+  const dias = Math.round((msFin - msInicio) / (1000 * 60 * 60 * 24)) + 1
+  return Math.round(dias / 7)
 }
 
 export default function GerenteMetas() {
@@ -35,9 +44,11 @@ export default function GerenteMetas() {
   const [msg, setMsg] = useState(null)
 
   const hoy = new Date()
-  const inicioMes = format(startOfMonth(hoy), 'yyyy-MM-dd')
-  const finMes = format(endOfMonth(hoy), 'yyyy-MM-dd')
-  const semanas = semanasEnMes(hoy)
+  const inicioMesDate = primerLunesDelMes(hoy)
+  const finMesDate = ultimoDomingoDelMes(hoy)
+  const inicioMes = format(inicioMesDate, 'yyyy-MM-dd')
+  const finMes = format(finMesDate, 'yyyy-MM-dd')
+  const semanas = semanasEntreFechas(inicioMesDate, finMesDate)
   const mesLabel = format(hoy, 'MMMM yyyy', { locale: es })
 
   const [form, setForm] = useState({
@@ -128,7 +139,7 @@ export default function GerenteMetas() {
         <div className={styles.mesInfoDivider} />
         <div className={styles.mesInfoItem}>
           <span className={styles.mesInfoLabel}>Periodo</span>
-          <span className={styles.mesInfoVal}>{format(startOfMonth(hoy), 'd MMM', { locale: es })} — {format(endOfMonth(hoy), 'd MMM', { locale: es })}</span>
+          <span className={styles.mesInfoVal}>{format(inicioMesDate, 'd MMM', { locale: es })} — {format(finMesDate, 'd MMM', { locale: es })}</span>
         </div>
       </div>
 
