@@ -40,9 +40,9 @@
   --info-dim: rgba(79, 142, 247, 0.12);
 
   /* Typography */
-  --font-display: 'Boogaloo', sans-serif;
-  --font-body: 'Barlow Condensed', sans-serif;
-  --font-mono: 'DM Mono', monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   /* Radius */
   --radius-sm: 8px;
