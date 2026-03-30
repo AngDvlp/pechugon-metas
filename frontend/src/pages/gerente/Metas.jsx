@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfMonth, endOfMonth, nextMonday, previousSunday, getDay } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import styles from './Metas.module.css'
 
@@ -9,29 +9,13 @@ const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: '
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
-// Primer lunes del mes (si el día 1 es lunes, ese mismo día)
-function primerLunesDelMes(fecha) {
-  const inicio = startOfMonth(fecha)
-  const diaSemana = getDay(inicio) // 0=domingo, 1=lunes...
-  if (diaSemana === 1) return inicio // ya es lunes
-  if (diaSemana === 0) return nextMonday(inicio) // domingo -> siguiente lunes
-  return nextMonday(inicio) // martes-sábado -> siguiente lunes
-}
-
-// Último domingo del mes (si el último día es domingo, ese mismo día)
-function ultimoDomingoDelMes(fecha) {
-  const fin = endOfMonth(fecha)
-  const diaSemana = getDay(fin) // 0=domingo
-  if (diaSemana === 0) return fin // ya es domingo
-  return previousSunday(fin) // retroceder al domingo anterior
-}
-
-// Contar semanas completas lun-dom entre dos fechas
-function semanasEntreFechas(inicio, fin) {
-  const msInicio = inicio.getTime()
-  const msFin = fin.getTime()
-  const dias = Math.round((msFin - msInicio) / (1000 * 60 * 60 * 24)) + 1
-  return Math.round(dias / 7)
+// Contar semanas completas (redondeado) entre dos fechas string yyyy-MM-dd
+function semanasEntreFechas(inicioStr, finStr) {
+  if (!inicioStr || !finStr) return 0
+  const inicio = new Date(inicioStr + 'T00:00:00')
+  const fin = new Date(finStr + 'T00:00:00')
+  const dias = Math.round((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  return Math.max(1, Math.round(dias / 7))
 }
 
 export default function GerenteMetas() {
@@ -44,24 +28,22 @@ export default function GerenteMetas() {
   const [msg, setMsg] = useState(null)
 
   const hoy = new Date()
-  const inicioMesDate = primerLunesDelMes(hoy)
-  const finMesDate = ultimoDomingoDelMes(hoy)
-  const inicioMes = format(inicioMesDate, 'yyyy-MM-dd')
-  const finMes = format(finMesDate, 'yyyy-MM-dd')
-  const semanas = semanasEntreFechas(inicioMesDate, finMesDate)
-  const mesLabel = format(hoy, 'MMMM yyyy', { locale: es })
 
   const [form, setForm] = useState({
     sucursal_id: '',
     pollos_meta: '',
     ticket_promedio_meta: '',
+    fecha_inicio: '',
+    fecha_fin: '',
   })
+
+  const semanas = semanasEntreFechas(form.fecha_inicio, form.fecha_fin)
 
   // Meta semanal calculada
   const metaSemanal = form.pollos_meta && form.ticket_promedio_meta
     ? parseFloat(form.pollos_meta) * parseFloat(form.ticket_promedio_meta)
     : null
-  const metaMensual = metaSemanal ? metaSemanal * semanas : null
+  const metaMensual = metaSemanal && semanas > 0 ? metaSemanal * semanas : null
 
   useEffect(() => { load() }, [])
 
@@ -78,7 +60,12 @@ export default function GerenteMetas() {
 
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta) return
+    if (!form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta || !form.fecha_inicio || !form.fecha_fin) return
+    if (form.fecha_fin < form.fecha_inicio) {
+      setMsg({ tipo: 'error', texto: 'La fecha de fin debe ser posterior a la fecha de inicio' })
+      setSaving(false)
+      return
+    }
     setSaving(true)
     setMsg(null)
 
@@ -92,17 +79,18 @@ export default function GerenteMetas() {
       pollos_meta: pollos,
       ticket_promedio_meta: ticket,
       semanas_mes: semanas,
-      fecha_inicio: inicioMes,
-      fecha_fin: finMes,
+      fecha_inicio: form.fecha_inicio,
+      fecha_fin: form.fecha_fin,
       creado_por: usuario.id,
     })
 
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {
-      setMsg({ tipo: 'ok', texto: `Meta creada para ${mesLabel}` })
+      const periodoLabel = `${form.fecha_inicio} — ${form.fecha_fin}`
+      setMsg({ tipo: 'ok', texto: `Meta creada para el periodo ${periodoLabel}` })
       setShowForm(false)
-      setForm({ sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '' })
+      setForm({ sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '', fecha_inicio: '', fecha_fin: '' })
       await load()
     }
     setSaving(false)
@@ -125,30 +113,12 @@ export default function GerenteMetas() {
         </button>
       </div>
 
-      {/* Info del mes */}
-      <div className={styles.mesInfo}>
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Mes en curso</span>
-          <span className={styles.mesInfoVal} style={{ textTransform: 'capitalize' }}>{mesLabel}</span>
-        </div>
-        <div className={styles.mesInfoDivider} />
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Semanas del mes</span>
-          <span className={styles.mesInfoVal}>{semanas}</span>
-        </div>
-        <div className={styles.mesInfoDivider} />
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Periodo</span>
-          <span className={styles.mesInfoVal}>{format(inicioMesDate, 'd MMM', { locale: es })} — {format(finMesDate, 'd MMM', { locale: es })}</span>
-        </div>
-      </div>
-
       {msg && <div className={`${styles.msg} ${styles[msg.tipo]}`}>{msg.texto}</div>}
 
       {showForm && (
         <div className={styles.formCard}>
-          <p className={styles.formTitle}>Nueva meta — {mesLabel}</p>
-          <p className={styles.formSub}>Las fechas se asignan automáticamente al mes en curso ({semanas} semanas)</p>
+          <p className={styles.formTitle}>Nueva meta</p>
+          <p className={styles.formSub}>Define el periodo y los objetivos de la sucursal</p>
 
           <form className={styles.form} onSubmit={handleSave} noValidate>
             <div className={styles.field}>
@@ -159,6 +129,31 @@ export default function GerenteMetas() {
                 {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
               </select>
             </div>
+
+            <div className={styles.twoCol}>
+              <div className={styles.field}>
+                <label className={styles.label}>Fecha de inicio</label>
+                <input className={styles.input} type="date"
+                  value={form.fecha_inicio}
+                  onChange={e => setForm(f => ({ ...f, fecha_inicio: e.target.value }))} required />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Fecha de fin</label>
+                <input className={styles.input} type="date"
+                  value={form.fecha_fin}
+                  min={form.fecha_inicio || undefined}
+                  onChange={e => setForm(f => ({ ...f, fecha_fin: e.target.value }))} required />
+              </div>
+            </div>
+
+            {form.fecha_inicio && form.fecha_fin && form.fecha_fin >= form.fecha_inicio && (
+              <div className={styles.mesInfo} style={{ marginBottom: 0 }}>
+                <div className={styles.mesInfoItem}>
+                  <span className={styles.mesInfoLabel}>Semanas del periodo</span>
+                  <span className={styles.mesInfoVal}>{semanas}</span>
+                </div>
+              </div>
+            )}
 
             <div className={styles.twoCol}>
               <div className={styles.field}>
@@ -184,14 +179,14 @@ export default function GerenteMetas() {
             </div>
 
             {/* Preview calculado */}
-            {metaSemanal !== null && (
+            {metaSemanal !== null && semanas > 0 && (
               <div className={styles.preview}>
                 <div className={styles.previewRow}>
                   <span className={styles.previewLabel}>Meta semanal</span>
                   <span className={styles.previewVal}>{fmt(metaSemanal)}</span>
                 </div>
                 <div className={styles.previewRow}>
-                  <span className={styles.previewLabel}>Meta mensual ({semanas} semanas)</span>
+                  <span className={styles.previewLabel}>Meta del periodo ({semanas} semanas)</span>
                   <span className={styles.previewValBig}>{fmt(metaMensual)}</span>
                 </div>
               </div>
@@ -241,8 +236,8 @@ export default function GerenteMetas() {
                   )}
                   <span className={styles.metaKpi}>{m.semanas_mes ?? 4} semanas</span>
                 </div>
-                <p className={styles.metaDates} style={{ textTransform: 'capitalize' }}>
-                  {format(parseISO(m.fecha_inicio), 'MMMM yyyy', { locale: es })}
+                <p className={styles.metaDates}>
+                  {format(parseISO(m.fecha_inicio), 'd MMM yyyy', { locale: es })} — {format(parseISO(m.fecha_fin), 'd MMM yyyy', { locale: es })}
                 </p>
               </div>
             )
