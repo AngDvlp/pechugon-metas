@@ -66,6 +66,8 @@ export default function GerenteDashboard() {
   const metaSemanalGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
   const ventaSemanaGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
   const avanceSemanalGrupo = metaSemanalGrupo > 0 ? (ventaSemanaGrupo / metaSemanalGrupo) * 100 : 0
+  const faltaMensualTotal = Math.max(0, totalMeta - totalAcumulado)
+  const faltaSemanalTotal = Math.max(0, metaSemanalGrupo - ventaSemanaGrupo)
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -102,6 +104,25 @@ export default function GerenteDashboard() {
             color: avanceSemanalGrupo >= 100 ? 'var(--success)' : avanceSemanalGrupo >= 70 ? 'var(--yellow)' : 'var(--red)'
           }}>{avanceSemanalGrupo.toFixed(0)}%</span>
         </div>
+
+        {/* Falta para la meta */}
+        {totalMeta > 0 && (
+          <div className={styles.faltaStrip}>
+            <div className={styles.faltaStripItem}>
+              <span className={styles.faltaStripLabel}>Falta mes</span>
+              <span className={styles.faltaStripVal} style={{ color: faltaMensualTotal <= 0 ? 'var(--success)' : 'var(--red)' }}>
+                {faltaMensualTotal <= 0 ? '¡Cumplida!' : fmt(faltaMensualTotal)}
+              </span>
+            </div>
+            <div className={styles.faltaStripDivider} />
+            <div className={styles.faltaStripItem}>
+              <span className={styles.faltaStripLabel}>Falta semana</span>
+              <span className={styles.faltaStripVal} style={{ color: faltaSemanalTotal <= 0 ? 'var(--success)' : 'var(--yellow)' }}>
+                {faltaSemanalTotal <= 0 ? '¡Cumplida!' : fmt(faltaSemanalTotal)}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className={styles.kpiRow}>
           <div className={styles.kpi}>

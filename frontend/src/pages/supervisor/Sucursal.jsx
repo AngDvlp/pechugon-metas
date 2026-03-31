@@ -23,6 +23,7 @@ export default function SupervisorSucursal() {
   const [semanaAnterior, setSemanaAnterior] = useState([])
   const [loading, setLoading] = useState(true)
   const [tabActiva, setTabActiva] = useState('venta') // 'venta' | 'pollos' | 'ticket'
+  const [faltaTab, setFaltaTab] = useState('semana') // 'semana' | 'mes'
 
   useEffect(() => { load() }, [id])
 
@@ -93,6 +94,11 @@ export default function SupervisorSucursal() {
   const maxVenta = Math.max(...semanaActual.map(d => d.venta_total ?? 0), 1)
   const maxPollos = Math.max(...semanaActual.map(d => d.pollos_vendidos ?? 0), 1)
   const maxTicket = Math.max(...semanaActual.map(d => d.ticket_promedio ?? 0), 1)
+
+  // Falta para la meta
+  const faltaSem = Math.max(0, (resumen?.meta_venta ?? 0) - totalVentaSemana)
+  const faltaPollosSem = Math.max(0, (resumen?.pollos_meta ?? 0) - totalPollosSemana)
+  const faltaMes = Math.max(0, (resumen?.meta_mensual ?? resumen?.meta_venta ?? 0) - (resumen?.venta_acumulada ?? 0))
 
   const pctVsAnt = (actual, anterior) => {
     if (!anterior) return null
@@ -181,6 +187,56 @@ export default function SupervisorSucursal() {
         </div>
       ) : (
         <div className={styles.noMeta}>Sin meta activa para esta sucursal</div>
+      )}
+
+      {/* Falta para la meta */}
+      {resumen && (
+        <div className={styles.faltaCard}>
+          <div className={styles.faltaHead}>
+            <span className={styles.faltaTitle}>Falta para la meta</span>
+            <div className={styles.faltaTabs}>
+              <button className={`${styles.faltaTab} ${faltaTab==='semana' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('semana')}>Semana</button>
+              <button className={`${styles.faltaTab} ${faltaTab==='mes' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('mes')}>Mes</button>
+            </div>
+          </div>
+          {faltaTab === 'semana' ? (
+            faltaSem <= 0 ? (
+              <p className={styles.faltaCumplida}>¡Meta semanal alcanzada!</p>
+            ) : (
+              <div className={styles.faltaRow}>
+                <div className={styles.faltaItem}>
+                  <span className={styles.faltaVal}>{fmt(faltaSem)}</span>
+                  <span className={styles.faltaLbl}>en ventas</span>
+                </div>
+                {(resumen.pollos_meta ?? 0) > 0 && (
+                  <>
+                    <div className={styles.faltaDivider} />
+                    <div className={styles.faltaItem}>
+                      <span className={styles.faltaVal}>{fmtNum(faltaPollosSem)}</span>
+                      <span className={styles.faltaLbl}>pollos</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          ) : (
+            faltaMes <= 0 ? (
+              <p className={styles.faltaCumplida}>¡Meta del periodo alcanzada!</p>
+            ) : (
+              <div className={styles.faltaRow}>
+                <div className={styles.faltaItem}>
+                  <span className={styles.faltaVal}>{fmt(faltaMes)}</span>
+                  <span className={styles.faltaLbl}>en ventas</span>
+                </div>
+                <div className={styles.faltaDivider} />
+                <div className={styles.faltaItem}>
+                  <span className={styles.faltaVal}>{diasRestantes}</span>
+                  <span className={styles.faltaLbl}>días restantes</span>
+                </div>
+              </div>
+            )
+          )}
+        </div>
       )}
 
       {/* SEMANA ACTUAL */}

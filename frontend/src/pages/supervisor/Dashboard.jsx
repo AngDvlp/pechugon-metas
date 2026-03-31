@@ -56,6 +56,8 @@ export default function SupervisorDashboard() {
   const ventaSemanaTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_semana_actual ?? 0), 0)
   const avanceMes = metaMensualTotal > 0 ? (acumuladoTotal / metaMensualTotal) * 100 : 0
   const avanceSem = metaSemanalTotal > 0 ? (ventaSemanaTotal / metaSemanalTotal) * 100 : 0
+  const faltaMesTotal = Math.max(0, metaMensualTotal - acumuladoTotal)
+  const faltaSemTotal = Math.max(0, metaSemanalTotal - ventaSemanaTotal)
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -112,6 +114,25 @@ export default function SupervisorDashboard() {
             <span className={styles.supStatVal}>{fmt(ventaHoyTotal)}</span>
           </div>
         </div>
+
+        {/* Falta para la meta */}
+        {(metaMensualTotal > 0 || metaSemanalTotal > 0) && (
+          <div className={styles.faltaStrip}>
+            <div className={styles.faltaStripItem}>
+              <span className={styles.faltaStripLabel}>Falta mes</span>
+              <span className={styles.faltaStripVal} style={{ color: faltaMesTotal <= 0 ? 'var(--success)' : 'var(--red)' }}>
+                {faltaMesTotal <= 0 ? '¡Cumplida!' : fmt(faltaMesTotal)}
+              </span>
+            </div>
+            <div className={styles.faltaStripDivider} />
+            <div className={styles.faltaStripItem}>
+              <span className={styles.faltaStripLabel}>Falta semana</span>
+              <span className={styles.faltaStripVal} style={{ color: faltaSemTotal <= 0 ? 'var(--success)' : 'var(--yellow)' }}>
+                {faltaSemTotal <= 0 ? '¡Cumplida!' : fmt(faltaSemTotal)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <p className={styles.secTitle}>Mis Sucursales</p>
@@ -126,6 +147,8 @@ export default function SupervisorDashboard() {
           const hv = ventasHoy[s.id]
           const avanceMesSuc = res?.avance_porcentaje ?? 0
           const avanceSemSuc = res?.avance_semanal ?? 0
+          const faltaSemSuc = res ? Math.max(0, (res.meta_venta ?? 0) - (res.venta_semana_actual ?? 0)) : null
+          const faltaMesSuc = res ? Math.max(0, (res.meta_mensual ?? res.meta_venta ?? 0) - (res.venta_acumulada ?? 0)) : null
 
           let barColor = 'var(--text-muted)'
           let statusLabel = 'Sin meta'
@@ -193,6 +216,14 @@ export default function SupervisorDashboard() {
                   </span>
                 </div>
               </div>
+              {res && (
+                <div className={styles.sucFaltaLine}>
+                  <span className={styles.sucFaltaLabel}>Falta esta semana</span>
+                  <span className={styles.sucFaltaVal} style={{ color: faltaSemSuc <= 0 ? 'var(--success)' : 'var(--yellow)' }}>
+                    {faltaSemSuc <= 0 ? '¡Meta cumplida!' : fmt(faltaSemSuc)}
+                  </span>
+                </div>
+              )}
 
               <div className={styles.sucArrow}>›</div>
             </div>

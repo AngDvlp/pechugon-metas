@@ -360,3 +360,41 @@
   font-family: var(--font-body); font-size: 0.6rem; font-weight: 700;
   color: var(--text-muted); text-transform: uppercase; min-width: 22px;
 }
+
+
+/* FALTA STRIP — gerente globalCard */
+.faltaStrip {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.faltaStripItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+.faltaStripLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.faltaStripVal {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+}
+.faltaStripDivider {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}

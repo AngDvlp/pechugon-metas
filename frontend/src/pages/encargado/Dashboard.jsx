@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import styles from './Dashboard.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
+const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
 export default function EncargadoDashboard() {
   const { usuario } = useAuth()
@@ -20,6 +21,7 @@ export default function EncargadoDashboard() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [faltaTab, setFaltaTab] = useState('semana')
   const hoy = format(new Date(), 'yyyy-MM-dd')
 
   useEffect(() => {
@@ -76,6 +78,15 @@ export default function EncargadoDashboard() {
   const avance = meta?.avance_porcentaje ?? 0
   const diasRestantes = meta ? meta.dias_totales - meta.dias_transcurridos : null
 
+  // Falta para la meta
+  const inicioSemana = startOfWeek(new Date(), { weekStartsOn: 1 })
+  const pollosSemana = ultimas
+    .filter(v => new Date(v.fecha + 'T00:00:00') >= inicioSemana)
+    .reduce((a, v) => a + (parseFloat(v.pollos_vendidos) || 0), 0)
+  const faltaSemPesos = Math.max(0, (meta?.meta_venta ?? 0) - (meta?.venta_semana_actual ?? 0))
+  const faltaSemPollos = Math.max(0, (meta?.pollos_meta ?? 0) - pollosSemana)
+  const faltaMesPesos = Math.max(0, (meta?.meta_mensual ?? 0) - (meta?.venta_acumulada ?? 0))
+
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
   return (
@@ -100,6 +111,60 @@ export default function EncargadoDashboard() {
             <span>{fmt(meta.venta_acumulada)} acumulado</span>
             <span>{diasRestantes} días restantes</span>
           </div>
+        </div>
+      )}
+
+      {/* Falta para la meta */}
+      {meta && (
+        <div className={styles.faltaCard}>
+          <div className={styles.faltaHead}>
+            <span className={styles.faltaTitle}>Falta para la meta</span>
+            <div className={styles.faltaTabs}>
+              <button className={`${styles.faltaTab} ${faltaTab==='semana' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('semana')}>Semana</button>
+              <button className={`${styles.faltaTab} ${faltaTab==='mes' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('mes')}>Mes</button>
+            </div>
+          </div>
+          {faltaTab === 'semana' ? (
+            faltaSemPesos <= 0 ? (
+              <p className={styles.faltaCumplida}>¡Meta semanal alcanzada!</p>
+            ) : (
+              <div className={styles.faltaRow}>
+                <div className={styles.faltaItem}>
+                  <span className={styles.faltaVal}>{fmt(faltaSemPesos)}</span>
+                  <span className={styles.faltaLbl}>en ventas</span>
+                </div>
+                {(meta.pollos_meta ?? 0) > 0 && (
+                  <>
+                    <div className={styles.faltaDivider} />
+                    <div className={styles.faltaItem}>
+                      <span className={styles.faltaVal}>{fmtNum(faltaSemPollos)}</span>
+                      <span className={styles.faltaLbl}>pollos</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          ) : (
+            faltaMesPesos <= 0 ? (
+              <p className={styles.faltaCumplida}>¡Meta del periodo alcanzada!</p>
+            ) : (
+              <div className={styles.faltaRow}>
+                <div className={styles.faltaItem}>
+                  <span className={styles.faltaVal}>{fmt(faltaMesPesos)}</span>
+                  <span className={styles.faltaLbl}>para cumplir el periodo</span>
+                </div>
+                {diasRestantes !== null && (
+                  <>
+                    <div className={styles.faltaDivider} />
+                    <div className={styles.faltaItem}>
+                      <span className={styles.faltaVal}>{diasRestantes}</span>
+                      <span className={styles.faltaLbl}>días restantes</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          )}
         </div>
       )}
 
