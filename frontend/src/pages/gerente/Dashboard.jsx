@@ -6,15 +6,27 @@ import styles from './Dashboard.module.css'
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
+// Abreviación inteligente del nombre de ruta para botones
+function abrevRuta(nombre) {
+  const map = {
+    'Ruta Norte Oriente': 'N. Oriente',
+    'Ruta Centro': 'Centro',
+    'Ruta Oriente': 'Oriente',
+    'Ruta Foranea': 'Foránea',
+    'Ruta Norte': 'Norte',
+  }
+  return map[nombre] ?? nombre.replace('Ruta ', '')
+}
+
 export default function GerenteDashboard() {
   const navigate = useNavigate()
   const [sucursales, setSucursales] = useState([])
   const [resumenes, setResumenes] = useState({})
   const [supervisores, setSupervisores] = useState([])
-  const [supSucMap, setSupSucMap] = useState({}) // supervisor_id -> [sucursal_id]
+  const [supSucMap, setSupSucMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
-  const [filtroSup, setFiltroSup] = useState('todos') // 'todos' | supervisor_id
+  const [filtroSup, setFiltroSup] = useState('todos')
 
   useEffect(() => { load() }, [])
 
@@ -47,27 +59,23 @@ export default function GerenteDashboard() {
     setLoading(false)
   }
 
-  // Sucursales filtradas por supervisor y búsqueda
   const sucursalesFiltradas = sucursales.filter(s => {
     const matchBusqueda = s.nombre.toLowerCase().includes(busqueda.toLowerCase())
     const matchSup = filtroSup === 'todos' || (supSucMap[filtroSup] ?? []).includes(s.id)
     return matchBusqueda && matchSup
   })
 
-  // KPIs sobre las sucursales filtradas
   const totalMeta = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_mensual ?? 0), 0)
   const totalAcumulado = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_acumulada ?? 0), 0)
   const totalPollos = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.pollos_totales ?? 0), 0)
   const avanceGlobal = totalMeta > 0 ? (totalAcumulado / totalMeta) * 100 : 0
-  const sinMeta = sucursalesFiltradas.length - sucursalesFiltradas.filter(s => resumenes[s.id] !== null).length
-  const encaminadas = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70).length
-
-  // Meta y avance semanal del grupo filtrado
+  const sinMeta = sucursalesFiltradas.filter(s => !resumenes[s.id]).length
+  const encaminadas = sucursalesFiltradas.filter(s => resumenes[s.id]?.avance_porcentaje >= 70).length
   const metaSemanalGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
   const ventaSemanaGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
   const avanceSemanalGrupo = metaSemanalGrupo > 0 ? (ventaSemanaGrupo / metaSemanalGrupo) * 100 : 0
-  const faltaMensualTotal = Math.max(0, totalMeta - totalAcumulado)
-  const faltaSemanalTotal = Math.max(0, metaSemanalGrupo - ventaSemanaGrupo)
+
+  const supActivo = supervisores.find(s => s.id === filtroSup)
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -76,9 +84,9 @@ export default function GerenteDashboard() {
       {/* KPIs globales */}
       <div className={styles.globalCard}>
         <div className={styles.globalTop}>
-          <div>
+          <div className={styles.globalTopLeft}>
             <p className={styles.globalLabel}>
-              {filtroSup === 'todos' ? 'Meta mensual global' : `Meta — ${supervisores.find(s => s.id === filtroSup)?.nombre}`}
+              {filtroSup === 'todos' ? 'Meta mensual global' : supActivo?.nombre}
             </p>
             <p className={styles.globalMeta}>{fmt(totalMeta)}</p>
           </div>
@@ -87,43 +95,31 @@ export default function GerenteDashboard() {
             <span className={styles.pctSym}>%</span>
           </div>
         </div>
-        <div className={styles.globalTrack}>
-          <div className={styles.globalFill} style={{ width: `${Math.min(avanceGlobal, 100)}%` }} />
+
+        {/* Barra mensual */}
+        <div className={styles.barraRow}>
+          <span className={styles.barraLabel}>Mes</span>
+          <div className={styles.globalTrack}>
+            <div className={styles.globalFill} style={{ width: `${Math.min(avanceGlobal, 100)}%` }} />
+          </div>
+          <span className={styles.barraPct}>{avanceGlobal.toFixed(0)}%</span>
         </div>
 
-        {/* Avance semanal */}
-        <div className={styles.semRow}>
-          <span className={styles.semLabel}>Semana actual</span>
-          <div className={styles.semTrack}>
+        {/* Barra semanal */}
+        <div className={styles.barraRow}>
+          <span className={styles.barraLabel}>Semana</span>
+          <div className={styles.globalTrack}>
             <div className={styles.semFill} style={{
               width: `${Math.min(avanceSemanalGrupo, 100)}%`,
               background: avanceSemanalGrupo >= 100 ? 'var(--success)' : avanceSemanalGrupo >= 70 ? 'var(--yellow)' : 'var(--red)'
             }} />
           </div>
-          <span className={styles.semPct} style={{
+          <span className={styles.barraPct} style={{
             color: avanceSemanalGrupo >= 100 ? 'var(--success)' : avanceSemanalGrupo >= 70 ? 'var(--yellow)' : 'var(--red)'
           }}>{avanceSemanalGrupo.toFixed(0)}%</span>
         </div>
 
-        {/* Falta para la meta */}
-        {totalMeta > 0 && (
-          <div className={styles.faltaStrip}>
-            <div className={styles.faltaStripItem}>
-              <span className={styles.faltaStripLabel}>Falta mes</span>
-              <span className={styles.faltaStripVal} style={{ color: faltaMensualTotal <= 0 ? 'var(--success)' : 'var(--red)' }}>
-                {faltaMensualTotal <= 0 ? '¡Cumplida!' : fmt(faltaMensualTotal)}
-              </span>
-            </div>
-            <div className={styles.faltaStripDivider} />
-            <div className={styles.faltaStripItem}>
-              <span className={styles.faltaStripLabel}>Falta semana</span>
-              <span className={styles.faltaStripVal} style={{ color: faltaSemanalTotal <= 0 ? 'var(--success)' : 'var(--yellow)' }}>
-                {faltaSemanalTotal <= 0 ? '¡Cumplida!' : fmt(faltaSemanalTotal)}
-              </span>
-            </div>
-          </div>
-        )}
-
+        {/* KPIs fila */}
         <div className={styles.kpiRow}>
           <div className={styles.kpi}>
             <span className={styles.kpiVal}>{fmt(totalAcumulado)}</span>
@@ -136,13 +132,13 @@ export default function GerenteDashboard() {
           </div>
           <div className={styles.kpiDivider} />
           <div className={styles.kpi}>
-            <span className={styles.kpiVal} style={{ color: 'var(--success)' }}>{encaminadas}</span>
+            <span className={styles.kpiVal} style={{ color: encaminadas > 0 ? 'var(--success)' : 'var(--text-muted)' }}>{encaminadas}</span>
             <span className={styles.kpiLabel}>Encaminadas</span>
           </div>
           <div className={styles.kpiDivider} />
           <div className={styles.kpi}>
             <span className={styles.kpiVal}>{fmtNum(totalPollos)}</span>
-            <span className={styles.kpiLabel}>Pollos mes</span>
+            <span className={styles.kpiLabel}>Pollos</span>
           </div>
         </div>
       </div>
@@ -163,21 +159,19 @@ export default function GerenteDashboard() {
         </button>
       </div>
 
-      {/* Filtro supervisor */}
+      {/* Filtro rutas — scroll horizontal */}
       <div className={styles.filtroRow}>
         <button
           className={`${styles.filtroBtn} ${filtroSup === 'todos' ? styles.filtroBtnActive : ''}`}
-          onClick={() => setFiltroSup('todos')}
-        >
+          onClick={() => setFiltroSup('todos')}>
           Todas
         </button>
         {supervisores.map(sup => (
           <button
             key={sup.id}
             className={`${styles.filtroBtn} ${filtroSup === sup.id ? styles.filtroBtnActive : ''}`}
-            onClick={() => setFiltroSup(sup.id)}
-          >
-            {sup.nombre.split(' ')[0]}
+            onClick={() => setFiltroSup(sup.id)}>
+            {abrevRuta(sup.nombre)}
           </button>
         ))}
       </div>
@@ -199,10 +193,10 @@ export default function GerenteDashboard() {
 
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
-        {filtroSup !== 'todos' ? ` — ${supervisores.find(s => s.id === filtroSup)?.nombre}` : ''}
+        {filtroSup !== 'todos' && supActivo ? ` — ${supActivo.nombre}` : ''}
       </p>
 
-      {/* Lista sucursales */}
+      {/* Lista */}
       <div className={styles.sucList}>
         {sucursalesFiltradas.length === 0 && (
           <div className={styles.noResults}>Sin resultados</div>
@@ -211,7 +205,6 @@ export default function GerenteDashboard() {
           const r = resumenes[s.id]
           const avanceMes = r?.avance_porcentaje ?? 0
           const avanceSem = r?.avance_semanal ?? 0
-
           let barColor = 'var(--text-muted)'
           let statusTag = 'Sin meta'
           let tagClass = styles.tagNeutral
@@ -220,7 +213,6 @@ export default function GerenteDashboard() {
             else if (avanceMes >= 70) { barColor = 'var(--yellow)'; statusTag = 'En camino'; tagClass = styles.tagWarn }
             else { barColor = 'var(--red)'; statusTag = 'En riesgo'; tagClass = styles.tagDanger }
           }
-
           return (
             <div key={s.id} className={styles.sucRow} onClick={() => navigate(`/gerente/sucursal/${s.id}`)}>
               <div className={styles.sucInfo}>
