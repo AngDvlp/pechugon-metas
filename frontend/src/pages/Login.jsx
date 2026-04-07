@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import styles from './Login.module.css'
 
 export default function Login() {
-  const { signIn, rol } = useAuth()
+  const { signIn } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,15 +15,12 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-
     const { error } = await signIn(email.trim(), password)
-
     if (error) {
       setError('Correo o contraseña incorrectos')
       setLoading(false)
       return
     }
-    // Redirect based on role — AuthContext will update, App router handles navigation
     setLoading(false)
     navigate('/', { replace: true })
   }
@@ -31,12 +28,9 @@ export default function Login() {
   return (
     <div className={styles.page}>
       <div className={styles.bg} aria-hidden />
-
       <div className={styles.card}>
         <div className={styles.logoArea}>
-          <div className={styles.logoMark}>
-            <span>P</span>
-          </div>
+          <img src="/logo.png" alt="El Pechugón" className={styles.logoImg} />
           <h1 className={styles.appName}>El Pechugón</h1>
           <p className={styles.tagline}>Seguimiento de Metas</p>
         </div>
