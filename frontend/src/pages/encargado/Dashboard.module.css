@@ -39,3 +39,40 @@
 .histPollos { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
 .histTicket { font-family: var(--font-mono); font-size: 0.75rem; color: var(--yellow); text-align: right; }
 .histNota { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; text-align: center; }
+/* Icono dentro del input */
+.inputIcon {
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+.ticketLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.histNota {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  justify-content: center;
+}
+/* badges con iconos */
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.sucStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+

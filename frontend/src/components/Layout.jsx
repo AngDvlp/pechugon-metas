@@ -1,21 +1,24 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import {
+  LayoutDashboard, Target, Store, Users, Download, LogOut, Home
+} from 'lucide-react'
 import styles from './Layout.module.css'
 
 const NAV_ITEMS = {
   encargado: [
-    { to: '/encargado', label: 'Inicio', icon: '⌂', end: true },
+    { to: '/encargado', label: 'Inicio', icon: Home, end: true },
   ],
   supervisor: [
-    { to: '/supervisor', label: 'Tiendas', icon: '⊞', end: true },
-    { to: '/supervisor/descarga', label: 'Exportar', icon: '⬇' },
+    { to: '/supervisor', label: 'Tiendas', icon: Store, end: true },
+    { to: '/supervisor/descarga', label: 'Exportar', icon: Download },
   ],
   gerente: [
-    { to: '/gerente', label: 'Resumen', icon: '◈', end: true },
-    { to: '/gerente/metas', label: 'Metas', icon: '◎' },
-    { to: '/gerente/sucursales', label: 'Sucursal', icon: '⊟' },
-    { to: '/gerente/usuarios', label: 'Usuarios', icon: '◉' },
-    { to: '/gerente/descarga', label: 'Exportar', icon: '⬇' },
+    { to: '/gerente', label: 'Resumen', icon: LayoutDashboard, end: true },
+    { to: '/gerente/metas', label: 'Metas', icon: Target },
+    { to: '/gerente/sucursales', label: 'Sucursal', icon: Store },
+    { to: '/gerente/usuarios', label: 'Usuarios', icon: Users },
+    { to: '/gerente/descarga', label: 'Exportar', icon: Download },
   ],
 }
 
@@ -29,14 +32,12 @@ export default function Layout({ rol }) {
   const { usuario, signOut } = useAuth()
   const navigate = useNavigate()
   const items = NAV_ITEMS[rol] ?? []
+  const nombreCorto = usuario?.nombre?.split(' ')[0] ?? '—'
 
   async function handleSignOut() {
     await signOut()
     navigate('/login')
   }
-
-  // Nombre corto para header (primer nombre solo)
-  const nombreCorto = usuario?.nombre?.split(' ')[0] ?? '—'
 
   return (
     <div className={styles.shell}>
@@ -51,11 +52,7 @@ export default function Layout({ rol }) {
         <div className={styles.headerRight}>
           <span className={styles.userName}>{nombreCorto}</span>
           <button className={styles.signOut} onClick={handleSignOut} title="Cerrar sesión">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
+            <LogOut size={16} />
           </button>
         </div>
       </header>
@@ -66,19 +63,22 @@ export default function Layout({ rol }) {
 
       {items.length > 1 && (
         <nav className={styles.bottomNav}>
-          {items.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `${styles.navItem} ${isActive ? styles.navActive : ''}`
-              }
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              <span className={styles.navLabel}>{item.label}</span>
-            </NavLink>
-          ))}
+          {items.map(item => {
+            const Icon = item.icon
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `${styles.navItem} ${isActive ? styles.navActive : ''}`
+                }
+              >
+                <Icon size={20} strokeWidth={1.75} />
+                <span className={styles.navLabel}>{item.label}</span>
+              </NavLink>
+            )
+          })}
         </nav>
       )}
     </div>

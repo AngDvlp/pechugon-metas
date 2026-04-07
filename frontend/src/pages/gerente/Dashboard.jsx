@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import {
+  Target, Store, Users, TrendingUp, TrendingDown,
+  Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock
+} from 'lucide-react'
 import styles from './Dashboard.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
@@ -25,19 +29,15 @@ export default function GerenteDashboard() {
       supabase.from('usuarios').select('id, nombre, roles!inner(nombre)').eq('roles.nombre', 'supervisor'),
       supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id'),
     ])
-
     setSucursales(sucs ?? [])
     setSupervisores(sups ?? [])
-
     const map = {}
     ss?.forEach(r => {
       if (!map[r.supervisor_id]) map[r.supervisor_id] = []
       map[r.supervisor_id].push(r.sucursal_id)
     })
     setSupSucMap(map)
-
     if (!sucs?.length) { setLoading(false); return }
-
     const results = await Promise.all(
       sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
     )
@@ -57,12 +57,10 @@ export default function GerenteDashboard() {
   const totalAcumulado = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_acumulada ?? 0), 0)
   const totalPollos = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.pollos_totales ?? 0), 0)
   const avanceGlobal = totalMeta > 0 ? (totalAcumulado / totalMeta) * 100 : 0
-  const sinMeta = sucursalesFiltradas.length - sucursalesFiltradas.filter(s => resumenes[s.id] !== null).length
   const encaminadas = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70).length
   const metaSemanalGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
   const ventaSemanaGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
   const avanceSemanalGrupo = metaSemanalGrupo > 0 ? (ventaSemanaGrupo / metaSemanalGrupo) * 100 : 0
-
   const supSeleccionado = supervisores.find(s => s.id === filtroSup)
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
@@ -83,13 +81,9 @@ export default function GerenteDashboard() {
             <span className={styles.pctSym}>%</span>
           </div>
         </div>
-
-        {/* Barra mensual */}
         <div className={styles.globalTrack}>
           <div className={styles.globalFill} style={{ width: `${Math.min(avanceGlobal, 100)}%` }} />
         </div>
-
-        {/* Barra semanal */}
         <div className={styles.semRow}>
           <span className={styles.semLabel}>Semana actual</span>
           <div className={styles.semTrack}>
@@ -102,8 +96,6 @@ export default function GerenteDashboard() {
             color: avanceSemanalGrupo >= 100 ? 'var(--success)' : avanceSemanalGrupo >= 70 ? 'var(--yellow)' : 'var(--red)'
           }}>{avanceSemanalGrupo.toFixed(0)}%</span>
         </div>
-
-        {/* KPIs */}
         <div className={styles.kpiRow}>
           <div className={styles.kpi}>
             <span className={styles.kpiVal}>{fmt(totalAcumulado)}</span>
@@ -130,33 +122,27 @@ export default function GerenteDashboard() {
       {/* Acciones */}
       <div className={styles.acciones}>
         <button className={styles.accionBtn} onClick={() => navigate('/gerente/metas')}>
-          <span className={styles.accionIcon}>◎</span>
+          <Target size={20} strokeWidth={1.75} />
           <span>Metas</span>
         </button>
         <button className={styles.accionBtn} onClick={() => navigate('/gerente/sucursales')}>
-          <span className={styles.accionIcon}>⊟</span>
+          <Store size={20} strokeWidth={1.75} />
           <span>Sucursales</span>
         </button>
         <button className={styles.accionBtn} onClick={() => navigate('/gerente/usuarios')}>
-          <span className={styles.accionIcon}>◉</span>
+          <Users size={20} strokeWidth={1.75} />
           <span>Usuarios</span>
         </button>
       </div>
 
-      {/* Filtro supervisor — scroll horizontal, nombre sin "Ruta" */}
+      {/* Filtro supervisor */}
       <div className={styles.filtroRow}>
-        <button
-          className={`${styles.filtroBtn} ${filtroSup === 'todos' ? styles.filtroBtnActive : ''}`}
-          onClick={() => setFiltroSup('todos')}
-        >
-          Todas
-        </button>
+        <button className={`${styles.filtroBtn} ${filtroSup === 'todos' ? styles.filtroBtnActive : ''}`}
+          onClick={() => setFiltroSup('todos')}>Todas</button>
         {supervisores.map(sup => (
-          <button
-            key={sup.id}
+          <button key={sup.id}
             className={`${styles.filtroBtn} ${filtroSup === sup.id ? styles.filtroBtnActive : ''}`}
-            onClick={() => setFiltroSup(sup.id)}
-          >
+            onClick={() => setFiltroSup(sup.id)}>
             {sup.nombre.replace('Ruta ', '')}
           </button>
         ))}
@@ -164,16 +150,13 @@ export default function GerenteDashboard() {
 
       {/* Búsqueda */}
       <div className={styles.searchWrap}>
-        <span className={styles.searchIcon}>🔍</span>
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="Buscar sucursal…"
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-        />
+        <Search size={15} strokeWidth={2} color="var(--text-muted)" />
+        <input className={styles.searchInput} type="text" placeholder="Buscar sucursal…"
+          value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         {busqueda && (
-          <button className={styles.clearBtn} onClick={() => setBusqueda('')}>✕</button>
+          <button className={styles.clearBtn} onClick={() => setBusqueda('')}>
+            <X size={14} strokeWidth={2} />
+          </button>
         )}
       </div>
 
@@ -191,24 +174,26 @@ export default function GerenteDashboard() {
           const r = resumenes[s.id]
           const avanceMes = r?.avance_porcentaje ?? 0
           const avanceSem = r?.avance_semanal ?? 0
-
           let barColor = 'var(--text-muted)'
+          let StatusIcon = Clock
           let statusTag = 'Sin meta'
           let tagClass = styles.tagNeutral
           if (r) {
-            if (avanceMes >= 100) { barColor = 'var(--success)'; statusTag = '✓ Cumplida'; tagClass = styles.tagOk }
-            else if (avanceMes >= 70) { barColor = 'var(--yellow)'; statusTag = 'En camino'; tagClass = styles.tagWarn }
-            else { barColor = 'var(--red)'; statusTag = 'En riesgo'; tagClass = styles.tagDanger }
+            if (avanceMes >= 100) { barColor = 'var(--success)'; statusTag = 'Cumplida'; tagClass = styles.tagOk; StatusIcon = CheckCircle }
+            else if (avanceMes >= 70) { barColor = 'var(--yellow)'; statusTag = 'En camino'; tagClass = styles.tagWarn; StatusIcon = TrendingUp }
+            else { barColor = 'var(--red)'; statusTag = 'En riesgo'; tagClass = styles.tagDanger; StatusIcon = AlertTriangle }
           }
-
           return (
             <div key={s.id} className={styles.sucRow} onClick={() => navigate(`/gerente/sucursal/${s.id}`)}>
               <div className={styles.sucInfo}>
                 <div className={styles.sucNombreRow}>
                   <p className={styles.sucNombre}>{s.nombre}</p>
                   <div className={styles.sucNombreRight}>
-                    <span className={`${styles.tag} ${tagClass}`}>{statusTag}</span>
-                    <span className={styles.sucArrow}>›</span>
+                    <span className={`${styles.tag} ${tagClass}`}>
+                      <StatusIcon size={10} strokeWidth={2.5} />
+                      {statusTag}
+                    </span>
+                    <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" />
                   </div>
                 </div>
                 {r && (

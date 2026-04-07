@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { DollarSign, Bird, TrendingUp, CheckCircle, AlertCircle, Lock } from 'lucide-react'
 import styles from './Dashboard.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
@@ -22,9 +23,7 @@ export default function EncargadoDashboard() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
 
-  useEffect(() => {
-    if (sucursalId) load()
-  }, [sucursalId])
+  useEffect(() => { if (sucursalId) load() }, [sucursalId])
 
   async function load() {
     setLoading(true)
@@ -34,9 +33,7 @@ export default function EncargadoDashboard() {
     ])
     setVentaHoy(hoyData)
     setUltimas(histData ?? [])
-    if (hoyData) {
-      setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
-    }
+    if (hoyData) setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
     setLoading(false)
   }
 
@@ -45,7 +42,6 @@ export default function EncargadoDashboard() {
     if (!form.venta_total || !form.pollos_vendidos) return
     setSaving(true)
     setMsg(null)
-
     const payload = {
       sucursal_id: sucursalId,
       encargado_id: usuario.id,
@@ -53,11 +49,9 @@ export default function EncargadoDashboard() {
       venta_total: parseFloat(form.venta_total),
       pollos_vendidos: parseFloat(form.pollos_vendidos),
     }
-
     const { error } = ventaHoy
       ? await supabase.from('ventas_diarias').update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos }).eq('id', ventaHoy.id)
       : await supabase.from('ventas_diarias').insert(payload)
-
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error al guardar: ' + error.message })
     } else {
@@ -82,70 +76,56 @@ export default function EncargadoDashboard() {
         </p>
       </div>
 
-      {/* Registro solo de HOY */}
       <div className={styles.formCard}>
         <p className={styles.formTitle}>{ventaHoy ? 'Actualizar cierre de hoy' : 'Registrar cierre de hoy'}</p>
-
         <form className={styles.form} onSubmit={handleSave} noValidate>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Venta Total</label>
             <div className={styles.inputWrapper}>
-              <span className={styles.inputPrefix}>$</span>
-              <input
-                className={styles.input}
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
+              <DollarSign size={16} strokeWidth={2} color="var(--text-muted)" className={styles.inputIcon} />
+              <input className={styles.input} type="number" inputMode="decimal"
+                min="0" step="0.01" placeholder="0.00"
                 value={form.venta_total}
-                onChange={e => setForm(f => ({ ...f, venta_total: e.target.value }))}
-                required
-              />
+                onChange={e => setForm(f => ({ ...f, venta_total: e.target.value }))} required />
             </div>
           </div>
-
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Pollos Vendidos</label>
             <div className={styles.inputWrapper}>
-              <span className={styles.inputPrefix}>🐔</span>
-              <input
-                className={styles.input}
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.5"
-                placeholder="0"
+              <Bird size={16} strokeWidth={2} color="var(--text-muted)" className={styles.inputIcon} />
+              <input className={styles.input} type="number" inputMode="decimal"
+                min="0" step="0.5" placeholder="0"
                 value={form.pollos_vendidos}
-                onChange={e => setForm(f => ({ ...f, pollos_vendidos: e.target.value }))}
-                required
-              />
+                onChange={e => setForm(f => ({ ...f, pollos_vendidos: e.target.value }))} required />
             </div>
           </div>
-
           <div className={styles.ticketPreview}>
-            <span className={styles.ticketLabel}>Ticket Promedio</span>
+            <div className={styles.ticketLeft}>
+              <TrendingUp size={15} strokeWidth={2} color="var(--yellow)" />
+              <span className={styles.ticketLabel}>Ticket Promedio</span>
+            </div>
             <span className={styles.ticketValue}>{ticketCalculado ? fmtDec(ticketCalculado) : '—'}</span>
           </div>
-
-          {msg && <div className={`${styles.msg} ${styles[msg.tipo]}`}>{msg.texto}</div>}
-
+          {msg && (
+            <div className={`${styles.msg} ${styles[msg.tipo]}`}>
+              {msg.tipo === 'ok'
+                ? <CheckCircle size={15} strokeWidth={2} />
+                : <AlertCircle size={15} strokeWidth={2} />}
+              {msg.texto}
+            </div>
+          )}
           <button className={styles.saveBtn} type="submit" disabled={saving}>
             {saving ? 'Guardando…' : ventaHoy ? 'Actualizar' : 'Registrar Venta'}
           </button>
         </form>
       </div>
 
-      {/* Historial solo lectura */}
       {ultimas.length > 0 && (
         <div className={styles.section}>
           <p className={styles.sectionTitle}>Historial reciente</p>
           <div className={styles.historial}>
             <div className={styles.histHead}>
-              <span>Fecha</span>
-              <span>Venta</span>
-              <span>Pollos</span>
-              <span>T.P.</span>
+              <span>Fecha</span><span>Venta</span><span>Pollos</span><span>T.P.</span>
             </div>
             {ultimas.map(v => (
               <div key={v.id} className={`${styles.histRow} ${v.fecha === hoyStr ? styles.histRowHoy : ''}`}>
@@ -158,9 +138,10 @@ export default function EncargadoDashboard() {
               </div>
             ))}
           </div>
-          <p className={styles.histNota}>
-            🔒 Para modificar registros de días anteriores, contacta a tu supervisor
-          </p>
+          <div className={styles.histNota}>
+            <Lock size={11} strokeWidth={2} />
+            Para modificar días anteriores, contacta a tu supervisor
+          </div>
         </div>
       )}
     </div>
