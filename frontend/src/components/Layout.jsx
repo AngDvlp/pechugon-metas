@@ -8,12 +8,14 @@ const NAV_ITEMS = {
   ],
   supervisor: [
     { to: '/supervisor', label: 'Mis Tiendas', icon: '⊞', end: true },
+    { to: '/supervisor/descarga', label: 'Exportar', icon: '⬇' },
   ],
   gerente: [
     { to: '/gerente', label: 'Resumen', icon: '◈', end: true },
     { to: '/gerente/metas', label: 'Metas', icon: '◎' },
     { to: '/gerente/sucursales', label: 'Sucursales', icon: '⊟' },
     { to: '/gerente/usuarios', label: 'Usuarios', icon: '◉' },
+    { to: '/gerente/descarga', label: 'Exportar', icon: '⬇' },
   ],
 }
 
@@ -35,7 +37,6 @@ export default function Layout({ rol }) {
 
   return (
     <div className={styles.shell}>
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <span className={styles.brand}>El Pechugón</span>
@@ -53,12 +54,10 @@ export default function Layout({ rol }) {
         </div>
       </header>
 
-      {/* Main content */}
       <main className={styles.main}>
         <Outlet />
       </main>
 
-      {/* Bottom Nav (solo si hay más de un item) */}
       {items.length > 1 && (
         <nav className={styles.bottomNav}>
           {items.map(item => (
@@ -66,9 +65,7 @@ export default function Layout({ rol }) {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) =>
-                `${styles.navItem} ${isActive ? styles.navActive : ''}`
-              }
+              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}
             >
               <span className={styles.navIcon}>{item.icon}</span>
               <span className={styles.navLabel}>{item.label}</span>

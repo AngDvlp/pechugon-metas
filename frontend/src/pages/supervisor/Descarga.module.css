@@ -1,0 +1,65 @@
+.page { display: flex; flex-direction: column; gap: 16px; }
+.empty { text-align: center; color: var(--text-muted); padding: 60px 0; font-family: var(--font-body); }
+.title { font-family: var(--font-display); font-size: 2rem; color: var(--text-primary); }
+
+.section { display: flex; flex-direction: column; gap: 10px; }
+.sectionHeaderRow { display: flex; align-items: center; justify-content: space-between; }
+.sectionTitle { font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+/* PERIODO */
+.periodoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.periodoBtn { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-muted); cursor: pointer; font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; padding: 11px 8px; transition: all 0.18s; text-align: center; }
+.periodoBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.periodoBtnActive { background: var(--yellow-dim); border-color: var(--yellow); color: var(--yellow); }
+
+.rangoRow { display: flex; align-items: flex-end; gap: 10px; }
+.rangoField { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.rangoLabel { font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.rangoInput { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; transition: border-color 0.2s; }
+.rangoInput:focus { outline: none; border-color: var(--yellow); }
+.rangoSep { color: var(--text-muted); font-family: var(--font-body); font-size: 1.2rem; padding-bottom: 10px; }
+
+.periodoInfo { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); background: var(--bg-elevated); border-radius: var(--radius-sm); padding: 8px 12px; }
+
+/* SUCURSALES */
+.sucursalesList { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; max-height: 320px; overflow-y: auto; }
+.sucItem { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 11px 14px; cursor: pointer; transition: background 0.15s; }
+.sucItem:hover { background: var(--bg-card-2); }
+.sucItemActive { background: rgba(245,196,0,0.06) !important; }
+.sucCheck { width: 18px; height: 18px; border: 1.5px solid var(--border-active); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--yellow); font-weight: 700; flex-shrink: 0; }
+.sucItemActive .sucCheck { background: var(--yellow); border-color: var(--yellow); color: var(--text-inverse); }
+.sucNombre { font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
+
+.toggleTodasBtn { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; padding: 5px 10px; transition: all 0.18s; }
+.toggleTodasBtn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* OPCIONES */
+.opcionesList { display: flex; flex-direction: column; gap: 8px; }
+.opcionItem { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; cursor: pointer; transition: all 0.18s; }
+.opcionItem:hover { border-color: var(--border-active); }
+.opcionActive { background: rgba(0,211,149,0.06); border-color: rgba(0,211,149,0.3); }
+.opcionCheck { width: 18px; height: 18px; border: 1.5px solid var(--border-active); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--success); font-weight: 700; flex-shrink: 0; }
+.opcionActive .opcionCheck { background: var(--success); border-color: var(--success); color: #000; }
+.opcionLabel { font-family: var(--font-body); font-size: 0.88rem; font-weight: 500; color: var(--text-primary); }
+
+/* BOTONES */
+.botonesRow { display: flex; gap: 10px; }
+.previewBtn { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-family: var(--font-body); font-size: 0.88rem; font-weight: 700; padding: 13px; transition: all 0.18s; }
+.previewBtn:hover:not(:disabled) { border-color: var(--info); color: var(--info); }
+.previewBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.descargaBtn { flex: 2; background: var(--success); border: none; border-radius: var(--radius-md); color: #000; cursor: pointer; font-family: var(--font-display); font-size: 1rem; font-weight: 700; padding: 13px; transition: opacity 0.2s; }
+.descargaBtn:hover:not(:disabled) { opacity: 0.85; }
+.descargaBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* PREVIEW */
+.sinDatos { font-family: var(--font-body); color: var(--text-muted); text-align: center; padding: 20px 0; }
+.previewTabla { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.previewHead { display: grid; grid-template-columns: 1.5fr 60px 1fr 55px 1fr; padding: 8px 12px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); font-family: var(--font-body); font-size: 0.62rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.previewRow { display: grid; grid-template-columns: 1.5fr 60px 1fr 55px 1fr; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+.previewRow:last-child { border-bottom: none; }
+.ptSuc { font-family: var(--font-body); font-size: 0.78rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptFecha { font-family: var(--font-body); font-size: 0.78rem; color: var(--text-muted); text-transform: capitalize; }
+.ptVenta { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-primary); }
+.ptPollos { font-family: var(--font-mono); font-size: 0.78rem; color: var(--info); text-align: center; }
+.ptTicket { font-family: var(--font-mono); font-size: 0.75rem; color: var(--success); text-align: right; }
+.masRegistros { font-family: var(--font-body); font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 10px; }

@@ -4,11 +4,13 @@ import Login from './pages/Login'
 import EncargadoDashboard from './pages/encargado/Dashboard'
 import SupervisorDashboard from './pages/supervisor/Dashboard'
 import SupervisorSucursal from './pages/supervisor/Sucursal'
+import SupervisorDescarga from './pages/supervisor/Descarga'
 import GerenteDashboard from './pages/gerente/Dashboard'
 import GerenteSucursales from './pages/gerente/Sucursales'
 import GerenteUsuarios from './pages/gerente/Usuarios'
 import GerenteMetas from './pages/gerente/Metas'
 import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
+import GerenteDescarga from './pages/gerente/Descarga'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
@@ -52,6 +54,7 @@ export default function App() {
       }>
         <Route index element={<SupervisorDashboard />} />
         <Route path="sucursal/:id" element={<SupervisorSucursal />} />
+        <Route path="descarga" element={<SupervisorDescarga />} />
       </Route>
 
       {/* GERENTE */}
@@ -61,10 +64,11 @@ export default function App() {
         </RequireAuth>
       }>
         <Route index element={<GerenteDashboard />} />
+        <Route path="metas" element={<GerenteMetas />} />
         <Route path="sucursales" element={<GerenteSucursales />} />
         <Route path="usuarios" element={<GerenteUsuarios />} />
-        <Route path="metas" element={<GerenteMetas />} />
         <Route path="sucursal/:id" element={<GerenteSucursalDetalle />} />
+        <Route path="descarga" element={<GerenteDescarga />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
