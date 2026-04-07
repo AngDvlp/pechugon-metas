@@ -4,7 +4,13 @@
       "Bash(xargs wc:*)",
       "Bash(npm install:*)",
       "Bash(node -e \"require\\(''xlsx''\\); console.log\\(''OK''\\)\")",
-      "Bash(xxd .gitignore)"
+      "Bash(xxd .gitignore)",
+      "Bash(xxd vercel.json)",
+      "Bash(xxd frontend/vercel.json)",
+      "Bash(printf '{\\\\n  \"\"\"\"installCommand\"\"\"\": \"\"\"\"npm --prefix frontend install\"\"\"\",\\\\n  \"\"\"\"buildCommand\"\"\"\": \"\"\"\"npm --prefix frontend run build\"\"\"\",\\\\n  \"\"\"\"outputDirectory\"\"\"\": \"\"\"\"frontend/dist\"\"\"\",\\\\n  \"\"\"\"rewrites\"\"\"\": [\\\\n    { \"\"\"\"source\"\"\"\": \"\"\"\"/\\(.*\\)\"\"\"\", \"\"\"\"destination\"\"\"\": \"\"\"\"/index.html\"\"\"\" }\\\\n  ]\\\\n}\\\\n')",
+      "Bash(cd:*)",
+      "Bash(\"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\\\\src\\\\pages\\\\gerente\\\\Metas.jsx\":*)",
+      "Bash(npm run:*)"
     ]
   }
 }

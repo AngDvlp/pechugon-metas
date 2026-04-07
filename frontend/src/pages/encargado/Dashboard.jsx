@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfWeek } from 'date-fns'
+import { format, parseISO, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import styles from './Dashboard.module.css'
 
@@ -14,34 +14,49 @@ export default function EncargadoDashboard() {
   const sucursal = usuario?.sucursales
   const sucursalId = sucursal?.id
 
-  const [ventaHoy, setVentaHoy] = useState(null)
+  const hoyStr = format(new Date(), 'yyyy-MM-dd')
+
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(hoyStr)
+  const [ventaDelDia, setVentaDelDia] = useState(null)
   const [ultimas, setUltimas] = useState([])
-  const [meta, setMeta] = useState(null)
   const [form, setForm] = useState({ venta_total: '', pollos_vendidos: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
-  const [faltaTab, setFaltaTab] = useState('semana')
-  const hoy = format(new Date(), 'yyyy-MM-dd')
 
   useEffect(() => {
-    if (sucursalId) load()
+    if (sucursalId) loadHistorial()
   }, [sucursalId])
 
-  async function load() {
-    setLoading(true)
-    const [{ data: hoyData }, { data: histData }, { data: metaData }] = await Promise.all([
-      supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoy).maybeSingle(),
-      supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).order('fecha', { ascending: false }).limit(7),
-      supabase.rpc('resumen_sucursal', { p_sucursal_id: sucursalId }).maybeSingle(),
-    ])
-    setVentaHoy(hoyData)
-    setUltimas(histData ?? [])
-    setMeta(metaData)
-    if (hoyData) {
-      setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
-    }
+  useEffect(() => {
+    if (sucursalId) loadFecha()
+  }, [sucursalId, fechaSeleccionada])
+
+  async function loadHistorial() {
+    const { data } = await supabase
+      .from('ventas_diarias')
+      .select('*')
+      .eq('sucursal_id', sucursalId)
+      .order('fecha', { ascending: false })
+      .limit(14)
+    setUltimas(data ?? [])
     setLoading(false)
+  }
+
+  async function loadFecha() {
+    const { data } = await supabase
+      .from('ventas_diarias')
+      .select('*')
+      .eq('sucursal_id', sucursalId)
+      .eq('fecha', fechaSeleccionada)
+      .maybeSingle()
+    setVentaDelDia(data)
+    if (data) {
+      setForm({ venta_total: data.venta_total, pollos_vendidos: data.pollos_vendidos })
+    } else {
+      setForm({ venta_total: '', pollos_vendidos: '' })
+    }
+    setMsg(null)
   }
 
   async function handleSave(e) {
@@ -53,20 +68,23 @@ export default function EncargadoDashboard() {
     const payload = {
       sucursal_id: sucursalId,
       encargado_id: usuario.id,
-      fecha: hoy,
+      fecha: fechaSeleccionada,
       venta_total: parseFloat(form.venta_total),
       pollos_vendidos: parseFloat(form.pollos_vendidos),
     }
 
-    const { error } = ventaHoy
-      ? await supabase.from('ventas_diarias').update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos }).eq('id', ventaHoy.id)
+    const { error } = ventaDelDia
+      ? await supabase.from('ventas_diarias')
+          .update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos })
+          .eq('id', ventaDelDia.id)
       : await supabase.from('ventas_diarias').insert(payload)
 
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error al guardar: ' + error.message })
     } else {
-      setMsg({ tipo: 'ok', texto: 'Venta registrada correctamente' })
-      await load()
+      setMsg({ tipo: 'ok', texto: `Venta del ${format(parseISO(fechaSeleccionada), "d 'de' MMMM", { locale: es })} guardada` })
+      await loadHistorial()
+      await loadFecha()
     }
     setSaving(false)
   }
@@ -75,110 +93,80 @@ export default function EncargadoDashboard() {
     ? parseFloat(form.venta_total) / parseFloat(form.pollos_vendidos)
     : null
 
-  const avance = meta?.avance_porcentaje ?? 0
-  const diasRestantes = meta ? meta.dias_totales - meta.dias_transcurridos : null
-
-  // Falta para la meta
-  const inicioSemana = startOfWeek(new Date(), { weekStartsOn: 1 })
-  const pollosSemana = ultimas
-    .filter(v => new Date(v.fecha + 'T00:00:00') >= inicioSemana)
-    .reduce((a, v) => a + (parseFloat(v.pollos_vendidos) || 0), 0)
-  const faltaSemPesos = Math.max(0, (meta?.meta_venta ?? 0) - (meta?.venta_semana_actual ?? 0))
-  const faltaSemPollos = Math.max(0, (meta?.pollos_meta ?? 0) - pollosSemana)
-  const faltaMesPesos = Math.max(0, (meta?.meta_mensual ?? 0) - (meta?.venta_acumulada ?? 0))
+  const fechaLabel = fechaSeleccionada === hoyStr
+    ? 'Hoy'
+    : format(parseISO(fechaSeleccionada), "EEEE d 'de' MMMM", { locale: es })
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
   return (
     <div className={styles.page}>
-      {/* Meta progress */}
-      {meta && (
-        <div className={styles.metaCard}>
-          <div className={styles.metaHeader}>
-            <div>
-              <p className={styles.metaLabel}>Meta del periodo</p>
-              <p className={styles.metaMonto}>{fmt(meta.meta_venta)}</p>
-            </div>
-            <div className={styles.metaPct}>
-              <span className={styles.pctNum}>{avance.toFixed(1)}</span>
-              <span className={styles.pctSym}>%</span>
-            </div>
-          </div>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${Math.min(avance, 100)}%` }} />
-          </div>
-          <div className={styles.metaFooter}>
-            <span>{fmt(meta.venta_acumulada)} acumulado</span>
-            <span>{diasRestantes} días restantes</span>
-          </div>
-        </div>
-      )}
-
-      {/* Falta para la meta */}
-      {meta && (
-        <div className={styles.faltaCard}>
-          <div className={styles.faltaHead}>
-            <span className={styles.faltaTitle}>Falta para la meta</span>
-            <div className={styles.faltaTabs}>
-              <button className={`${styles.faltaTab} ${faltaTab==='semana' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('semana')}>Semana</button>
-              <button className={`${styles.faltaTab} ${faltaTab==='mes' ? styles.faltaTabOn : ''}`} onClick={() => setFaltaTab('mes')}>Mes</button>
-            </div>
-          </div>
-          {faltaTab === 'semana' ? (
-            faltaSemPesos <= 0 ? (
-              <p className={styles.faltaCumplida}>¡Meta semanal alcanzada!</p>
-            ) : (
-              <div className={styles.faltaRow}>
-                <div className={styles.faltaItem}>
-                  <span className={styles.faltaVal}>{fmt(faltaSemPesos)}</span>
-                  <span className={styles.faltaLbl}>en ventas</span>
-                </div>
-                {(meta.pollos_meta ?? 0) > 0 && (
-                  <>
-                    <div className={styles.faltaDivider} />
-                    <div className={styles.faltaItem}>
-                      <span className={styles.faltaVal}>{fmtNum(faltaSemPollos)}</span>
-                      <span className={styles.faltaLbl}>pollos</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            )
-          ) : (
-            faltaMesPesos <= 0 ? (
-              <p className={styles.faltaCumplida}>¡Meta del periodo alcanzada!</p>
-            ) : (
-              <div className={styles.faltaRow}>
-                <div className={styles.faltaItem}>
-                  <span className={styles.faltaVal}>{fmt(faltaMesPesos)}</span>
-                  <span className={styles.faltaLbl}>para cumplir el periodo</span>
-                </div>
-                {diasRestantes !== null && (
-                  <>
-                    <div className={styles.faltaDivider} />
-                    <div className={styles.faltaItem}>
-                      <span className={styles.faltaVal}>{diasRestantes}</span>
-                      <span className={styles.faltaLbl}>días restantes</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            )
-          )}
-        </div>
-      )}
-
-      {/* Sucursal name */}
-      <div className={styles.sectionHeader}>
+      {/* Nombre sucursal */}
+      <div className={styles.sucursalHeader}>
         <h2 className={styles.sucursalNombre}>{sucursal?.nombre ?? 'Mi Sucursal'}</h2>
-        <p className={styles.fechaHoy}>
-          {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}
-        </p>
+        <p className={styles.sucursalSub}>Registro de ventas diarias</p>
       </div>
 
-      {/* Registro form */}
+      {/* Selector de fecha */}
+      <div className={styles.fechaCard}>
+        <p className={styles.fechaCardLabel}>Fecha a registrar</p>
+        <div className={styles.fechaRow}>
+          <button
+            className={styles.fechaNav}
+            onClick={() => {
+              const d = new Date(fechaSeleccionada + 'T12:00:00')
+              d.setDate(d.getDate() - 1)
+              setFechaSeleccionada(format(d, 'yyyy-MM-dd'))
+            }}
+          >‹</button>
+          <div className={styles.fechaCenter}>
+            <input
+              className={styles.fechaInput}
+              type="date"
+              value={fechaSeleccionada}
+              max={hoyStr}
+              onChange={e => setFechaSeleccionada(e.target.value)}
+            />
+            <p className={styles.fechaLabel} style={{ textTransform: 'capitalize' }}>{fechaLabel}</p>
+          </div>
+          <button
+            className={styles.fechaNav}
+            onClick={() => {
+              const d = new Date(fechaSeleccionada + 'T12:00:00')
+              d.setDate(d.getDate() + 1)
+              const nueva = format(d, 'yyyy-MM-dd')
+              if (nueva <= hoyStr) setFechaSeleccionada(nueva)
+            }}
+            disabled={fechaSeleccionada >= hoyStr}
+          >›</button>
+        </div>
+
+        {/* Accesos rápidos */}
+        <div className={styles.fechaShortcuts}>
+          {[0, 1, 2, 3, 4, 5, 6].map(diasAtras => {
+            const d = format(subDays(new Date(), diasAtras), 'yyyy-MM-dd')
+            const label = diasAtras === 0 ? 'Hoy' : diasAtras === 1 ? 'Ayer' : format(parseISO(d), 'EEE d', { locale: es })
+            const activo = d === fechaSeleccionada
+            return (
+              <button
+                key={d}
+                className={`${styles.shortcut} ${activo ? styles.shortcutActive : ''}`}
+                onClick={() => setFechaSeleccionada(d)}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Formulario de registro */}
       <div className={styles.formCard}>
-        <p className={styles.formTitle}>{ventaHoy ? 'Actualizar cierre del día' : 'Registrar cierre del día'}</p>
+        <p className={styles.formTitle}>
+          {ventaDelDia ? '✏️ Actualizar registro' : '+ Nuevo registro'}
+          <span className={styles.formTitleFecha}> — {format(parseISO(fechaSeleccionada), "d MMM", { locale: es })}</span>
+        </p>
+
         <form className={styles.form} onSubmit={handleSave} noValidate>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Venta Total</label>
@@ -216,7 +204,7 @@ export default function EncargadoDashboard() {
             </div>
           </div>
 
-          {/* Ticket preview */}
+          {/* Ticket promedio calculado */}
           <div className={styles.ticketPreview}>
             <span className={styles.ticketLabel}>Ticket Promedio</span>
             <span className={styles.ticketValue}>
@@ -229,26 +217,34 @@ export default function EncargadoDashboard() {
           )}
 
           <button className={styles.saveBtn} type="submit" disabled={saving}>
-            {saving ? 'Guardando…' : ventaHoy ? 'Actualizar' : 'Registrar Venta'}
+            {saving ? 'Guardando…' : ventaDelDia ? 'Actualizar' : 'Registrar Venta'}
           </button>
         </form>
       </div>
 
-      {/* Historial */}
+      {/* Historial últimos 14 días */}
       {ultimas.length > 0 && (
         <div className={styles.section}>
-          <p className={styles.sectionTitle}>Últimos 7 días</p>
+          <p className={styles.sectionTitle}>Historial reciente</p>
           <div className={styles.historial}>
+            <div className={styles.histHead}>
+              <span>Fecha</span>
+              <span>Venta</span>
+              <span>Pollos</span>
+              <span>T.P.</span>
+            </div>
             {ultimas.map(v => (
-              <div key={v.id} className={styles.histRow}>
-                <div className={styles.histFecha}>
+              <div
+                key={v.id}
+                className={`${styles.histRow} ${v.fecha === fechaSeleccionada ? styles.histRowActive : ''}`}
+                onClick={() => setFechaSeleccionada(v.fecha)}
+              >
+                <span className={styles.histFecha}>
                   {format(parseISO(v.fecha), 'EEE d MMM', { locale: es })}
-                </div>
-                <div className={styles.histData}>
-                  <span className={styles.histVenta}>{fmt(v.venta_total)}</span>
-                  <span className={styles.histPollos}>{v.pollos_vendidos} pollos</span>
-                  <span className={styles.histTicket}>TP {fmtDec(v.ticket_promedio)}</span>
-                </div>
+                </span>
+                <span className={styles.histVenta}>{fmt(v.venta_total)}</span>
+                <span className={styles.histPollos}>{fmtNum(v.pollos_vendidos)}</span>
+                <span className={styles.histTicket}>{fmtDec(v.ticket_promedio)}</span>
               </div>
             ))}
           </div>

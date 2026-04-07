@@ -11,100 +11,129 @@
   font-family: var(--font-body);
 }
 
-/* META CARD */
-.metaCard {
-  background: linear-gradient(135deg, rgba(27,58,140,0.6) 0%, rgba(27,58,140,0.3) 100%);
-  border: 1px solid rgba(27,58,140,0.5);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px 14px;
-}
-
-.metaHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.metaLabel {
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(240,244,255,0.6);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 2px;
-}
-
-.metaMonto {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.metaPct {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-}
-
-.pctNum {
-  font-family: var(--font-display);
-  font-size: 2.2rem;
-  color: var(--yellow);
-  line-height: 1;
-}
-
-.pctSym {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--yellow);
-  opacity: 0.7;
-}
-
-.progressTrack {
-  height: 6px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
-  border-radius: 99px;
-  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.metaFooter {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: rgba(240,244,255,0.5);
-}
-
-/* SECTION HEADER */
-.sectionHeader { margin: 4px 0 0; }
+/* SUCURSAL HEADER */
+.sucursalHeader { margin-bottom: -4px; }
 
 .sucursalNombre {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 2rem;
   color: var(--text-primary);
   line-height: 1.1;
 }
 
-.fechaHoy {
+.sucursalSub {
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-top: 3px;
+}
+
+/* FECHA CARD */
+.fechaCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fechaCardLabel {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.fechaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fechaNav {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1.4rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.fechaNav:hover:not(:disabled) { border-color: var(--yellow); color: var(--yellow); }
+.fechaNav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.fechaCenter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.fechaInput {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  padding: 9px 14px;
+  text-align: center;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.fechaInput:focus { outline: none; border-color: var(--yellow); }
+
+.fechaLabel {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Shortcuts */
+.fechaShortcuts {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.fechaShortcuts::-webkit-scrollbar { display: none; }
+
+.shortcut {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
   text-transform: capitalize;
-  margin-top: 2px;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.shortcut:hover { color: var(--text-secondary); border-color: var(--border-active); }
+.shortcutActive {
+  background: var(--yellow-dim);
+  border-color: var(--yellow);
+  color: var(--yellow);
 }
 
 /* FORM CARD */
@@ -117,12 +146,18 @@
 
 .formTitle {
   font-family: var(--font-body);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   margin-bottom: 16px;
+}
+
+.formTitleFecha {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
 .form {
@@ -131,16 +166,12 @@
   gap: 12px;
 }
 
-.inputGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
+.inputGroup { display: flex; flex-direction: column; gap: 5px; }
 
 .inputLabel {
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -177,7 +208,6 @@
 .input:focus { outline: none; }
 .input::placeholder { color: var(--text-muted); font-size: 1rem; }
 
-/* Ticket preview */
 .ticketPreview {
   display: flex;
   align-items: center;
@@ -191,7 +221,7 @@
 .ticketLabel {
   font-family: var(--font-body);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--yellow);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -235,7 +265,7 @@
 
 .sectionTitle {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -244,146 +274,68 @@
 }
 
 .historial {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--border);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid var(--border);
+}
+
+.histHead {
+  display: grid;
+  grid-template-columns: 1fr 1fr 60px 1fr;
+  padding: 8px 14px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
 .histRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 60px 1fr;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
   align-items: center;
-  justify-content: space-between;
-  background: var(--bg-card);
-  padding: 12px 16px;
-  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.histRow:first-child { border-radius: var(--radius-md) var(--radius-md) 0 0; }
-.histRow:last-child { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.histRow:last-child { border-bottom: none; }
+.histRow:hover { background: var(--bg-hover); }
+
+.histRowActive {
+  background: var(--yellow-dim) !important;
+  border-left: 3px solid var(--yellow);
+}
 
 .histFecha {
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: capitalize;
-  min-width: 80px;
-}
-
-.histData {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .histVenta {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
 .histPollos {
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .histTicket {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--yellow);
-  background: var(--yellow-dim);
-  padding: 2px 7px;
-  border-radius: 6px;
-}
-
-/* FALTA PARA LA META */
-.faltaCard {
-  background: rgba(232, 25, 44, 0.06);
-  border: 1px solid rgba(232, 25, 44, 0.22);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-}
-.faltaHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.faltaTitle {
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.faltaTabs {
-  display: flex;
-  gap: 3px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
-  padding: 2px;
-}
-.faltaTab {
-  background: none;
-  border: none;
-  border-radius: 6px;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  transition: background 0.15s, color 0.15s;
-}
-.faltaTabOn {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-.faltaRow {
-  display: flex;
-  align-items: center;
-}
-.faltaItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.faltaVal {
-  font-family: var(--font-mono);
-  font-size: 1.4rem;
-  font-weight: 500;
-  color: var(--red);
-}
-.faltaLbl {
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.faltaDivider {
-  width: 1px;
-  height: 36px;
-  background: rgba(255,255,255,0.07);
-  margin: 0 16px;
-  flex-shrink: 0;
-}
-.faltaCumplida {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--success);
-  text-align: center;
-  padding: 2px 0;
+  text-align: right;
 }
