@@ -5,6 +5,7 @@ import EncargadoDashboard from './pages/encargado/Dashboard'
 import SupervisorDashboard from './pages/supervisor/Dashboard'
 import SupervisorSucursal from './pages/supervisor/Sucursal'
 import SupervisorDescarga from './pages/supervisor/Descarga'
+import SupervisorRegistro from './pages/supervisor/RegistroAtrasado'
 import GerenteDashboard from './pages/gerente/Dashboard'
 import GerenteSucursales from './pages/gerente/Sucursales'
 import GerenteUsuarios from './pages/gerente/Usuarios'
@@ -54,6 +55,7 @@ export default function App() {
       }>
         <Route index element={<SupervisorDashboard />} />
         <Route path="sucursal/:id" element={<SupervisorSucursal />} />
+        <Route path="registro" element={<SupervisorRegistro />} />
         <Route path="descarga" element={<SupervisorDescarga />} />
       </Route>
 
