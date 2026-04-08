@@ -1,3 +1,4 @@
+/* ── Page ───────────────────────────────────────────────── */
 .page {
   min-height: 100dvh;
   display: flex;
@@ -8,153 +9,230 @@
   overflow: hidden;
 }
 
+/* ── Animated background ─────────────────────────────────── */
 .bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(27, 58, 140, 0.35) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(232, 25, 44, 0.12) 0%, transparent 60%),
-    var(--bg-base);
+  background: var(--bg-base);
   z-index: 0;
 }
 
+.bg::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 65%;
+  height: 65%;
+  background: radial-gradient(ellipse, rgba(27, 58, 140, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float-orb 10s ease-in-out infinite;
+}
+
+.bg::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  right: -15%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(ellipse, rgba(232, 25, 44, 0.12) 0%, transparent 65%);
+  border-radius: 50%;
+  animation: float-orb-2 14s ease-in-out infinite;
+}
+
+/* Extra orb via box-shadow trick not possible, use a span-less approach */
+/* The yellow orb in the center */
+.page::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(ellipse, rgba(245, 196, 0, 0.06) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Card ───────────────────────────────────────────────── */
 .card {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 380px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  max-width: 390px;
   border-radius: var(--radius-xl);
-  padding: 36px 28px 28px;
-  box-shadow: var(--shadow-elevated);
+  padding: 40px 28px 32px;
+  animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* Glass effect */
+  background: rgba(11, 18, 32, 0.86);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+
+  /* Gradient border */
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow:
+    0 0 0 1px rgba(245,196,0,0.06),
+    0 24px 80px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
+/* ── Logo area ──────────────────────────────────────────── */
 .logoArea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 36px;
-  gap: 6px;
+  margin-bottom: 40px;
+  gap: 8px;
 }
 
 .logoImg {
-  width: 80px;
-  height: 80px;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
-  border-radius: 20px;
+  border-radius: 24px;
   margin-bottom: 4px;
-  /* Sombra suave para que resalte sobre el fondo oscuro */
-  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+  filter:
+    drop-shadow(0 4px 16px rgba(0,0,0,0.5))
+    drop-shadow(0 0 32px rgba(245,196,0,0.25));
 }
 
 .appName {
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-size: 2rem;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .tagline {
   font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
 }
 
+/* ── Form ───────────────────────────────────────────────── */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .label {
   font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
 }
 
 .input {
-  background: var(--bg-elevated);
+  background: rgba(19, 32, 53, 0.8);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 500;
-  padding: 13px 16px;
-  transition: border-color 0.2s, background 0.2s;
+  padding: 14px 16px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   width: 100%;
 }
+
 .input::placeholder { color: var(--text-muted); }
+
 .input:focus {
   outline: none;
-  border-color: var(--yellow);
-  background: var(--bg-card-2);
+  border-color: rgba(245,196,0,0.5);
+  background: rgba(19, 32, 53, 1);
+  box-shadow: 0 0 0 3px rgba(245,196,0,0.08), 0 0 16px rgba(245,196,0,0.1);
 }
 
+/* ── Error ──────────────────────────────────────────────── */
 .errorBanner {
   background: var(--danger-dim);
-  border: 1px solid rgba(232, 25, 44, 0.25);
+  border: 1px solid rgba(232, 25, 44, 0.22);
   border-radius: var(--radius-md);
   color: var(--red);
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
-  padding: 10px 14px;
+  padding: 11px 14px;
   display: flex;
   align-items: center;
   gap: 8px;
+  animation: fadeIn 0.2s ease;
 }
 
+/* ── Submit button ──────────────────────────────────────── */
 .btn {
-  background: var(--yellow);
+  background: linear-gradient(135deg, #F5C400 0%, #FFD740 100%);
   border: none;
   border-radius: var(--radius-md);
   color: var(--text-inverse);
   cursor: pointer;
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 14px;
-  transition: opacity 0.2s, transform 0.15s;
+  letter-spacing: 0.3px;
+  padding: 15px;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
   margin-top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 50px;
+  min-height: 52px;
+  box-shadow: 0 4px 20px rgba(245,196,0,0.3);
 }
-.btn:hover:not(:disabled) { opacity: 0.88; }
-.btn:active:not(:disabled) { transform: scale(0.98); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 6px 28px rgba(245,196,0,0.45);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 2px 12px rgba(245,196,0,0.25);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Spinner ────────────────────────────────────────────── */
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(10,15,30,0.3);
+  border: 2.5px solid rgba(6,10,20,0.25);
   border-top-color: var(--text-inverse);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Footer ─────────────────────────────────────────────── */
 .footer {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   text-align: center;
-  margin-top: 20px;
+  margin-top: 24px;
+  letter-spacing: 0.2px;
 }

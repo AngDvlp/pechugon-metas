@@ -1,3 +1,4 @@
+/* ── Shell ──────────────────────────────────────────────── */
 .shell {
   display: flex;
   flex-direction: column;
@@ -7,19 +8,36 @@
   position: relative;
 }
 
+/* ── Header ─────────────────────────────────────────────── */
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 15, 30, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: calc(var(--safe-top) + 10px) 16px 10px;
+  background: rgba(6, 10, 20, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: calc(var(--safe-top) + 11px) 18px 11px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+}
+
+/* Gradient bottom line */
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 196, 0, 0.18) 30%,
+    rgba(245, 196, 0, 0.06) 70%,
+    transparent 100%
+  );
 }
 
 .headerLeft {
@@ -32,47 +50,51 @@
 .brandRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .logoImg {
-  height: 32px;
-  width: 32px;
+  height: 30px;
+  width: 30px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(245,196,0,0.35));
 }
 
 .brand {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--yellow);
   line-height: 1;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .rolBadge {
   font-family: var(--font-body);
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.6rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.5px;
+  padding-left: 1px;
 }
 
 .headerRight {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .userName {
   font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  max-width: 120px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -80,27 +102,33 @@
 
 .signOut {
   background: none;
-  border: none;
+  border: 1px solid var(--border);
   cursor: pointer;
   color: var(--text-muted);
-  padding: 6px;
+  padding: 7px;
   border-radius: var(--radius-sm);
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
-.signOut:hover { color: var(--red); background: var(--danger-dim); }
+.signOut:hover {
+  color: var(--red);
+  background: var(--danger-dim);
+  border-color: rgba(232,25,44,0.3);
+}
 
+/* ── Main ───────────────────────────────────────────────── */
 .main {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px 14px;
-  padding-bottom: calc(72px + var(--safe-bottom) + 8px);
+  padding: 18px 16px;
+  padding-bottom: calc(76px + var(--safe-bottom) + 10px);
+  animation: fadeUp 0.25s ease both;
 }
 
-/* BOTTOM NAV */
+/* ── Bottom Nav ─────────────────────────────────────────── */
 .bottomNav {
   position: fixed;
   bottom: 0;
@@ -108,13 +136,25 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: rgba(17, 24, 39, 0.97);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(9, 14, 26, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid var(--border);
   display: flex;
   padding-bottom: var(--safe-bottom);
   z-index: 100;
+}
+
+/* Subtle top glow on nav */
+.bottomNav::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 1px;
+  background: rgba(245,196,0,0.2);
 }
 
 .navItem {
@@ -123,40 +163,45 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 9px 4px;
+  gap: 3px;
+  padding: 10px 4px 9px;
   text-decoration: none;
   color: var(--text-muted);
   transition: color 0.2s;
+  position: relative;
   min-width: 0;
 }
 
-.navItem:hover { color: var(--text-secondary); }
+.navItem:hover {
+  color: var(--text-secondary);
+}
 
+/* Active indicator — top line */
 .navActive {
   color: var(--yellow) !important;
 }
 
-.navIcon {
-  font-size: 1.1rem;
-  line-height: 1;
+.navActive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: var(--yellow);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 0 8px rgba(245,196,0,0.6);
 }
 
 .navLabel {
   font-family: var(--font-body);
-  font-size: 0.62rem;
-  font-weight: 600;
+  font-size: 0.58rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-}
-
-/* Logo imagen */
-.logoImg {
-  height: 28px;
-  width: auto;
-  object-fit: contain;
 }

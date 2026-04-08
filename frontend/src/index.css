@@ -1,6 +1,6 @@
 /* ============================================================
-   SEGUIMIENTO DE METAS EL PECHUGÓN — Design System
-   Revolut-inspired dark mode + brand colors
+   SEGUIMIENTO DE METAS EL PECHUGÓN — Design System v2
+   Premium dark SaaS aesthetic
    ============================================================ */
 
 :root {
@@ -10,55 +10,66 @@
   --red: #E8192C;
   --red-dark: #C01020;
   --yellow: #F5C400;
-  --yellow-dim: rgba(245, 196, 0, 0.15);
+  --yellow-dim: rgba(245, 196, 0, 0.1);
+  --yellow-glow: rgba(245, 196, 0, 0.35);
 
-  /* Dark UI */
-  --bg-base: #0A0F1E;
-  --bg-card: #111827;
-  --bg-card-2: #1a2236;
-  --bg-elevated: #1f2d47;
-  --bg-hover: rgba(255,255,255,0.04);
+  /* Dark UI — ultra deep */
+  --bg-base: #060A14;
+  --bg-card: #0B1220;
+  --bg-card-2: #0F1929;
+  --bg-elevated: #132035;
+  --bg-hover: rgba(255,255,255,0.025);
+
+  /* Glass */
+  --glass-bg: rgba(11, 18, 32, 0.88);
+  --glass-border: rgba(255,255,255,0.07);
 
   /* Text */
-  --text-primary: #F0F4FF;
-  --text-secondary: #8A94B0;
-  --text-muted: #4A5470;
-  --text-inverse: #0A0F1E;
+  --text-primary: #EEF2FF;
+  --text-secondary: #7B90B8;
+  --text-muted: #3D5070;
+  --text-inverse: #060A14;
 
   /* Borders */
-  --border: rgba(255,255,255,0.07);
-  --border-active: rgba(255,255,255,0.15);
+  --border: rgba(255,255,255,0.055);
+  --border-active: rgba(255,255,255,0.13);
+  --border-yellow: rgba(245, 196, 0, 0.25);
 
   /* Status */
   --success: #00D395;
-  --success-dim: rgba(0, 211, 149, 0.12);
+  --success-dim: rgba(0, 211, 149, 0.1);
+  --success-glow: rgba(0, 211, 149, 0.28);
   --warning: #F5C400;
-  --warning-dim: rgba(245, 196, 0, 0.12);
+  --warning-dim: rgba(245, 196, 0, 0.1);
   --danger: #E8192C;
-  --danger-dim: rgba(232, 25, 44, 0.12);
+  --danger-dim: rgba(232, 25, 44, 0.1);
   --info: #4F8EF7;
-  --info-dim: rgba(79, 142, 247, 0.12);
+  --info-dim: rgba(79, 142, 247, 0.1);
 
   /* Typography */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  /* Radius — slightly bigger for premium feel */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
 
   /* Shadows */
-  --shadow-card: 0 2px 16px rgba(0,0,0,0.4);
-  --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-card: 0 4px 32px rgba(0,0,0,0.6);
+  --shadow-elevated: 0 16px 56px rgba(0,0,0,0.75);
+  --shadow-glow-yellow: 0 0 24px rgba(245, 196, 0, 0.28);
+  --shadow-glow-success: 0 0 20px rgba(0, 211, 149, 0.25);
+  --shadow-glow-danger: 0 0 20px rgba(232, 25, 44, 0.2);
 
   /* Safe areas */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ── Reset ──────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -78,6 +89,7 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -86,21 +98,75 @@ body {
   flex-direction: column;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 99px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(245,196,0,0.3); }
 
-/* Focus ring */
+/* ── Focus ──────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--yellow);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
-/* Utility */
+/* ── Utilities ──────────────────────────────────────────── */
 .mono { font-family: var(--font-mono); }
 .display { font-family: var(--font-display); }
-
-/* Number formatting */
 .currency::before { content: '$'; font-size: 0.7em; vertical-align: super; margin-right: 1px; }
+
+/* ── Global Animations ──────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes bar-fill {
+  from { width: 0 !important; }
+}
+
+@keyframes float-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(25px, -20px) scale(1.06); }
+  66%       { transform: translate(-15px, 15px) scale(0.94); }
+}
+
+@keyframes float-orb-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(-20px, 25px) scale(0.93); }
+  66%       { transform: translate(30px, -10px) scale(1.05); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--yellow-glow); }
+  50%       { box-shadow: 0 0 24px var(--yellow-glow), 0 0 40px rgba(245,196,0,0.1); }
+}
+
+@keyframes slide-progress {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(250%); }
+  100% { transform: translateX(250%); }
+}

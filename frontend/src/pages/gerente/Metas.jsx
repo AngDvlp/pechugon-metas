@@ -330,7 +330,7 @@ export default function GerenteMetas() {
                   <span className={styles.metaKpi}>{m.semanas_mes ?? 4} semanas</span>
                 </div>
                 <p className={styles.metaDates} style={{ textTransform: 'capitalize' }}>
-                  {format(parseISO(m.fecha_inicio), 'd MMM', { locale: es })} — {format(parseISO(m.fecha_fin), 'd MMM yyyy', { locale: es })}
+                  {m.fecha_inicio ? format(parseISO(m.fecha_inicio), 'd MMM', { locale: es }) : '—'} — {m.fecha_fin ? format(parseISO(m.fecha_fin), 'd MMM yyyy', { locale: es }) : '—'}
                 </p>
               </div>
             )

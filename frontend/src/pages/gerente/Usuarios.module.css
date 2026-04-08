@@ -1,15 +1,18 @@
-.page { display: flex; flex-direction: column; gap: 16px; }
+.page { display: flex; flex-direction: column; gap: 16px; animation: fadeUp 0.22s ease both; }
 
+/* ── Header ─────────────────────────────────────────────── */
 .header { display: flex; align-items: center; justify-content: space-between; }
 
 .title {
   font-family: var(--font-display);
   font-size: 1.9rem;
+  font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .addBtn {
-  background: var(--yellow);
+  background: linear-gradient(135deg, #F5C400 0%, #FFD740 100%);
   border: none;
   border-radius: var(--radius-md);
   color: var(--text-inverse);
@@ -17,49 +20,65 @@
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 700;
-  padding: 9px 16px;
-  transition: opacity 0.2s;
+  padding: 9px 18px;
+  transition: all 0.2s;
+  box-shadow: 0 3px 14px rgba(245,196,0,0.25);
 }
-.addBtn:hover { opacity: 0.85; }
+.addBtn:hover { opacity:0.9; transform: translateY(-1px); box-shadow: 0 5px 20px rgba(245,196,0,0.35); }
+.addBtn:active { transform: scale(0.97) translateY(0); }
 
+/* ── Messages ───────────────────────────────────────────── */
 .msg {
   font-family: var(--font-body);
   font-size: 0.88rem;
   font-weight: 500;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
+  animation: fadeIn 0.2s ease;
 }
-.ok { background: var(--success-dim); color: var(--success); }
-.error { background: var(--danger-dim); color: var(--red); }
+.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,211,149,0.15); }
+.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid rgba(232,25,44,0.15); }
 
+/* ── Form Card ──────────────────────────────────────────── */
 .formCard {
   background: var(--bg-card);
   border: 1px solid var(--border-active);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.formCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--yellow), rgba(245,196,0,0.1), transparent);
 }
 
 .formTitle {
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--yellow);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
 }
 
 .field { display: flex; flex-direction: column; gap: 5px; }
 
 .label {
   font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
 }
 
 .input {
@@ -70,11 +89,11 @@
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 500;
-  padding: 12px 14px;
-  transition: border-color 0.2s;
+  padding: 13px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
-.input:focus { outline: none; border-color: var(--yellow); }
+.input:focus { outline: none; border-color: rgba(245,196,0,0.4); box-shadow: 0 0 0 3px rgba(245,196,0,0.07); }
 
 .select {
   background: var(--bg-elevated);
@@ -84,48 +103,59 @@
   font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 500;
-  padding: 12px 14px;
+  padding: 13px 14px;
   appearance: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
+  cursor: pointer;
 }
-.select:focus { outline: none; border-color: var(--yellow); }
+.select:focus { outline: none; border-color: rgba(245,196,0,0.4); box-shadow: 0 0 0 3px rgba(245,196,0,0.07); }
 .select option { background: var(--bg-elevated); }
 
 .twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .saveBtn {
-  background: var(--yellow);
+  background: linear-gradient(135deg, #F5C400 0%, #FFD740 100%);
   border: none;
   border-radius: var(--radius-md);
   color: var(--text-inverse);
   cursor: pointer;
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  padding: 13px;
-  transition: opacity 0.2s;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 14px;
+  transition: all 0.2s;
   margin-top: 4px;
+  box-shadow: 0 3px 14px rgba(245,196,0,0.25);
 }
-.saveBtn:disabled { opacity: 0.5; }
+.saveBtn:hover:not(:disabled) { opacity:0.9; box-shadow: 0 5px 20px rgba(245,196,0,0.35); transform: translateY(-1px); }
+.saveBtn:active:not(:disabled) { transform: scale(0.98) translateY(0); }
+.saveBtn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow:none; }
 
+/* ── Empty ──────────────────────────────────────────────── */
 .empty {
   text-align: center;
   color: var(--text-muted);
   padding: 40px 0;
   font-family: var(--font-body);
+  font-size: 0.9rem;
 }
 
+/* ── User List ──────────────────────────────────────────── */
 .list { display: flex; flex-direction: column; gap: 10px; }
 
 .userCard {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  transition: background 0.18s, border-color 0.2s;
+  box-shadow: var(--shadow-card);
 }
+.userCard:hover { background: var(--bg-card-2); border-color: var(--border-active); }
 
 .userTop {
   display: flex;
@@ -137,8 +167,10 @@
 .userName {
   font-family: var(--font-display);
   font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
 }
 
 .userEmail {
@@ -148,14 +180,15 @@
   color: var(--text-muted);
 }
 
+/* Role badges */
 .rolBadge {
   font-family: var(--font-body);
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.62rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
@@ -166,16 +199,16 @@
   color: var(--text-secondary);
 }
 
-/* SUPERVISOR SUCURSALES */
+/* ── Supervisor Section ─────────────────────────────────── */
 .supSection { display: flex; flex-direction: column; gap: 8px; }
 
 .supLabel {
   font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
 }
 
 .supTags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -183,26 +216,30 @@
 .supTag {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-secondary);
-  padding: 4px 8px 4px 10px;
+  padding: 5px 10px 5px 12px;
+  transition: border-color 0.18s;
 }
+.supTag:hover { border-color: var(--border-active); }
 
 .quitarBtn {
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1rem;
   line-height: 1;
-  padding: 0 2px;
+  padding: 1px 3px;
   transition: color 0.2s;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
 }
 .quitarBtn:hover { color: var(--red); }
 
@@ -214,11 +251,11 @@
   font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 500;
-  padding: 6px 10px;
+  padding: 7px 12px;
   appearance: none;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   align-self: flex-start;
 }
-.selectSmall:focus { outline: none; border-color: var(--yellow); }
+.selectSmall:focus { outline: none; border-color: rgba(245,196,0,0.4); box-shadow: 0 0 0 3px rgba(245,196,0,0.07); }
 .selectSmall option { background: var(--bg-elevated); }

@@ -5,50 +5,68 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background ambient */
+.splash::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(27,58,140,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float-orb 8s ease-in-out infinite;
 }
 
 .logo {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+  z-index: 1;
 }
 
 .brand {
   font-family: var(--font-display);
-  font-size: 2.8rem;
+  font-size: 3rem;
+  font-weight: 700;
   color: var(--yellow);
-  letter-spacing: 0.5px;
+  letter-spacing: -0.02em;
+  filter: drop-shadow(0 0 24px rgba(245,196,0,0.3));
 }
 
 .sub {
   font-family: var(--font-body);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .loader {
-  width: 120px;
+  width: 100px;
   height: 2px;
-  background: var(--border);
+  background: rgba(255,255,255,0.06);
   border-radius: 99px;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.4s 0.3s ease both;
 }
 
 .bar {
   height: 100%;
-  width: 40%;
-  background: var(--yellow);
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
   border-radius: 99px;
-  animation: slide 1.2s ease-in-out infinite;
-}
-
-@keyframes slide {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(200%); }
-  100% { transform: translateX(200%); }
+  animation: slide-progress 1.4s ease-in-out infinite;
 }
