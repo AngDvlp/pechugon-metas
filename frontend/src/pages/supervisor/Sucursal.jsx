@@ -355,7 +355,7 @@ export default function SucursalDetalle({ backPath }) {
                 <label className={styles.inputLabel}>Venta Total</label>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputPrefix}>$</span>
-                  <input className={styles.input} type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00"
+                  <input className={styles.input} type="number" inputMode="decimal" min="0" step="any" placeholder="0.00"
                     value={editForm.venta_total} onChange={e => setEditForm(f => ({ ...f, venta_total: e.target.value }))} required autoFocus />
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function SucursalDetalle({ backPath }) {
                 <label className={styles.inputLabel}>Pollos Vendidos</label>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputPrefix}>🐔</span>
-                  <input className={styles.input} type="number" inputMode="decimal" min="0" step="0.5" placeholder="0"
+                  <input className={styles.input} type="number" inputMode="decimal" min="0" step="any" placeholder="0"
                     value={editForm.pollos_vendidos} onChange={e => setEditForm(f => ({ ...f, pollos_vendidos: e.target.value }))} required />
                 </div>
               </div>

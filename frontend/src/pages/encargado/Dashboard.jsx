@@ -84,7 +84,7 @@ export default function EncargadoDashboard() {
             <div className={styles.inputWrapper}>
               <DollarSign size={16} strokeWidth={2} color="var(--text-muted)" className={styles.inputIcon} />
               <input className={styles.input} type="number" inputMode="decimal"
-                min="0" step="0.01" placeholder="0.00"
+                min="0" step="any" placeholder="0.00"
                 value={form.venta_total}
                 onChange={e => setForm(f => ({ ...f, venta_total: e.target.value }))} required />
             </div>
@@ -94,7 +94,7 @@ export default function EncargadoDashboard() {
             <div className={styles.inputWrapper}>
               <Bird size={16} strokeWidth={2} color="var(--text-muted)" className={styles.inputIcon} />
               <input className={styles.input} type="number" inputMode="decimal"
-                min="0" step="0.5" placeholder="0"
+                min="0" step="any" placeholder="0"
                 value={form.pollos_vendidos}
                 onChange={e => setForm(f => ({ ...f, pollos_vendidos: e.target.value }))} required />
             </div>

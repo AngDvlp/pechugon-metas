@@ -262,7 +262,7 @@ export default function GerenteMetas() {
                 <div className={styles.inputWrap}>
                   <Bird size={15} strokeWidth={2} color="var(--text-muted)" />
                   <input className={styles.input} type="number" inputMode="decimal"
-                    min="0" step="0.5" placeholder="0"
+                    min="0" step="any" placeholder="0"
                     value={form.pollos_meta}
                     onChange={e => setForm(f => ({ ...f, pollos_meta: e.target.value }))} required />
                 </div>
@@ -272,7 +272,7 @@ export default function GerenteMetas() {
                 <div className={styles.inputWrap}>
                   <DollarSign size={15} strokeWidth={2} color="var(--text-muted)" />
                   <input className={styles.input} type="number" inputMode="decimal"
-                    min="0" step="0.01" placeholder="0.00"
+                    min="0" step="any" placeholder="0.00"
                     value={form.ticket_promedio_meta}
                     onChange={e => setForm(f => ({ ...f, ticket_promedio_meta: e.target.value }))} required />
                 </div>

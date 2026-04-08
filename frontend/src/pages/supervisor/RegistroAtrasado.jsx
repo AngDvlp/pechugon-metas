@@ -187,7 +187,7 @@ export default function RegistroAtrasado() {
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.01"
+                  step="any"
                   placeholder="0.00"
                   value={venta}
                   onChange={e => setVenta(e.target.value)}
@@ -205,7 +205,7 @@ export default function RegistroAtrasado() {
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.5"
+                  step="any"
                   placeholder="0"
                   value={pollos}
                   onChange={e => setPollos(e.target.value)}
