@@ -15,9 +15,14 @@ export default function GerenteSucursales() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('sucursales').select('*').order('nombre')
-    setSucursales(data ?? [])
-    setLoading(false)
+    try {
+      const { data } = await supabase.from('sucursales').select('*').order('nombre')
+      setSucursales(data ?? [])
+    } catch (e) {
+      console.error('Error loading sucursales:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleAdd(e) {

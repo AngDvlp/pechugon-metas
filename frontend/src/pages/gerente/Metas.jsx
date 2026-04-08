@@ -55,26 +55,31 @@ export default function GerenteMetas() {
     : null
   const metaMensual = metaSemanal ? metaSemanal * semanasActuales : null
 
-  const mesLabel = format(new Date(periodoDesde + 'T12:00:00'), 'MMMM yyyy', { locale: es })
+  const mesLabel = periodoDesde
+    ? format(new Date(periodoDesde + 'T12:00:00'), 'MMMM yyyy', { locale: es })
+    : '—'
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const [{ data: sucs }, { data: metasData }] = await Promise.all([
-      supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
-      supabase.from('metas').select('*, sucursales(nombre)').order('created_at', { ascending: false }),
-    ])
-    setSucursales(sucs ?? [])
-    setMetas(metasData ?? [])
+    try {
+      const [{ data: sucs }, { data: metasData }] = await Promise.all([
+        supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
+        supabase.from('metas').select('*, sucursales(nombre)').order('created_at', { ascending: false }),
+      ])
+      setSucursales(sucs ?? [])
+      setMetas(metasData ?? [])
 
-    // Cargar periodo desde la meta vigente más reciente
-    const metaVigente = metasData?.find(m => m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr)
-    if (metaVigente) {
-      setPeriodoDesde(metaVigente.fecha_inicio)
-      setPeriodoHasta(metaVigente.fecha_fin)
+      // Cargar periodo desde la meta vigente más reciente
+      const metaVigente = metasData?.find(m => m.fecha_inicio && m.fecha_fin && m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr)
+      if (metaVigente?.fecha_inicio) setPeriodoDesde(metaVigente.fecha_inicio)
+      if (metaVigente?.fecha_fin) setPeriodoHasta(metaVigente.fecha_fin)
+    } catch (e) {
+      console.error('Error loading metas:', e)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   // Actualizar periodo de TODAS las metas vigentes
@@ -190,7 +195,7 @@ export default function GerenteMetas() {
               <div className={styles.periodoResumenItem}>
                 <span className={styles.periodoResumenLabel}>Periodo</span>
                 <span className={styles.periodoResumenVal} style={{ textTransform: 'capitalize' }}>
-                  {format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es })} — {format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })}
+                  {periodoDesde ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) : '—'} — {periodoHasta ? format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es }) : '—'}
                 </span>
               </div>
             </div>
@@ -223,7 +228,7 @@ export default function GerenteMetas() {
         <div className={styles.mesInfoItem}>
           <span className={styles.mesInfoLabel}>Periodo</span>
           <span className={styles.mesInfoVal}>
-            {format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es })} — {format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })}
+            {periodoDesde ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) : '—'} — {periodoHasta ? format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es }) : '—'}
           </span>
         </div>
       </div>
@@ -240,7 +245,7 @@ export default function GerenteMetas() {
         <div className={styles.formCard}>
           <p className={styles.formTitle}>Nueva meta</p>
           <p className={styles.formSub}>
-            Periodo: {format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es })} al {format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })} ({semanasActuales} semanas)
+            Periodo: {periodoDesde ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) : '—'} al {periodoHasta ? format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es }) : '—'} ({semanasActuales} semanas)
           </p>
           <form className={styles.form} onSubmit={handleSave} noValidate>
             <div className={styles.field}>

@@ -24,27 +24,33 @@ export default function GerenteDashboard() {
 
   async function load() {
     setLoading(true)
-    const [{ data: sucs }, { data: sups }, { data: ss }] = await Promise.all([
-      supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
-      supabase.from('usuarios').select('id, nombre, roles!inner(nombre)').eq('roles.nombre', 'supervisor'),
-      supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id'),
-    ])
-    setSucursales(sucs ?? [])
-    setSupervisores(sups ?? [])
-    const map = {}
-    ss?.forEach(r => {
-      if (!map[r.supervisor_id]) map[r.supervisor_id] = []
-      map[r.supervisor_id].push(r.sucursal_id)
-    })
-    setSupSucMap(map)
-    if (!sucs?.length) { setLoading(false); return }
-    const results = await Promise.all(
-      sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
-    )
-    const rmap = {}
-    sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
-    setResumenes(rmap)
-    setLoading(false)
+    try {
+      const [{ data: sucs }, { data: sups }, { data: ss }] = await Promise.all([
+        supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
+        supabase.from('usuarios').select('id, nombre, roles!inner(nombre)').eq('roles.nombre', 'supervisor'),
+        supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id'),
+      ])
+      setSucursales(sucs ?? [])
+      setSupervisores(sups ?? [])
+      const map = {}
+      ss?.forEach(r => {
+        if (!map[r.supervisor_id]) map[r.supervisor_id] = []
+        map[r.supervisor_id].push(r.sucursal_id)
+      })
+      setSupSucMap(map)
+      if (sucs?.length) {
+        const results = await Promise.all(
+          sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
+        )
+        const rmap = {}
+        sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
+        setResumenes(rmap)
+      }
+    } catch (e) {
+      console.error('Error loading gerente dashboard:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const sucursalesFiltradas = sucursales.filter(s => {
