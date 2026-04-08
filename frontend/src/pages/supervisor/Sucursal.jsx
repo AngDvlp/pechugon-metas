@@ -151,7 +151,7 @@ export default function SucursalDetalle({ backPath }) {
 
   const inicioSemLabel = format(startOfWeek(semanaRef, { weekStartsOn: 1 }), 'd MMM', { locale: es })
   const finSemLabel = format(endOfWeek(semanaRef, { weekStartsOn: 1 }), 'd MMM', { locale: es })
-  const esSemanActual = format(semanaRef, 'yyyy-WW') === format(new Date(), 'yyyy-WW')
+  const esSemanActual = startOfWeek(semanaRef, { weekStartsOn: 1 }).getTime() === startOfWeek(new Date(), { weekStartsOn: 1 }).getTime()
 
   const DiffBadge = ({ actual, anterior }) => {
     if (!anterior) return null
