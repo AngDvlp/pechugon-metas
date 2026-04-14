@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import {
   ChevronRight, TrendingUp, TrendingDown, AlertTriangle,
-  CheckCircle, Clock, AlertCircle
+  CheckCircle, Clock, AlertCircle, Utensils
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 
@@ -16,10 +16,13 @@ export default function SupervisorDashboard() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [sucursales, setSucursales] = useState([])
-  const [resumenes, setResumenes] = useState({})
-  const [ventasHoy, setVentasHoy] = useState({})
+  const [resumenes,  setResumenes]  = useState({})
+  const [ventasHoy,  setVentasHoy]  = useState({})
+  const [tacoMap,    setTacoMap]    = useState({})   // sucursalId → { stock, deficit, expirando }
+  const [minimosMap, setMinimosMap] = useState({})
   const [loading, setLoading] = useState(true)
-  const hoy = format(new Date(), 'yyyy-MM-dd')
+  const hoy     = format(new Date(), 'yyyy-MM-dd')
+  const manana  = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
   useEffect(() => { if (usuario?.id) load() }, [usuario])
 
@@ -33,8 +36,10 @@ export default function SupervisorDashboard() {
     const sucs = supSuc?.map(s => s.sucursales) ?? []
     setSucursales(sucs)
     if (sids.length === 0) { setLoading(false); return }
-    const [{ data: hoyData }, ...resResults] = await Promise.all([
+    const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, ...resResults] = await Promise.all([
       supabase.from('ventas_diarias').select('*').in('sucursal_id', sids).eq('fecha', hoy),
+      supabase.from('pollos_taco').select('*').in('sucursal_id', sids),
+      supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
       ...sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())
     ])
     const hoyMap = {}
@@ -43,6 +48,25 @@ export default function SupervisorDashboard() {
     const resMap = {}
     sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
     setResumenes(resMap)
+
+    // Taco map
+    const mMap = {}
+    minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
+    setMinimosMap(mMap)
+    const tMap = {}
+    sids.forEach(id => {
+      const lotes    = tacoLotes?.filter(l => l.sucursal_id === id) ?? []
+      const vigentes = lotes.filter(l => l.fecha_caducidad > hoy)
+      const stock    = vigentes.reduce((a, l) => a + l.cantidad, 0)
+      const minimo   = mMap[id] ?? 0
+      tMap[id] = {
+        stock,
+        deficit:    minimo > 0 && stock < minimo,
+        expirando:  vigentes.some(l => l.fecha_caducidad === manana),
+        minimo,
+      }
+    })
+    setTacoMap(tMap)
     setLoading(false)
   }
 
@@ -179,6 +203,21 @@ export default function SupervisorDashboard() {
                   </span>
                 </div>
               </div>
+
+              {/* Indicador pollo para taco */}
+              {tacoMap[s.id] && (
+                <div className={styles.tacoIndicator}>
+                  <Utensils size={11} strokeWidth={2} color={tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--info)'} />
+                  <span className={styles.tacoLabel} style={{
+                    color: tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--text-muted)'
+                  }}>
+                    Taco: {tacoMap[s.id].stock} pollos
+                    {tacoMap[s.id].deficit && ' — Déficit'}
+                    {!tacoMap[s.id].deficit && tacoMap[s.id].expirando && ' — Caduca hoy'}
+                  </span>
+                </div>
+              )}
+
               <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" className={styles.sucArrow} />
             </div>
           )

@@ -267,3 +267,343 @@
 .badge  { display: flex; align-items: center; gap: 4px; }
 .tag    { display: flex; align-items: center; gap: 3px; }
 .sucStatus { display: flex; align-items: center; gap: 4px; }
+
+/* ══════════════════════════════════════════════════
+   POLLO PARA TACO
+══════════════════════════════════════════════════ */
+.tacoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tacoSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tacoTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tacoSectionTitle {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+
+.tacoAddBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.25);
+  border-radius: 8px;
+  color: var(--info);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.tacoAddBtn:hover { background: rgba(79,142,247,0.18); border-color: rgba(79,142,247,0.4); }
+
+/* Stock summary card */
+.tacoStockCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border: 1px solid;
+}
+
+.tacoStockOk      { background: rgba(0,211,149,0.07); border-color: rgba(0,211,149,0.2); }
+.tacoStockWarn    { background: rgba(245,196,0,0.07); border-color: rgba(245,196,0,0.25); }
+.tacoStockDeficit { background: rgba(232,25,44,0.07); border-color: rgba(232,25,44,0.2); }
+
+.tacoStockLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tacoStockNum {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.tacoStockLabel {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.tacoStockRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.tacoMinLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tacoMinVal {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tacoBadgeOk, .tacoDeficitBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.tacoBadgeOk      { background: rgba(0,211,149,0.12); color: var(--success); }
+.tacoDeficitBadge { background: rgba(232,25,44,0.12);  color: var(--red); }
+
+/* Alert banner */
+.tacoAlert {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(245,196,0,0.08);
+  border: 1px solid rgba(245,196,0,0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--yellow);
+}
+.tacoAlert strong { font-weight: 700; }
+
+/* Formulario agregar lote */
+.tacoForm {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tacoFormTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.tacoFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tacoInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tacoInputLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tacoInput {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.tacoInput:focus { outline: none; border-color: rgba(79,142,247,0.5); }
+.tacoInput::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+.tacoCadInfo {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -4px;
+}
+
+.tacoSaveBtn {
+  background: var(--info);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 12px;
+  transition: opacity 0.2s;
+}
+.tacoSaveBtn:hover:not(:disabled) { opacity: 0.85; }
+.tacoSaveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Lotes table */
+.lotesSection { display: flex; flex-direction: column; gap: 6px; }
+
+.lotesSectionLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lotesSectionLabelMuted {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lotesTable {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.lotesHead {
+  display: grid;
+  grid-template-columns: 1fr 60px 90px 64px;
+  padding: 8px 14px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.loteRow {
+  display: grid;
+  grid-template-columns: 1fr 60px 90px 64px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background 0.15s;
+}
+.loteRow:last-child { border-bottom: none; }
+.loteRow:hover { background: var(--bg-hover); }
+
+.loteRowExpired { opacity: 0.4; }
+
+.loteDate {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.loteCantidad {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.loteDias {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.loteDiasExpired {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--red);
+}
+
+.loteActions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.loteActionEdit, .loteActionDel, .loteActionOk, .loteActionCancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.loteActionEdit   { color: var(--text-muted); }
+.loteActionEdit:hover { background: rgba(79,142,247,0.15); border-color: rgba(79,142,247,0.3); color: var(--info); }
+.loteActionDel    { color: var(--text-muted); }
+.loteActionDel:hover { background: rgba(232,25,44,0.15); border-color: rgba(232,25,44,0.3); color: var(--red); }
+.loteActionOk     { color: var(--success); }
+.loteActionOk:hover { background: rgba(0,211,149,0.15); border-color: rgba(0,211,149,0.3); }
+.loteActionCancel { color: var(--text-muted); }
+.loteActionCancel:hover { background: var(--bg-hover); }
+
+.tacoInputInline {
+  background: var(--bg-elevated);
+  border: 1px solid rgba(79,142,247,0.4);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 5px 8px;
+  width: 100%;
+}
+.tacoInputInline:focus { outline: none; }
+.tacoInputInline::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+.tacoEmpty {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 24px 0;
+}

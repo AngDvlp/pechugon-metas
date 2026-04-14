@@ -14,7 +14,10 @@
       "Bash(wc:*)",
       "Bash(node -e \"const l = require\\('./node_modules/lucide-react/dist/cjs/lucide-react.js'\\); console.log\\('ToggleLeft:', typeof l.ToggleLeft, 'ToggleRight:', typeof l.ToggleRight, 'RefreshCw:', typeof l.RefreshCw, 'Bird:', typeof l.Bird\\)\")",
       "Bash(node -e ':*)",
-      "Bash(grep -o \"fadeUp[^;,{]*\" dist/assets/*.css)"
+      "Bash(grep -o \"fadeUp[^;,{]*\" dist/assets/*.css)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)"
     ]
   }
 }

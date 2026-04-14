@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  LayoutDashboard, Target, Store, Users, Download, LogOut, Home, CalendarPlus
+  LayoutDashboard, Target, Store, Users, Download, LogOut, Home, CalendarPlus, Utensils
 } from 'lucide-react'
 import styles from './Layout.module.css'
 
@@ -11,12 +11,14 @@ const NAV_ITEMS = {
   ],
   supervisor: [
     { to: '/supervisor', label: 'Tiendas', icon: Store, end: true },
+    { to: '/supervisor/pollos-taco', label: 'Taco', icon: Utensils },
     { to: '/supervisor/registro', label: 'Registrar', icon: CalendarPlus },
     { to: '/supervisor/descarga', label: 'Exportar', icon: Download },
   ],
   gerente: [
     { to: '/gerente', label: 'Resumen', icon: LayoutDashboard, end: true },
     { to: '/gerente/metas', label: 'Metas', icon: Target },
+    { to: '/gerente/pollos-taco', label: 'Taco', icon: Utensils },
     { to: '/gerente/sucursales', label: 'Sucursal', icon: Store },
     { to: '/gerente/usuarios', label: 'Usuarios', icon: Users },
     { to: '/gerente/descarga', label: 'Exportar', icon: Download },

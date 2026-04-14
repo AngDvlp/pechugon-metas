@@ -12,6 +12,8 @@ import GerenteUsuarios from './pages/gerente/Usuarios'
 import GerenteMetas from './pages/gerente/Metas'
 import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
 import GerenteDescarga from './pages/gerente/Descarga'
+import GerentePollosTaco from './pages/gerente/PollosTaco'
+import SupervisorPollosTaco from './pages/supervisor/PollosTaco'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
@@ -57,6 +59,7 @@ export default function App() {
         <Route path="sucursal/:id" element={<SupervisorSucursal />} />
         <Route path="registro" element={<SupervisorRegistro />} />
         <Route path="descarga" element={<SupervisorDescarga />} />
+        <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
       </Route>
 
       {/* GERENTE */}
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="usuarios" element={<GerenteUsuarios />} />
         <Route path="sucursal/:id" element={<GerenteSucursalDetalle />} />
         <Route path="descarga" element={<GerenteDescarga />} />
+        <Route path="pollos-taco" element={<GerentePollosTaco />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

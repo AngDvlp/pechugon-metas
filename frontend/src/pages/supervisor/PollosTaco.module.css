@@ -1,0 +1,441 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.22s ease both;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 0;
+  font-family: var(--font-body);
+}
+
+/* ── Header ── */
+.pageHeader { margin-bottom: -2px; }
+.titleRow { display: flex; align-items: center; gap: 9px; }
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.pageDate {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* ── KPIs ── */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.kpiCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-card);
+}
+.kpiCardDanger { border-color: rgba(232,25,44,0.3); background: rgba(232,25,44,0.05); }
+.kpiCardWarn   { border-color: rgba(245,196,0,0.3); background: rgba(245,196,0,0.05); }
+.kpiVal {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.kpiLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+/* ── Alert banner ── */
+.alertBanner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+}
+.alertBanner strong { font-weight: 700; }
+
+/* ── Branch cards ── */
+.sucCards { display: flex; flex-direction: column; gap: 10px; }
+
+.sucCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.sucCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sucCardHeader:hover { background: var(--bg-hover); }
+
+.sucCardLeft { display: flex; flex-direction: column; gap: 5px; }
+.sucNombre {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.sucStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  width: fit-content;
+}
+
+.sucCardRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stockBig { display: flex; align-items: baseline; gap: 2px; }
+.stockNum {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.stockMin {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Progress bar */
+.stockBar {
+  height: 3px;
+  background: var(--border);
+  margin: 0 18px;
+}
+.stockFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Card body */
+.sucCardBody {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inlineAlert {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Mínimo row */
+.minimoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.minimoInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.minimoLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.minimoVal {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.minimoEditBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.minimoEditBtn:hover { color: var(--info); border-color: rgba(79,142,247,0.3); }
+
+.minimoEdit { display: flex; align-items: center; gap: 6px; }
+.minimoInput {
+  background: var(--bg-elevated);
+  border: 1px solid rgba(79,142,247,0.4);
+  border-radius: 7px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  width: 80px;
+}
+.minimoInput:focus { outline: none; }
+
+.minimoSaveBtn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,211,149,0.12);
+  border: 1px solid rgba(0,211,149,0.3);
+  border-radius: 7px;
+  color: var(--success);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.minimoSaveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.minimoCancelBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Action row */
+.actionRow { display: flex; gap: 8px; }
+.addLoteBtn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.25);
+  border-radius: 8px;
+  color: var(--info);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.addLoteBtn:hover { background: rgba(79,142,247,0.18); }
+
+/* Add form */
+.addForm {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.addFormTitle {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.addFormRow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.addInputGroup { display: flex; flex-direction: column; gap: 5px; }
+.addInputLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.addInput {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  padding: 9px 11px;
+  width: 100%;
+}
+.addInput:focus { outline: none; border-color: rgba(79,142,247,0.5); }
+.addInput::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+.cadInfo {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.addMsg {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+}
+.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,211,149,0.15); }
+.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid rgba(232,25,44,0.15); }
+
+.addSaveBtn {
+  background: var(--info);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 11px;
+  transition: opacity 0.2s;
+}
+.addSaveBtn:hover:not(:disabled) { opacity: 0.85; }
+.addSaveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Lotes list */
+.lotesBlock { display: flex; flex-direction: column; gap: 6px; }
+.lotesLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.lotesLabelMuted {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.loteItem {
+  display: grid;
+  grid-template-columns: 1fr 90px 80px 56px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  gap: 8px;
+  transition: background 0.15s;
+}
+.loteItem:hover { background: var(--bg-hover); }
+.loteExpired { opacity: 0.35; }
+
+.loteItemDate {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+.loteItemCant {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.loteItemDias {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.loteItemExpiredTag {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  color: var(--red);
+}
+.loteItemActions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.loteActionEdit, .loteActionDel, .loteActionOk, .loteActionCancel {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.loteActionEdit   { color: var(--text-muted); }
+.loteActionEdit:hover { background: rgba(79,142,247,0.15); border-color: rgba(79,142,247,0.3); color: var(--info); }
+.loteActionDel    { color: var(--text-muted); }
+.loteActionDel:hover { background: rgba(232,25,44,0.15); border-color: rgba(232,25,44,0.3); color: var(--red); }
+.loteActionOk     { color: var(--success); }
+.loteActionOk:hover { background: rgba(0,211,149,0.15); }
+.loteActionCancel { color: var(--text-muted); }
+
+.loteInputInline {
+  background: var(--bg-elevated);
+  border: 1px solid rgba(79,142,247,0.4);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 4px 7px;
+  width: 100%;
+}
+.loteInputInline:focus { outline: none; }
+.loteInputInline::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+.noLotes {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 12px 0;
+}
