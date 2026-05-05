@@ -44,7 +44,10 @@ export default function EncargadoDashboard() {
   const [editingLoteId,  setEditingLoteId]  = useState(null)
   const [editLoteVals,   setEditLoteVals]   = useState({ cantidad: '', fecha_rostizado: '' })
 
-  useEffect(() => { if (sucursalId) load() }, [sucursalId])
+  useEffect(() => {
+    if (sucursalId) load()
+    else if (usuario) setLoading(false)
+  }, [sucursalId, usuario])
 
   async function load() {
     setLoading(true)
@@ -72,17 +75,20 @@ export default function EncargadoDashboard() {
       sucursal_id:    sucursalId,
       encargado_id:   usuario.id,
       fecha:          hoyStr,
-      venta_total:    parseFloat(form.venta_total),
-      pollos_vendidos: parseFloat(form.pollos_vendidos),
+      venta_total:     parseFloat(form.venta_total),
+      pollos_vendidos: Math.round(parseFloat(form.pollos_vendidos)),
     }
     const { error } = ventaHoy
-      ? await supabase.from('ventas_diarias').update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos }).eq('id', ventaHoy.id)
+      ? await supabase.from('ventas_diarias')
+          .update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos })
+          .eq('id', ventaHoy.id)
       : await supabase.from('ventas_diarias').insert(payload)
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error al guardar: ' + error.message })
     } else {
       setMsg({ tipo: 'ok', texto: 'Venta registrada correctamente' })
       await load()
+      setTimeout(() => setMsg(null), 4000)
     }
     setSaving(false)
   }
@@ -149,6 +155,14 @@ export default function EncargadoDashboard() {
     : null
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (!sucursalId) return (
+    <div className={styles.page}>
+      <div className={styles.sucursalHeader}>
+        <h2 className={styles.sucursalNombre}>Sin sucursal asignada</h2>
+        <p className={styles.sucursalFecha}>Contacta al gerente para que te asigne una sucursal.</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className={styles.page}>

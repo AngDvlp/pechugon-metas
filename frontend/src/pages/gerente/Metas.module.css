@@ -279,6 +279,65 @@
 }
 .metaDates { font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); }
 
+/* ── Banners ─────────────────────────────────────────────── */
+.alertBanner {
+  display:flex; align-items:flex-start; gap:10px;
+  background:rgba(232,25,44,0.08); border:1px solid rgba(232,25,44,0.2);
+  border-radius:var(--radius-sm); padding:13px 15px;
+  font-family:var(--font-body); font-size:0.82rem; color:var(--red);
+  animation: fadeIn 0.22s ease;
+}
+.alertBanner strong { font-weight:700; }
+.alertBanner svg { flex-shrink:0; margin-top:1px; }
+
+.warnBanner {
+  display:flex; align-items:flex-start; gap:10px;
+  background:rgba(245,196,0,0.07); border:1px solid rgba(245,196,0,0.22);
+  border-radius:var(--radius-sm); padding:13px 15px;
+  font-family:var(--font-body); font-size:0.82rem; color:var(--yellow);
+  animation: fadeIn 0.22s ease;
+}
+.warnBanner strong { font-weight:700; }
+.warnBanner svg { flex-shrink:0; margin-top:1px; }
+
+/* ── Nota del periodo ────────────────────────────────────── */
+.periodoNota {
+  font-family:var(--font-body); font-size:0.73rem;
+  color:var(--text-muted); line-height:1.5;
+  padding:10px 13px; background:var(--bg-elevated);
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+}
+
+/* ── Field hint ──────────────────────────────────────────── */
+.fieldHint {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--font-body); font-size:0.71rem;
+  color:var(--yellow); margin-top:3px;
+}
+
+/* ── Section label ───────────────────────────────────────── */
+.sectionLabel {
+  display:flex; align-items:center; gap:6px;
+  font-family:var(--font-body); font-size:0.66rem; font-weight:800;
+  color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px;
+  margin-top:4px;
+}
+
+/* ── Historial toggle ────────────────────────────────────── */
+.historialToggle {
+  display:flex; align-items:center; gap:7px;
+  background:none; border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-secondary);
+  cursor:pointer; font-family:var(--font-body); font-size:0.78rem;
+  font-weight:600; padding:10px 14px; transition:all 0.18s; width:100%;
+  text-align:left;
+}
+.historialToggle:hover { border-color:var(--border-active); color:var(--text-primary); }
+
+.historialArrow {
+  margin-left:auto; font-size:0.6rem; opacity:0.6;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:600px) {
   .twoCol   { grid-template-columns:1fr; }

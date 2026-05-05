@@ -100,14 +100,16 @@ export default function SucursalDetalle({ backPath }) {
     const payload = {
       sucursal_id: id,
       fecha: editFecha,
-      venta_total: parseFloat(editForm.venta_total),
-      pollos_vendidos: parseFloat(editForm.pollos_vendidos),
+      venta_total:     parseFloat(editForm.venta_total),
+      pollos_vendidos: Math.round(parseFloat(editForm.pollos_vendidos)),
     }
     const { error } = ventaExistente
-      ? await supabase.from('ventas_diarias').update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos }).eq('id', ventaExistente.id)
+      ? await supabase.from('ventas_diarias')
+          .update({ venta_total: payload.venta_total, pollos_vendidos: payload.pollos_vendidos })
+          .eq('id', ventaExistente.id)
       : await supabase.from('ventas_diarias').insert({ ...payload, encargado_id: null })
     if (error) {
-      setEditMsg({ tipo: 'error', texto: error.message })
+      setEditMsg({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {
       setEditMsg({ tipo: 'ok', texto: 'Guardado ✓' })
       await load()
