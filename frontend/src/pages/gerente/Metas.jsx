@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfMonth, endOfMonth, addMonths } from 'date-fns'
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
   Plus, X, Trash2, Bird, DollarSign, Calendar,
@@ -21,8 +21,16 @@ function diasEntreFechas(desde, hasta) {
 function semanasEntreFechas(desde, hasta) {
   return Math.round(diasEntreFechas(desde, hasta) / 7)
 }
+function periodoLabel(desde, hasta) {
+  try {
+    const ini = format(parseISO(desde), "d 'de' MMM", { locale: es })
+    const fin = format(parseISO(hasta), "d 'de' MMM yyyy", { locale: es })
+    const sem = semanasEntreFechas(desde, hasta)
+    return `${ini} — ${fin}  (${sem} sem)`
+  } catch { return `${desde} — ${hasta}` }
+}
 
-function defaultPeriod() {
+function currentMonthPeriod() {
   const hoy = new Date()
   return {
     desde: format(startOfMonth(hoy), 'yyyy-MM-dd'),
@@ -30,31 +38,53 @@ function defaultPeriod() {
   }
 }
 
+const FORM_EMPTY = { sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '', periodoKey: '' }
+
 export default function GerenteMetas() {
   const { usuario } = useAuth()
-  const [sucursales, setSucursales] = useState([])
-  const [metas,      setMetas]      = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [showForm,   setShowForm]   = useState(false)
-  const [showPeriodo, setShowPeriodo] = useState(false)
+  const [sucursales,    setSucursales]    = useState([])
+  const [metas,         setMetas]         = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [showForm,      setShowForm]      = useState(false)
+  const [showPeriodo,   setShowPeriodo]   = useState(false)
   const [showHistorial, setShowHistorial] = useState(false)
-  const [saving,     setSaving]     = useState(false)
-  const [msg,        setMsg]        = useState(null)
+  const [saving,        setSaving]        = useState(false)
+  const [msg,           setMsg]           = useState(null)
 
   const hoy    = new Date()
   const hoyStr = format(hoy, 'yyyy-MM-dd')
 
-  const dp = defaultPeriod()
-  const [periodoDesde, setPeriodoDesde] = useState(dp.desde)
-  const [periodoHasta, setPeriodoHasta] = useState(dp.hasta)
-  const semanasActuales = semanasEntreFechas(periodoDesde, periodoHasta)
-  const diasActuales    = diasEntreFechas(periodoDesde, periodoHasta)
+  // Fechas del nuevo periodo (solo para configurar, nunca se guardan solas en DB)
+  const cmp = currentMonthPeriod()
+  const [periodoDesde, setPeriodoDesde] = useState(cmp.desde)
+  const [periodoHasta, setPeriodoHasta] = useState(cmp.hasta)
 
-  const [form, setForm] = useState({ sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '' })
+  const [form, setForm] = useState(FORM_EMPTY)
 
-  const metaSemanal = form.pollos_meta && form.ticket_promedio_meta
+  // ── Periodos disponibles: únicos de las metas existentes + el nuevo si no está ──
+  const periodosDisponibles = useMemo(() => {
+    const map = new Map()
+    metas.forEach(m => {
+      if (!m.fecha_inicio || !m.fecha_fin) return
+      const k = `${m.fecha_inicio}|${m.fecha_fin}`
+      if (!map.has(k)) map.set(k, { key: k, fecha_inicio: m.fecha_inicio, fecha_fin: m.fecha_fin, esNuevo: false })
+    })
+    // Agregar nuevo periodo configurado si no coincide con ninguno existente
+    if (periodoDesde && periodoHasta) {
+      const nk = `${periodoDesde}|${periodoHasta}`
+      if (!map.has(nk)) map.set(nk, { key: nk, fecha_inicio: periodoDesde, fecha_fin: periodoHasta, esNuevo: true })
+    }
+    return [...map.values()].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio))
+  }, [metas, periodoDesde, periodoHasta])
+
+  // Derivar periodo y semanas del form
+  const formPeriodo = form.periodoKey
+    ? { desde: form.periodoKey.split('|')[0], hasta: form.periodoKey.split('|')[1] }
+    : null
+  const semanasForm  = formPeriodo ? semanasEntreFechas(formPeriodo.desde, formPeriodo.hasta) : 0
+  const metaSemanal  = form.pollos_meta && form.ticket_promedio_meta && semanasForm > 0
     ? parseFloat(form.pollos_meta) * parseFloat(form.ticket_promedio_meta) : null
-  const metaMensual = metaSemanal ? metaSemanal * semanasActuales : null
+  const metaMensual  = metaSemanal ? metaSemanal * semanasForm : null
 
   useEffect(() => { load() }, [])
 
@@ -67,18 +97,6 @@ export default function GerenteMetas() {
       ])
       setSucursales(sucs ?? [])
       setMetas(metasData ?? [])
-
-      // Sugerir el próximo periodo: mes siguiente al de la meta más reciente
-      if (metasData?.length) {
-        const sorted = [...metasData].sort((a, b) => b.fecha_fin.localeCompare(a.fecha_fin))
-        const masReciente = sorted[0]
-        const finReciente  = parseISO(masReciente.fecha_fin)
-        const nextStart    = startOfMonth(addMonths(finReciente, 1))
-        const todayStart   = startOfMonth(hoy)
-        const useStart     = nextStart >= todayStart ? nextStart : todayStart
-        setPeriodoDesde(format(useStart, 'yyyy-MM-dd'))
-        setPeriodoHasta(format(endOfMonth(useStart), 'yyyy-MM-dd'))
-      }
     } catch (e) {
       console.error('Error cargando metas:', e)
     } finally {
@@ -86,20 +104,31 @@ export default function GerenteMetas() {
     }
   }
 
+  function abrirForm() {
+    // Pre-seleccionar el periodo más reciente al abrir el formulario
+    const primerPeriodo = periodosDisponibles[0]
+    setForm({ ...FORM_EMPTY, periodoKey: primerPeriodo?.key ?? '' })
+    setShowForm(v => !v)
+    setMsg(null)
+  }
+
   async function handleSave(e) {
     e.preventDefault()
-    if (!form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta) return
+    if (!form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta || !form.periodoKey) {
+      setMsg({ tipo: 'error', texto: 'Completa todos los campos, incluyendo el periodo' })
+      return
+    }
 
+    const [fechaInicio, fechaFin] = form.periodoKey.split('|')
     const metaActivaExistente = metas.find(m =>
       m.sucursal_id === form.sucursal_id &&
-      m.fecha_inicio <= hoyStr &&
-      m.fecha_fin >= hoyStr
+      m.fecha_inicio === fechaInicio &&
+      m.fecha_fin === fechaFin
     )
     if (metaActivaExistente) {
       const sucNombre = sucursales.find(s => s.id === form.sucursal_id)?.nombre ?? 'esta sucursal'
       const ok = window.confirm(
-        `"${sucNombre}" ya tiene una meta activa en este periodo.\n\n` +
-        `¿Crear una nueva de todas formas? La anterior seguirá vigente hasta que expire y pasará al historial automáticamente.`
+        `"${sucNombre}" ya tiene una meta en ese periodo.\n¿Crear otra de todas formas?`
       )
       if (!ok) return
     }
@@ -108,38 +137,44 @@ export default function GerenteMetas() {
     setMsg(null)
     const pollos  = parseFloat(form.pollos_meta)
     const ticket  = parseFloat(form.ticket_promedio_meta)
-    const semanas = semanasEntreFechas(periodoDesde, periodoHasta)
+    const semanas = semanasEntreFechas(fechaInicio, fechaFin)
 
-    const { error } = await supabase.from('metas').insert({
-      sucursal_id:          form.sucursal_id,
-      meta_venta:           pollos * ticket,
-      pollos_meta:          pollos,
-      ticket_promedio_meta: ticket,
-      semanas_mes:          semanas,
-      fecha_inicio:         periodoDesde,
-      fecha_fin:            periodoHasta,
-      creado_por:           usuario.id,
-    })
+    const { data: nuevaMeta, error } = await supabase
+      .from('metas')
+      .insert({
+        sucursal_id:          form.sucursal_id,
+        meta_venta:           pollos * ticket,
+        pollos_meta:          pollos,
+        ticket_promedio_meta: ticket,
+        semanas_mes:          semanas,
+        fecha_inicio:         fechaInicio,
+        fecha_fin:            fechaFin,
+        creado_por:           usuario.id,
+      })
+      .select('*, sucursales(nombre)')
+      .single()
 
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {
+      // Actualizar estado local sin recargar (no hay scroll reset)
+      setMetas(prev => [nuevaMeta, ...prev])
       setMsg({ tipo: 'ok', texto: 'Meta creada correctamente' })
       setShowForm(false)
-      setForm({ sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '' })
-      await load()
+      setForm(FORM_EMPTY)
       setTimeout(() => setMsg(null), 4000)
     }
     setSaving(false)
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('¿Eliminar esta meta? Esta acción no se puede deshacer.')) return
+    if (!window.confirm('¿Eliminar esta meta?')) return
+    // Optimista: quitar del estado inmediatamente
+    setMetas(prev => prev.filter(m => m.id !== id))
     const { error } = await supabase.from('metas').delete().eq('id', id)
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error al eliminar: ' + error.message })
-    } else {
-      await load()
+      await load() // Restaurar si falló
     }
   }
 
@@ -148,15 +183,10 @@ export default function GerenteMetas() {
   const metasFuturas   = metas.filter(m => m.fecha_inicio > hoyStr)
   const metasExpiradas = metas.filter(m => m.fecha_fin < hoyStr)
 
-  // ¿Cuántos días faltan para que termine el periodo activo?
-  const periodoActivo = metasVigentes[0]
-  const diasRestantesPeriodo = periodoActivo
+  const periodoActivo         = metasVigentes[0]
+  const diasRestantesPeriodo  = periodoActivo
     ? Math.round((new Date(periodoActivo.fecha_fin + 'T23:59:59') - hoy) / 86400000)
     : null
-
-  const mesLabel = periodoDesde
-    ? format(new Date(periodoDesde + 'T12:00:00'), 'MMMM yyyy', { locale: es })
-    : '—'
 
   return (
     <div className={styles.page}>
@@ -168,7 +198,7 @@ export default function GerenteMetas() {
             <Settings size={14} strokeWidth={2.5} />
             {showPeriodo ? 'Cerrar' : 'Nuevo periodo'}
           </button>
-          <button className={styles.addBtn} onClick={() => { setShowForm(v => !v); setMsg(null) }}>
+          <button className={styles.addBtn} onClick={abrirForm}>
             {showForm
               ? <><X size={14} strokeWidth={2.5} /> Cancelar</>
               : <><Plus size={14} strokeWidth={2.5} /> Nueva meta</>}
@@ -182,7 +212,7 @@ export default function GerenteMetas() {
           <AlertTriangle size={15} strokeWidth={2.5} />
           <div>
             <strong>Sin periodo activo</strong>
-            {' — '}Configura las fechas del nuevo periodo y crea las metas para que los encargados puedan registrar progreso.
+            {' — '}Crea un nuevo periodo y agrega las metas para que los encargados puedan registrar progreso.
           </div>
         </div>
       )}
@@ -194,10 +224,10 @@ export default function GerenteMetas() {
           <div>
             <strong>
               {diasRestantesPeriodo === 0
-                ? 'El periodo termina hoy'
-                : `El periodo vence en ${diasRestantesPeriodo} día${diasRestantesPeriodo !== 1 ? 's' : ''}`}
+                ? 'El periodo activo termina hoy'
+                : `El periodo activo vence en ${diasRestantesPeriodo} día${diasRestantesPeriodo !== 1 ? 's' : ''}`}
             </strong>
-            {' — '}Configura el próximo periodo y crea las nuevas metas con anticipación.
+            {' — '}Crea el próximo periodo y sus metas con anticipación.
           </div>
         </div>
       )}
@@ -206,10 +236,10 @@ export default function GerenteMetas() {
       {showPeriodo && (
         <div className={styles.periodoCard}>
           <div className={styles.periodoCardHeader}>
-            <p className={styles.periodoCardTitle}>Configurar nuevo periodo</p>
+            <p className={styles.periodoCardTitle}>Agregar nuevo periodo</p>
             <p className={styles.periodoCardSub}>
-              Define las fechas que se usarán al crear <strong>nuevas metas</strong>.
-              Las metas existentes no se modifican — quedan en el historial al expirar.
+              Define las fechas. Después podrás crear metas eligiendo este periodo en el formulario.
+              Los periodos anteriores no se modifican.
             </p>
           </div>
           <div className={styles.periodoForm}>
@@ -225,65 +255,58 @@ export default function GerenteMetas() {
                   min={periodoDesde} onChange={e => setPeriodoHasta(e.target.value)} />
               </div>
             </div>
-            <div className={styles.periodoResumen}>
-              <div className={styles.periodoResumenItem}>
-                <span className={styles.periodoResumenLabel}>Semanas</span>
-                <span className={styles.periodoResumenVal}>{semanasActuales}</span>
+            {periodoDesde && periodoHasta && (
+              <div className={styles.periodoResumen}>
+                <div className={styles.periodoResumenItem}>
+                  <span className={styles.periodoResumenLabel}>Semanas</span>
+                  <span className={styles.periodoResumenVal}>{semanasEntreFechas(periodoDesde, periodoHasta)}</span>
+                </div>
+                <div className={styles.periodoResumenDivider} />
+                <div className={styles.periodoResumenItem}>
+                  <span className={styles.periodoResumenLabel}>Días</span>
+                  <span className={styles.periodoResumenVal}>{diasEntreFechas(periodoDesde, periodoHasta)}</span>
+                </div>
+                <div className={styles.periodoResumenDivider} />
+                <div className={styles.periodoResumenItem}>
+                  <span className={styles.periodoResumenLabel}>Rango</span>
+                  <span className={styles.periodoResumenVal} style={{ textTransform: 'capitalize' }}>
+                    {format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es })}
+                    {' — '}
+                    {format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })}
+                  </span>
+                </div>
               </div>
-              <div className={styles.periodoResumenDivider} />
-              <div className={styles.periodoResumenItem}>
-                <span className={styles.periodoResumenLabel}>Días</span>
-                <span className={styles.periodoResumenVal}>{diasActuales}</span>
-              </div>
-              <div className={styles.periodoResumenDivider} />
-              <div className={styles.periodoResumenItem}>
-                <span className={styles.periodoResumenLabel}>Rango</span>
-                <span className={styles.periodoResumenVal} style={{ textTransform: 'capitalize' }}>
-                  {periodoDesde ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) : '—'}
-                  {' — '}
-                  {periodoHasta ? format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es }) : '—'}
-                </span>
-              </div>
-            </div>
+            )}
             <button className={styles.periodoSaveBtn} type="button" onClick={() => setShowPeriodo(false)}>
               <CheckCircle size={14} strokeWidth={2.5} />
-              Aplicar fechas
+              Listo — usar este periodo
             </button>
             <p className={styles.periodoNota}>
-              Estas fechas solo afectan las metas que crees a partir de ahora. Los periodos anteriores quedan intactos como historial.
+              Este periodo ya aparece como opción en el formulario "Nueva meta". No se guarda hasta que crees una meta con él.
             </p>
           </div>
         </div>
       )}
 
-      {/* Barra de info */}
-      <div className={styles.mesInfo}>
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Periodo activo</span>
-          <span className={styles.mesInfoVal} style={{ textTransform: 'capitalize' }}>
-            {periodoActivo
-              ? format(new Date(periodoActivo.fecha_inicio + 'T12:00:00'), 'd MMM', { locale: es }) +
-                ' — ' +
-                format(new Date(periodoActivo.fecha_fin + 'T12:00:00'), 'd MMM yyyy', { locale: es })
-              : 'Sin periodo activo'}
-          </span>
+      {/* Periodos disponibles (vista rápida) */}
+      {!loading && periodosDisponibles.length > 0 && (
+        <div className={styles.periodosRow}>
+          {periodosDisponibles.map(p => {
+            const vig = p.fecha_inicio <= hoyStr && p.fecha_fin >= hoyStr
+            const exp = p.fecha_fin < hoyStr
+            return (
+              <span
+                key={p.key}
+                className={`${styles.periodoPill} ${vig ? styles.pillVig : exp ? styles.pillExp : p.esNuevo ? styles.pillNuevo : styles.pillFut}`}>
+                {p.esNuevo && '✦ '}
+                {format(parseISO(p.fecha_inicio), 'd MMM', { locale: es })}
+                {' — '}
+                {format(parseISO(p.fecha_fin), 'd MMM', { locale: es })}
+              </span>
+            )
+          })}
         </div>
-        <div className={styles.mesInfoDivider} />
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Nuevas metas en</span>
-          <span className={styles.mesInfoVal} style={{ textTransform: 'capitalize' }}>
-            {periodoDesde
-              ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) + ' — ' +
-                format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })
-              : '—'}
-          </span>
-        </div>
-        <div className={styles.mesInfoDivider} />
-        <div className={styles.mesInfoItem}>
-          <span className={styles.mesInfoLabel}>Mes</span>
-          <span className={styles.mesInfoVal} style={{ textTransform: 'capitalize' }}>{mesLabel}</span>
-        </div>
-      </div>
+      )}
 
       {/* Mensaje */}
       {msg && (
@@ -299,39 +322,63 @@ export default function GerenteMetas() {
       {showForm && (
         <div className={styles.formCard}>
           <p className={styles.formTitle}>Nueva meta</p>
-          <p className={styles.formSub}>
-            Periodo:{' '}
-            {periodoDesde ? format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es }) : '—'}
-            {' al '}
-            {periodoHasta ? format(new Date(periodoHasta + 'T12:00:00'), 'd MMM yyyy', { locale: es }) : '—'}
-            {' '}({semanasActuales} semanas)
-          </p>
           <form className={styles.form} onSubmit={handleSave} noValidate>
+
+            {/* Periodo selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Periodo</label>
+              {periodosDisponibles.length === 0 ? (
+                <p className={styles.fieldHint}>
+                  <AlertTriangle size={11} strokeWidth={2.5} />
+                  No hay periodos — usa el botón "Nuevo periodo" para crear uno primero
+                </p>
+              ) : (
+                <select
+                  className={styles.select}
+                  value={form.periodoKey}
+                  onChange={e => setForm(f => ({ ...f, periodoKey: e.target.value }))}
+                  required>
+                  <option value="">Seleccionar periodo…</option>
+                  {periodosDisponibles.map(p => (
+                    <option key={p.key} value={p.key}>
+                      {p.esNuevo ? '✦ Nuevo: ' : ''}{periodoLabel(p.fecha_inicio, p.fecha_fin)}
+                      {p.fecha_inicio <= hoyStr && p.fecha_fin >= hoyStr ? ' ← activo' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             <div className={styles.field}>
               <label className={styles.label}>Sucursal</label>
               <select className={styles.select} value={form.sucursal_id}
                 onChange={e => setForm(f => ({ ...f, sucursal_id: e.target.value }))} required>
                 <option value="">Seleccionar sucursal…</option>
                 {sucursales.map(s => {
-                  const activa = metas.some(m =>
-                    m.sucursal_id === s.id && m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr
+                  const tieneEnPeriodo = form.periodoKey && metas.some(m =>
+                    m.sucursal_id === s.id &&
+                    m.fecha_inicio === form.periodoKey.split('|')[0] &&
+                    m.fecha_fin === form.periodoKey.split('|')[1]
                   )
                   return (
                     <option key={s.id} value={s.id}>
-                      {s.nombre}{activa ? ' ✓' : ''}
+                      {s.nombre}{tieneEnPeriodo ? ' ✓' : ''}
                     </option>
                   )
                 })}
               </select>
-              {form.sucursal_id && metas.some(m =>
-                m.sucursal_id === form.sucursal_id && m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr
+              {form.sucursal_id && form.periodoKey && metas.some(m =>
+                m.sucursal_id === form.sucursal_id &&
+                m.fecha_inicio === form.periodoKey.split('|')[0] &&
+                m.fecha_fin === form.periodoKey.split('|')[1]
               ) && (
                 <p className={styles.fieldHint}>
                   <AlertTriangle size={11} strokeWidth={2.5} />
-                  Esta sucursal ya tiene una meta activa en el periodo vigente
+                  Ya tiene meta en este periodo
                 </p>
               )}
             </div>
+
             <div className={styles.twoCol}>
               <div className={styles.field}>
                 <label className={styles.label}>Pollos / semana</label>
@@ -354,21 +401,23 @@ export default function GerenteMetas() {
                 </div>
               </div>
             </div>
-            {metaSemanal !== null && (
+
+            {metaSemanal !== null && formPeriodo && (
               <div className={styles.preview}>
                 <div className={styles.previewRow}>
                   <span className={styles.previewLabel}>Meta semanal</span>
                   <span className={styles.previewVal}>{fmt(metaSemanal)}</span>
                 </div>
                 <div className={styles.previewRow}>
-                  <span className={styles.previewLabel}>Meta total ({semanasActuales} semanas)</span>
+                  <span className={styles.previewLabel}>Meta total ({semanasForm} semanas)</span>
                   <span className={styles.previewValBig}>{fmt(metaMensual)}</span>
                 </div>
               </div>
             )}
+
             <button
               className={styles.saveBtn} type="submit"
-              disabled={saving || !form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta}>
+              disabled={saving || !form.sucursal_id || !form.pollos_meta || !form.ticket_promedio_meta || !form.periodoKey}>
               {saving ? 'Guardando…' : 'Crear meta'}
             </button>
           </form>
@@ -380,11 +429,10 @@ export default function GerenteMetas() {
         <div className={styles.loading}>Cargando…</div>
       ) : metas.length === 0 ? (
         <div className={styles.empty}>
-          No hay metas creadas todavía. Configura el periodo y crea la primera meta.
+          No hay metas. Crea un periodo con el botón "Nuevo periodo" y luego agrega metas.
         </div>
       ) : (
         <>
-          {/* Vigentes */}
           {metasVigentes.length > 0 && (
             <>
               <p className={styles.sectionLabel}>
@@ -399,7 +447,6 @@ export default function GerenteMetas() {
             </>
           )}
 
-          {/* Futuras */}
           {metasFuturas.length > 0 && (
             <>
               <p className={styles.sectionLabel}>
@@ -414,12 +461,9 @@ export default function GerenteMetas() {
             </>
           )}
 
-          {/* Historial: colapsable */}
           {metasExpiradas.length > 0 && (
             <>
-              <button
-                className={styles.historialToggle}
-                onClick={() => setShowHistorial(v => !v)}>
+              <button className={styles.historialToggle} onClick={() => setShowHistorial(v => !v)}>
                 <Clock size={13} strokeWidth={2.5} />
                 Historial ({metasExpiradas.length} expirada{metasExpiradas.length !== 1 ? 's' : ''})
                 <span className={styles.historialArrow}>{showHistorial ? '▲' : '▼'}</span>
@@ -472,8 +516,8 @@ function MetaCard({ m, hoyStr, onDelete }) {
         </div>
       </div>
       <div className={styles.metaKpis}>
-        {m.pollos_meta && <span className={styles.metaKpi}>{fmtNum(m.pollos_meta)} pollos/sem</span>}
-        {m.ticket_promedio_meta && <span className={styles.metaKpi}>TP {fmtDec(m.ticket_promedio_meta)}</span>}
+        {m.pollos_meta != null && <span className={styles.metaKpi}>{fmtNum(m.pollos_meta)} pollos/sem</span>}
+        {m.ticket_promedio_meta != null && <span className={styles.metaKpi}>TP {fmtDec(m.ticket_promedio_meta)}</span>}
         <span className={styles.metaKpi}>{m.semanas_mes ?? 4} semanas</span>
       </div>
       <p className={styles.metaDates} style={{ textTransform: 'capitalize' }}>

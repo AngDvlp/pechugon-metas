@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { UserPlus, X, Trash2, CheckCircle, AlertCircle, Store, Mail, Lock, User } from 'lucide-react'
+import { UserPlus, X, CheckCircle, AlertCircle, Store, Mail, Lock, User } from 'lucide-react'
 import styles from './Usuarios.module.css'
 
 export default function GerenteUsuarios() {
-  const [usuarios, setUsuarios] = useState([])
-  const [sucursales, setSucursales] = useState([])
-  const [roles, setRoles] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState(null)
-  const [form, setForm] = useState({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '' })
-  const [supSucursales, setSupSucursales] = useState({})
+  const [usuarios,     setUsuarios]     = useState([])
+  const [sucursales,   setSucursales]   = useState([])
+  const [roles,        setRoles]        = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [showForm,     setShowForm]     = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const [msg,          setMsg]          = useState(null)
+  const [form,         setForm]         = useState({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '' })
+  const [supSucursales, setSupSucursales] = useState({})  // supervisorId → [{supervisor_id, sucursal_id, sucursales:{nombre}}]
 
   useEffect(() => { load() }, [])
 
@@ -48,36 +48,68 @@ export default function GerenteUsuarios() {
     })
     if (authErr) { setMsg({ tipo: 'error', texto: 'Error: ' + authErr.message }); setSaving(false); return }
     const uid = authData.user?.id
-    if (!uid) { setMsg({ tipo: 'error', texto: 'No se pudo obtener el ID' }); setSaving(false); return }
+    if (!uid) { setMsg({ tipo: 'error', texto: 'No se pudo obtener el ID del usuario' }); setSaving(false); return }
     const { error: dbErr } = await supabase.from('usuarios').insert({
-      id: uid, nombre: form.nombre.trim(), email: form.email.trim(),
-      rol_id: parseInt(form.rol_id),
-      sucursal_id: rolSeleccionado?.nombre === 'encargado' ? form.sucursal_id || null : null,
+      id:          uid,
+      nombre:      form.nombre.trim(),
+      email:       form.email.trim(),
+      rol_id:      parseInt(form.rol_id),
+      sucursal_id: rolSeleccionado?.nombre === 'encargado' ? (form.sucursal_id || null) : null,
     })
-    if (dbErr) { setMsg({ tipo: 'error', texto: 'Error: ' + dbErr.message }); setSaving(false); return }
-    setMsg({ tipo: 'ok', texto: `Usuario ${form.nombre} creado` })
+    if (dbErr) { setMsg({ tipo: 'error', texto: 'Error en DB: ' + dbErr.message }); setSaving(false); return }
+    setMsg({ tipo: 'ok', texto: `Usuario "${form.nombre.trim()}" creado` })
     setShowForm(false)
     setForm({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '' })
     await load()
     setSaving(false)
   }
 
+  // ── Asignar sucursal a supervisor — actualización optimista ──
   async function handleAsignarSucursal(supervisorId, sucursalId) {
     if (!sucursalId) return
     const ya = supSucursales[supervisorId]?.find(s => s.sucursal_id === sucursalId)
     if (ya) return
-    await supabase.from('supervisor_sucursales').insert({ supervisor_id: supervisorId, sucursal_id: sucursalId })
-    await load()
+
+    const sucursal = sucursales.find(s => s.id === sucursalId)
+    const newEntry = { supervisor_id: supervisorId, sucursal_id: sucursalId, sucursales: { nombre: sucursal?.nombre ?? '' } }
+
+    // Actualizar estado inmediatamente (sin scroll reset)
+    setSupSucursales(prev => ({
+      ...prev,
+      [supervisorId]: [...(prev[supervisorId] ?? []), newEntry],
+    }))
+
+    const { error } = await supabase.from('supervisor_sucursales')
+      .insert({ supervisor_id: supervisorId, sucursal_id: sucursalId })
+
+    if (error) {
+      // Revertir si falló
+      setSupSucursales(prev => ({
+        ...prev,
+        [supervisorId]: (prev[supervisorId] ?? []).filter(s => s.sucursal_id !== sucursalId),
+      }))
+    }
   }
 
+  // ── Quitar sucursal de supervisor — actualización optimista ──
   async function handleQuitarSucursal(supervisorId, sucursalId) {
-    await supabase.from('supervisor_sucursales').delete()
+    // Quitar del estado inmediatamente
+    setSupSucursales(prev => ({
+      ...prev,
+      [supervisorId]: (prev[supervisorId] ?? []).filter(s => s.sucursal_id !== sucursalId),
+    }))
+
+    const { error } = await supabase.from('supervisor_sucursales').delete()
       .eq('supervisor_id', supervisorId).eq('sucursal_id', sucursalId)
-    await load()
+
+    if (error) {
+      // Revertir si falló (recargar para estar seguros)
+      await load()
+    }
   }
 
   const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', encargado: 'var(--success)' }
-  const ROL_DIM = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', encargado: 'var(--success-dim)' }
+  const ROL_DIM   = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', encargado: 'var(--success-dim)' }
 
   return (
     <div className={styles.page}>
@@ -151,9 +183,13 @@ export default function GerenteUsuarios() {
       {loading ? <div className={styles.empty}>Cargando…</div> : (
         <div className={styles.list}>
           {usuarios.map(u => {
-            const rolNombre = u.roles?.nombre ?? '—'
+            const rolNombre  = u.roles?.nombre ?? '—'
             const esSupervisor = rolNombre === 'supervisor'
-            const misSupSucs = supSucursales[u.id] ?? []
+            const misSupSucs   = supSucursales[u.id] ?? []
+            // Sucursales que este supervisor aún no tiene asignadas
+            const sucursalesDisponibles = sucursales.filter(
+              s => !misSupSucs.find(ss => ss.sucursal_id === s.id)
+            )
             return (
               <div key={u.id} className={styles.userCard}>
                 <div className={styles.userTop}>
@@ -166,31 +202,46 @@ export default function GerenteUsuarios() {
                     {rolNombre}
                   </span>
                 </div>
+
                 {rolNombre === 'encargado' && u.sucursales && (
                   <p className={styles.sucAsignada}>
                     <Store size={12} strokeWidth={2} /> {u.sucursales.nombre}
                   </p>
                 )}
+
                 {esSupervisor && (
                   <div className={styles.supSection}>
-                    <p className={styles.supLabel}>Sucursales asignadas ({misSupSucs.length}/5)</p>
+                    <p className={styles.supLabel}>
+                      Sucursales asignadas ({misSupSucs.length})
+                    </p>
                     <div className={styles.supTags}>
                       {misSupSucs.map(ss => (
                         <span key={ss.sucursal_id} className={styles.supTag}>
                           {ss.sucursales?.nombre}
-                          <button className={styles.quitarBtn} onClick={() => handleQuitarSucursal(u.id, ss.sucursal_id)}>
+                          <button
+                            className={styles.quitarBtn}
+                            onClick={() => handleQuitarSucursal(u.id, ss.sucursal_id)}>
                             <X size={12} strokeWidth={2.5} />
                           </button>
                         </span>
                       ))}
                     </div>
-                    {misSupSucs.length < 5 && (
-                      <select className={styles.selectSmall} defaultValue=""
-                        onChange={e => { handleAsignarSucursal(u.id, e.target.value); e.target.value = '' }}>
+                    {sucursalesDisponibles.length > 0 && (
+                      <select
+                        className={styles.selectSmall}
+                        value=""
+                        onChange={e => {
+                          if (e.target.value) handleAsignarSucursal(u.id, e.target.value)
+                          e.target.value = ''
+                        }}>
                         <option value="">+ Asignar sucursal…</option>
-                        {sucursales.filter(s => !misSupSucs.find(ss => ss.sucursal_id === s.id))
-                          .map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                        {sucursalesDisponibles.map(s => (
+                          <option key={s.id} value={s.id}>{s.nombre}</option>
+                        ))}
                       </select>
+                    )}
+                    {sucursalesDisponibles.length === 0 && (
+                      <p className={styles.todasAsignadas}>Todas las sucursales asignadas</p>
                     )}
                   </div>
                 )}
