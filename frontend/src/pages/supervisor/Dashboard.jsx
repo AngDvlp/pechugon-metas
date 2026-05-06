@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, addDays } from 'date-fns'
+import { format, addDays, startOfWeek, startOfMonth } from 'date-fns'
 import {
-  ChevronRight, TrendingUp, TrendingDown, AlertTriangle,
-  CheckCircle, Clock, AlertCircle, Utensils
+  ChevronRight, TrendingUp, TrendingDown,
+  CheckCircle, Clock, Utensils
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 
@@ -15,16 +15,33 @@ const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, m
 export default function SupervisorDashboard() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
-  const [sucursales, setSucursales] = useState([])
-  const [resumenes,  setResumenes]  = useState({})
-  const [ventasHoy,  setVentasHoy]  = useState({})
-  const [tacoMap,    setTacoMap]    = useState({})   // sucursalId → { stock, deficit, expirando }
-  const [minimosMap, setMinimosMap] = useState({})
-  const [loading, setLoading] = useState(true)
-  const hoy     = format(new Date(), 'yyyy-MM-dd')
-  const manana  = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+  const [sucursales,    setSucursales]    = useState([])
+  const [resumenes,     setResumenes]     = useState({})
+  const [ventasHoy,     setVentasHoy]     = useState({})
+  const [tacoMap,       setTacoMap]       = useState({})
+  const [minimosMap,    setMinimosMap]    = useState({})
+  const [rangos,        setRangos]        = useState({})
+  const [loadingRangos, setLoadingRangos] = useState(false)
+  const [loading,       setLoading]       = useState(true)
+  const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
+  const [customDesde,   setCustomDesde]   = useState('')
+  const [customHasta,   setCustomHasta]   = useState('')
+  const hoy    = format(new Date(), 'yyyy-MM-dd')
+  const manana = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
   useEffect(() => { if (usuario?.id) load() }, [usuario])
+
+  useEffect(() => {
+    if (filtroTiempo === 'periodo' || !sucursales.length) return
+    const hoyD = new Date()
+    let desde, hasta
+    if (filtroTiempo === 'hoy')   { desde = hasta = format(hoyD, 'yyyy-MM-dd') }
+    else if (filtroTiempo === 'semana') { desde = format(startOfWeek(hoyD, { weekStartsOn: 1 }), 'yyyy-MM-dd'); hasta = format(hoyD, 'yyyy-MM-dd') }
+    else if (filtroTiempo === 'mes')    { desde = format(startOfMonth(hoyD), 'yyyy-MM-dd'); hasta = format(hoyD, 'yyyy-MM-dd') }
+    else if (filtroTiempo === 'custom' && customDesde && customHasta) { desde = customDesde; hasta = customHasta }
+    else return
+    loadRangos(desde, hasta)
+  }, [filtroTiempo, customDesde, customHasta, sucursales.length])
 
   async function load() {
     setLoading(true)
@@ -70,6 +87,37 @@ export default function SupervisorDashboard() {
     setLoading(false)
   }
 
+  async function loadRangos(desde, hasta) {
+    setLoadingRangos(true)
+    const sids = sucursales.map(s => s.id)
+    const { data } = await supabase.from('ventas_diarias')
+      .select('sucursal_id, venta_total, pollos_vendidos')
+      .in('sucursal_id', sids)
+      .gte('fecha', desde).lte('fecha', hasta)
+    const map = {}
+    data?.forEach(r => {
+      if (!map[r.sucursal_id]) map[r.sucursal_id] = { venta: 0, pollos: 0, dias: 0 }
+      map[r.sucursal_id].venta  += r.venta_total
+      map[r.sucursal_id].pollos += r.pollos_vendidos
+      map[r.sucursal_id].dias   += 1
+    })
+    Object.keys(map).forEach(id => {
+      const m = map[id]
+      m.ticket  = m.pollos > 0 ? m.venta / m.pollos : 0
+      m.promDia = m.dias   > 0 ? m.venta / m.dias   : 0
+    })
+    setRangos(map)
+    setLoadingRangos(false)
+  }
+
+  const esRango          = filtroTiempo !== 'periodo'
+  const fmtDec           = v => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:2, maximumFractionDigits:2 }).format(v ?? 0)
+  const rangoVentaTotal  = sucursales.reduce((a, s) => a + (rangos[s.id]?.venta  ?? 0), 0)
+  const rangoPollosTotal = sucursales.reduce((a, s) => a + (rangos[s.id]?.pollos ?? 0), 0)
+  const rangoTicket      = rangoPollosTotal > 0 ? rangoVentaTotal / rangoPollosTotal : 0
+  const rangoConVenta    = sucursales.filter(s => (rangos[s.id]?.venta ?? 0) > 0).length
+  const RANGO_LABELS     = { hoy:'Hoy', semana:'Esta semana', mes:'Este mes', custom:'Personalizado' }
+
   const metaMensualTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_mensual ?? 0), 0)
   const acumuladoTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
   const ventaHoyTotal = Object.values(ventasHoy).reduce((a, v) => a + (v?.venta_total ?? 0), 0)
@@ -82,7 +130,59 @@ export default function SupervisorDashboard() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.supervisorCard}>
+      {/* ── Time filter ── */}
+      <div className={styles.timeFilter}>
+        {[
+          { key: 'periodo', label: 'Periodo' },
+          { key: 'hoy',     label: 'Hoy' },
+          { key: 'semana',  label: 'Semana' },
+          { key: 'mes',     label: 'Mes' },
+          { key: 'custom',  label: 'Personalizado' },
+        ].map(f => (
+          <button key={f.key}
+            className={`${styles.timePill} ${filtroTiempo === f.key ? styles.timePillActive : ''}`}
+            onClick={() => setFiltroTiempo(f.key)}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filtroTiempo === 'custom' && (
+        <div className={styles.customRango}>
+          <input className={styles.rangoDateInput} type="date"
+            value={customDesde} onChange={e => setCustomDesde(e.target.value)} />
+          <span className={styles.rangoSep}>—</span>
+          <input className={styles.rangoDateInput} type="date"
+            value={customHasta} min={customDesde} onChange={e => setCustomHasta(e.target.value)} />
+        </div>
+      )}
+
+      {/* ── Range hero card (non-periodo mode) ── */}
+      {esRango && (
+        <div className={styles.rangoHeroCard}>
+          <p className={styles.rangoHeroLabel}>{RANGO_LABELS[filtroTiempo] ?? ''}</p>
+          <p className={styles.rangoHeroVenta}>{fmt(rangoVentaTotal)}</p>
+          <div className={styles.rangoHeroStats}>
+            <div className={styles.rangoHeroStat}>
+              <span className={styles.rangoHeroStatLabel}>Pollos</span>
+              <span className={styles.rangoHeroStatVal}>{new Intl.NumberFormat('es-MX',{maximumFractionDigits:1}).format(rangoPollosTotal)}</span>
+            </div>
+            <div className={styles.rangoHeroDivider} />
+            <div className={styles.rangoHeroStat}>
+              <span className={styles.rangoHeroStatLabel}>Ticket prom.</span>
+              <span className={styles.rangoHeroStatVal}>{fmtDec(rangoTicket)}</span>
+            </div>
+            <div className={styles.rangoHeroDivider} />
+            <div className={styles.rangoHeroStat}>
+              <span className={styles.rangoHeroStatLabel}>Con registro</span>
+              <span className={styles.rangoHeroStatVal}>{rangoConVenta} / {sucursales.length}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Periodo hero card ── */}
+      {!esRango && <div className={styles.supervisorCard}>
         <div className={styles.supTop}>
           <div>
             <p className={styles.supLabel}>Meta mensual</p>
@@ -127,102 +227,143 @@ export default function SupervisorDashboard() {
             <span className={styles.supStatVal}>{fmt(ventaHoyTotal)}</span>
           </div>
         </div>
-      </div>
+      </div>}
 
       <p className={styles.secTitle}>Mis Sucursales</p>
       {sucursales.length === 0 && <div className={styles.empty}>No tienes sucursales asignadas</div>}
 
-      <div className={styles.cards}>
-        {sucursales.map(s => {
-          const res = resumenes[s.id]
-          const hv = ventasHoy[s.id]
-          const avanceMesSuc = res?.avance_porcentaje ?? 0
-          const avanceSemSuc = res?.avance_semanal ?? 0
-          let barColor = 'var(--text-muted)'
-          let statusLabel = 'Sin meta'
-          let StatusIcon = Clock
-          if (res) {
-            if (avanceMesSuc >= 100) { barColor = 'var(--success)'; statusLabel = 'Meta cumplida'; StatusIcon = CheckCircle }
-            else if (avanceMesSuc >= 70) { barColor = 'var(--yellow)'; statusLabel = 'En camino'; StatusIcon = TrendingUp }
-            else { barColor = 'var(--red)'; statusLabel = 'Por debajo'; StatusIcon = TrendingDown }
-          }
-          return (
-            <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}>
-              <div className={styles.sucHeader}>
-                <div>
-                  <p className={styles.sucNombre}>{s.nombre}</p>
-                  <p className={styles.sucStatus} style={{ color: barColor, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <StatusIcon size={11} strokeWidth={2.5} />
-                    {statusLabel}
-                  </p>
-                </div>
-                <div className={styles.sucPct}>
-                  {!res ? <span className={styles.noMeta}>—</span> : (
+      {esRango && loadingRangos ? (
+        <div className={styles.empty}>Cargando datos…</div>
+      ) : (
+        <div className={styles.cards}>
+          {sucursales.map(s => {
+            if (!esRango) {
+              const res = resumenes[s.id]
+              const hv = ventasHoy[s.id]
+              const avanceMesSuc = res?.avance_porcentaje ?? 0
+              const avanceSemSuc = res?.avance_semanal ?? 0
+              let barColor = 'var(--text-muted)'
+              let statusLabel = 'Sin meta'
+              let StatusIcon = Clock
+              if (res) {
+                if (avanceMesSuc >= 100) { barColor = 'var(--success)'; statusLabel = 'Meta cumplida'; StatusIcon = CheckCircle }
+                else if (avanceMesSuc >= 70) { barColor = 'var(--yellow)'; statusLabel = 'En camino'; StatusIcon = TrendingUp }
+                else { barColor = 'var(--red)'; statusLabel = 'Por debajo'; StatusIcon = TrendingDown }
+              }
+              return (
+                <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}>
+                  <div className={styles.sucHeader}>
+                    <div>
+                      <p className={styles.sucNombre}>{s.nombre}</p>
+                      <p className={styles.sucStatus} style={{ color: barColor, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <StatusIcon size={11} strokeWidth={2.5} />
+                        {statusLabel}
+                      </p>
+                    </div>
+                    <div className={styles.sucPct}>
+                      {!res ? <span className={styles.noMeta}>—</span> : (
+                        <>
+                          <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
+                          <span className={styles.sucPctSym}>%</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {res && (
                     <>
-                      <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
-                      <span className={styles.sucPctSym}>%</span>
+                      <div className={styles.sucBarRow}>
+                        <span className={styles.sucBarLabel}>Mes</span>
+                        <div className={styles.sucProgressTrack}>
+                          <div className={styles.sucProgressFill} style={{ width: `${Math.min(avanceMesSuc, 100)}%`, background: barColor }} />
+                        </div>
+                      </div>
+                      <div className={styles.sucBarRow}>
+                        <span className={styles.sucBarLabel}>Sem</span>
+                        <div className={styles.sucProgressTrack}>
+                          <div className={styles.sucProgressFill} style={{
+                            width: `${Math.min(avanceSemSuc, 100)}%`,
+                            background: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
+                          }} />
+                        </div>
+                        <span className={styles.sucBarPct} style={{
+                          color: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
+                        }}>{avanceSemSuc.toFixed(0)}%</span>
+                      </div>
                     </>
                   )}
-                </div>
-              </div>
-              {res && (
-                <>
-                  <div className={styles.sucBarRow}>
-                    <span className={styles.sucBarLabel}>Mes</span>
-                    <div className={styles.sucProgressTrack}>
-                      <div className={styles.sucProgressFill} style={{ width: `${Math.min(avanceMesSuc, 100)}%`, background: barColor }} />
+                  <div className={styles.sucStats}>
+                    <div className={styles.sucStat}>
+                      <span className={styles.sucStatLabel}>Acumulado</span>
+                      <span className={styles.sucStatVal}>{res ? fmt(res.venta_acumulada) : '—'}</span>
+                    </div>
+                    <div className={styles.sucStat}>
+                      <span className={styles.sucStatLabel}>Meta mes</span>
+                      <span className={styles.sucStatVal}>{res ? fmt(res.meta_mensual ?? res.meta_venta) : '—'}</span>
+                    </div>
+                    <div className={styles.sucStat}>
+                      <span className={styles.sucStatLabel}>Hoy</span>
+                      <span className={styles.sucStatVal} style={{ color: !hv ? 'var(--red)' : 'var(--success)' }}>
+                        {!hv ? 'Sin registro' : fmt(hv.venta_total)}
+                      </span>
                     </div>
                   </div>
-                  <div className={styles.sucBarRow}>
-                    <span className={styles.sucBarLabel}>Sem</span>
-                    <div className={styles.sucProgressTrack}>
-                      <div className={styles.sucProgressFill} style={{
-                        width: `${Math.min(avanceSemSuc, 100)}%`,
-                        background: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
-                      }} />
+                  {tacoMap[s.id] && (
+                    <div className={styles.tacoIndicator}>
+                      <Utensils size={11} strokeWidth={2} color={tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--info)'} />
+                      <span className={styles.tacoLabel} style={{
+                        color: tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--text-muted)'
+                      }}>
+                        Taco: {tacoMap[s.id].stock} pollos
+                        {tacoMap[s.id].deficit && ' — Déficit'}
+                        {!tacoMap[s.id].deficit && tacoMap[s.id].expirando && ' — Caduca hoy'}
+                      </span>
                     </div>
-                    <span className={styles.sucBarPct} style={{
-                      color: avanceSemSuc >= 100 ? 'var(--success)' : avanceSemSuc >= 70 ? 'var(--yellow)' : 'var(--red)'
-                    }}>{avanceSemSuc.toFixed(0)}%</span>
+                  )}
+                  <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" className={styles.sucArrow} />
+                </div>
+              )
+            }
+
+            // Range mode card
+            const rango   = rangos[s.id]
+            const hasData = rango && rango.venta > 0
+            return (
+              <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}>
+                <div className={styles.sucRangoHeader}>
+                  <p className={styles.sucNombre}>{s.nombre}</p>
+                  <p className={styles.sucRangoVenta} style={{ color: hasData ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    {hasData ? fmt(rango.venta) : 'Sin datos'}
+                  </p>
+                </div>
+                {hasData && (
+                  <div className={styles.rangoStats}>
+                    <div className={styles.rangoStat}>
+                      <span className={styles.rangoStatLabel}>Pollos</span>
+                      <span className={styles.rangoStatVal}>{new Intl.NumberFormat('es-MX',{maximumFractionDigits:1}).format(rango.pollos)}</span>
+                    </div>
+                    <div className={styles.rangoStatDiv} />
+                    <div className={styles.rangoStat}>
+                      <span className={styles.rangoStatLabel}>Ticket</span>
+                      <span className={styles.rangoStatVal}>{fmtDec(rango.ticket)}</span>
+                    </div>
+                    <div className={styles.rangoStatDiv} />
+                    <div className={styles.rangoStat}>
+                      <span className={styles.rangoStatLabel}>Días</span>
+                      <span className={styles.rangoStatVal}>{rango.dias}</span>
+                    </div>
+                    <div className={styles.rangoStatDiv} />
+                    <div className={styles.rangoStat}>
+                      <span className={styles.rangoStatLabel}>Prom/día</span>
+                      <span className={styles.rangoStatVal}>{fmt(rango.promDia)}</span>
+                    </div>
                   </div>
-                </>
-              )}
-              <div className={styles.sucStats}>
-                <div className={styles.sucStat}>
-                  <span className={styles.sucStatLabel}>Acumulado</span>
-                  <span className={styles.sucStatVal}>{res ? fmt(res.venta_acumulada) : '—'}</span>
-                </div>
-                <div className={styles.sucStat}>
-                  <span className={styles.sucStatLabel}>Meta mes</span>
-                  <span className={styles.sucStatVal}>{res ? fmt(res.meta_mensual ?? res.meta_venta) : '—'}</span>
-                </div>
-                <div className={styles.sucStat}>
-                  <span className={styles.sucStatLabel}>Hoy</span>
-                  <span className={styles.sucStatVal} style={{ color: !hv ? 'var(--red)' : 'var(--success)' }}>
-                    {!hv ? 'Sin registro' : fmt(hv.venta_total)}
-                  </span>
-                </div>
+                )}
+                <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" className={styles.sucArrow} />
               </div>
-
-              {/* Indicador pollo para taco */}
-              {tacoMap[s.id] && (
-                <div className={styles.tacoIndicator}>
-                  <Utensils size={11} strokeWidth={2} color={tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--info)'} />
-                  <span className={styles.tacoLabel} style={{
-                    color: tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--text-muted)'
-                  }}>
-                    Taco: {tacoMap[s.id].stock} pollos
-                    {tacoMap[s.id].deficit && ' — Déficit'}
-                    {!tacoMap[s.id].deficit && tacoMap[s.id].expirando && ' — Caduca hoy'}
-                  </span>
-                </div>
-              )}
-
-              <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" className={styles.sucArrow} />
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -16,7 +16,7 @@ function diasParaCaducar(fechaCaducidad, hoyStr) {
 }
 
 export default function SupervisorPollosTaco() {
-  const { usuario } = useAuth()
+  const { usuario, rol } = useAuth()
   const hoyStr    = format(new Date(), 'yyyy-MM-dd')
   const mananaStr = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
@@ -39,12 +39,17 @@ export default function SupervisorPollosTaco() {
 
   async function load() {
     setLoading(true)
-    const { data: supSuc } = await supabase
-      .from('supervisor_sucursales')
-      .select('sucursal_id, sucursales(id, nombre)')
-      .eq('supervisor_id', usuario.id)
-
-    const sucs = supSuc?.map(s => s.sucursales) ?? []
+    let sucs = []
+    if (rol === 'suplente') {
+      const { data } = await supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
+      sucs = data ?? []
+    } else {
+      const { data: supSuc } = await supabase
+        .from('supervisor_sucursales')
+        .select('sucursal_id, sucursales(id, nombre)')
+        .eq('supervisor_id', usuario.id)
+      sucs = supSuc?.map(s => s.sucursales) ?? []
+    }
     setSucursales(sucs)
 
     if (!sucs.length) { setLoading(false); return }

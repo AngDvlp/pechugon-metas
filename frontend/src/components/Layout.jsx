@@ -15,6 +15,12 @@ const NAV_ITEMS = {
     { to: '/supervisor/registro', label: 'Registrar', icon: CalendarPlus },
     { to: '/supervisor/descarga', label: 'Exportar', icon: Download },
   ],
+  suplente: [
+    { to: '/suplente', label: 'Tiendas', icon: Store, end: true },
+    { to: '/suplente/pollos-taco', label: 'Taco', icon: Utensils },
+    { to: '/suplente/registro', label: 'Registrar', icon: CalendarPlus },
+    { to: '/suplente/descarga', label: 'Exportar', icon: Download },
+  ],
   gerente: [
     { to: '/gerente', label: 'Resumen', icon: LayoutDashboard, end: true },
     { to: '/gerente/metas', label: 'Metas', icon: Target },
@@ -28,6 +34,7 @@ const NAV_ITEMS = {
 const ROL_LABELS = {
   encargado: 'Encargado',
   supervisor: 'Supervisor',
+  suplente: 'Supervisor Suplente',
   gerente: 'Gerente General',
 }
 

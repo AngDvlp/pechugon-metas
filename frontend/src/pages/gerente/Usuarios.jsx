@@ -108,8 +108,8 @@ export default function GerenteUsuarios() {
     }
   }
 
-  const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', encargado: 'var(--success)' }
-  const ROL_DIM   = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', encargado: 'var(--success-dim)' }
+  const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', suplente: 'var(--yellow)', encargado: 'var(--success)' }
+  const ROL_DIM   = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', suplente: 'var(--warning-dim)', encargado: 'var(--success-dim)' }
 
   return (
     <div className={styles.page}>
@@ -206,6 +206,12 @@ export default function GerenteUsuarios() {
                 {rolNombre === 'encargado' && u.sucursales && (
                   <p className={styles.sucAsignada}>
                     <Store size={12} strokeWidth={2} /> {u.sucursales.nombre}
+                  </p>
+                )}
+
+                {rolNombre === 'suplente' && (
+                  <p className={styles.sucAsignada} style={{ color: 'var(--yellow)' }}>
+                    <Store size={12} strokeWidth={2} /> Acceso a todas las sucursales
                   </p>
                 )}
 

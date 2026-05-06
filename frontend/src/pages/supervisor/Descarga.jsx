@@ -31,7 +31,7 @@ export default function Descarga({ allSucursales = false }) {
 
   async function loadSucursales() {
     setLoading(true)
-    if (rol === 'gerente' || allSucursales) {
+    if (rol === 'gerente' || rol === 'suplente' || allSucursales) {
       const { data } = await supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
       setSucursales(data ?? [])
       setSeleccionadas((data ?? []).map(s => s.id))

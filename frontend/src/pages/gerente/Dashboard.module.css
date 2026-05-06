@@ -492,3 +492,98 @@
   color: var(--text-muted);
   flex-shrink: 0;
 }
+
+/* ── Time filter ──────────────────────────────────────────── */
+.timeFilter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.timeFilter::-webkit-scrollbar { display: none; }
+.timePill {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.timePill:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.timePillActive { background: rgba(245,196,0,0.1); border-color: var(--yellow); color: var(--yellow); }
+
+.customRango {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.rangoDateInput {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+.rangoDateInput::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.35; cursor: pointer; }
+.rangoSep { color: var(--text-muted); font-size: 1rem; flex-shrink: 0; }
+
+/* Range summary card */
+.rangoGlobalCard {
+  background: linear-gradient(145deg, rgba(0,90,60,0.35) 0%, rgba(6,10,20,0.96) 100%);
+  border: 1px solid rgba(0,211,149,0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 48px rgba(0,0,0,0.55);
+}
+.rangoGlobalCard::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:200px; height:200px;
+  background: radial-gradient(ellipse, rgba(0,211,149,0.07) 0%, transparent 68%);
+  pointer-events:none;
+}
+.rangoGlobalLabel {
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: rgba(0,211,149,0.7);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+.rangoGlobalVenta {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+.rangoKpiRow { display:flex; align-items:stretch; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-md); overflow:hidden; }
+.rangoKpi { flex:1; display:flex; flex-direction:column; gap:4px; padding:11px 8px; text-align:center; }
+.rangoKpiLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.6px; }
+.rangoKpiVal { font-family:var(--font-mono); font-size:0.9rem; font-weight:500; color:var(--text-primary); }
+.rangoKpiDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+
+/* Range row in sucursal list */
+.sucRangoRow { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.sucRangoVenta { font-family:var(--font-mono); font-size:1rem; font-weight:600; flex-shrink:0; color:var(--text-primary); }
+.rangoMiniStats { display:flex; gap:12px; }
+.rangoMiniStat { display:flex; flex-direction:column; gap:2px; }
+.rangoMiniLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; }
+.rangoMiniVal { font-family:var(--font-mono); font-size:0.8rem; font-weight:500; color:var(--text-secondary); }

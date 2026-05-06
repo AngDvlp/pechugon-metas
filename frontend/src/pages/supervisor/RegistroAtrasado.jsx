@@ -12,7 +12,7 @@ const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, m
 const ayerStr = format(subDays(new Date(), 1), 'yyyy-MM-dd')
 
 export default function RegistroAtrasado() {
-  const { usuario } = useAuth()
+  const { usuario, rol } = useAuth()
   const [sucursales, setSucursales] = useState([])
   const [loadingSucs, setLoadingSucs] = useState(true)
 
@@ -44,12 +44,18 @@ export default function RegistroAtrasado() {
     if (!usuario) return
     setLoadingSucs(true)
     try {
-      const { data: ss } = await supabase
-        .from('supervisor_sucursales')
-        .select('sucursal_id, sucursales(id, nombre)')
-        .eq('supervisor_id', usuario.id)
-      const sucs = ss?.map(r => r.sucursales).filter(Boolean) ?? []
-      sucs.sort((a, b) => a.nombre.localeCompare(b.nombre))
+      let sucs = []
+      if (rol === 'suplente') {
+        const { data } = await supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
+        sucs = data ?? []
+      } else {
+        const { data: ss } = await supabase
+          .from('supervisor_sucursales')
+          .select('sucursal_id, sucursales(id, nombre)')
+          .eq('supervisor_id', usuario.id)
+        sucs = (ss?.map(r => r.sucursales).filter(Boolean) ?? [])
+          .sort((a, b) => a.nombre.localeCompare(b.nombre))
+      }
       setSucursales(sucs)
       if (sucs.length === 1) setSucursalId(sucs[0].id)
     } finally {

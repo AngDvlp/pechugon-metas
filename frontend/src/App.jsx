@@ -14,6 +14,7 @@ import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
 import GerenteDescarga from './pages/gerente/Descarga'
 import GerentePollosTaco from './pages/gerente/PollosTaco'
 import SupervisorPollosTaco from './pages/supervisor/PollosTaco'
+import SuplenteDashboard from './pages/suplente/Dashboard'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
@@ -30,6 +31,7 @@ function RootRedirect() {
   if (loading) return <Splash />
   if (rol === 'encargado') return <Navigate to="/encargado" replace />
   if (rol === 'supervisor') return <Navigate to="/supervisor" replace />
+  if (rol === 'suplente') return <Navigate to="/suplente" replace />
   if (rol === 'gerente') return <Navigate to="/gerente" replace />
   return <Navigate to="/login" replace />
 }
@@ -57,6 +59,19 @@ export default function App() {
       }>
         <Route index element={<SupervisorDashboard />} />
         <Route path="sucursal/:id" element={<SupervisorSucursal />} />
+        <Route path="registro" element={<SupervisorRegistro />} />
+        <Route path="descarga" element={<SupervisorDescarga />} />
+        <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
+      </Route>
+
+      {/* SUPLENTE */}
+      <Route path="/suplente" element={
+        <RequireAuth rolesPermitidos={['suplente']}>
+          <Layout rol="suplente" />
+        </RequireAuth>
+      }>
+        <Route index element={<SuplenteDashboard />} />
+        <Route path="sucursal/:id" element={<SupervisorSucursal backPath="/suplente" />} />
         <Route path="registro" element={<SupervisorRegistro />} />
         <Route path="descarga" element={<SupervisorDescarga />} />
         <Route path="pollos-taco" element={<SupervisorPollosTaco />} />

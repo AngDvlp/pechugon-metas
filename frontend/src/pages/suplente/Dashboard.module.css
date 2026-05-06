@@ -1,0 +1,358 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeUp 0.22s ease both;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+/* ── Ruta filter ──────────────────────────────────────────── */
+.filtroSection { display: flex; flex-direction: column; gap: 6px; }
+
+.filtroSectionLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+}
+
+.filtroRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filtroRow::-webkit-scrollbar { display: none; }
+
+.rutaBtn {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.rutaBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.rutaBtnActive { background: rgba(79,142,247,0.1); border-color: var(--info); color: var(--info); }
+
+/* ── Time filter ──────────────────────────────────────────── */
+.timeFilter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.timeFilter::-webkit-scrollbar { display: none; }
+
+.timePill {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+}
+.timePill:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.timePillActive { background: rgba(245,196,0,0.1); border-color: var(--yellow); color: var(--yellow); }
+
+/* Custom range inputs */
+.customRango {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.rangoDateInput {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+.rangoDateInput::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.35; cursor: pointer; }
+.rangoSep { color: var(--text-muted); font-size: 1rem; flex-shrink: 0; }
+
+/* ── Hero card (periodo mode) ─────────────────────────────── */
+.heroCard {
+  background:
+    linear-gradient(145deg, rgba(27,58,140,0.45) 0%, rgba(6,10,20,0.96) 100%);
+  border: 1px solid rgba(27,58,140,0.35);
+  border-radius: var(--radius-lg);
+  padding: 22px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.heroCard::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -20px;
+  width: 180px; height: 180px;
+  background: radial-gradient(ellipse, rgba(245,196,0,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.heroLabel {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.heroMeta {
+  font-family: var(--font-mono);
+  font-size: 1.65rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.heroPct { display: flex; align-items: baseline; gap: 1px; }
+.pctNum {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--yellow);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(245,196,0,0.4);
+}
+.pctSym { font-family: var(--font-body); font-size: 1rem; font-weight: 700; color: var(--yellow); opacity: 0.65; }
+
+.barRow { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.barLabel {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: rgba(240,244,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  min-width: 48px;
+}
+.progressTrack { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; }
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
+  border-radius: 99px;
+  transition: width 0.9s cubic-bezier(0.34,1.4,0.64,1);
+  box-shadow: 0 0 10px rgba(245,196,0,0.5);
+  animation: bar-fill 0.9s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+.barPct { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; min-width: 34px; text-align: right; }
+
+.heroBottom {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 14px;
+}
+.heroStat { flex:1; display:flex; flex-direction:column; gap:4px; padding:12px 10px; text-align:center; }
+.heroStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.heroStatVal { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 500; color: var(--text-primary); }
+.heroDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+
+/* ── Range hero card ──────────────────────────────────────── */
+.rangoHeroCard {
+  background:
+    linear-gradient(145deg, rgba(0,90,60,0.35) 0%, rgba(6,10,20,0.96) 100%);
+  border: 1px solid rgba(0,211,149,0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px 20px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.rangoHeroCard::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -20px;
+  width: 160px; height: 160px;
+  background: radial-gradient(ellipse, rgba(0,211,149,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.rangoHeroLabel {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(0,211,149,0.7);
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin-bottom: 6px;
+}
+.rangoHeroVenta {
+  font-family: var(--font-mono);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+.rangoHeroStats {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.rangoHeroStat { flex:1; display:flex; flex-direction:column; gap:4px; padding:11px 10px; text-align:center; }
+.rangoHeroStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.rangoHeroStatVal { font-family: var(--font-mono); font-size: 0.88rem; font-weight: 500; color: var(--text-primary); }
+.rangoHeroDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+
+/* ── Section title ────────────────────────────────────────── */
+.secTitle {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ── Branch cards ─────────────────────────────────────────── */
+.cards { display: flex; flex-direction: column; gap: 10px; }
+
+.sucCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 16px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.sucCard:hover { background: var(--bg-card-2); border-color: var(--border-active); box-shadow: 0 8px 32px rgba(0,0,0,0.4); transform: translateY(-1px); }
+.sucCard:active { transform: scale(0.99) translateY(0); }
+
+.sucHeader { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.sucNombre {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
+}
+.sucStatus {
+  font-family: var(--font-body);
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.sucPct { display: flex; align-items: baseline; gap: 1px; flex-shrink: 0; }
+.sucPctNum { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: var(--text-primary); line-height: 1; letter-spacing: -0.02em; }
+.sucPctSym { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+.noMeta { font-family: var(--font-mono); font-size: 1.5rem; color: var(--text-muted); }
+
+.sucBarRow { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+.sucBarLabel { font-family:var(--font-body); font-size:0.56rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; min-width:24px; letter-spacing:0.4px; }
+.sucProgressTrack { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; }
+.sucProgressFill { height:100%; border-radius:99px; transition:width 0.7s ease; animation:bar-fill 0.7s ease both; }
+.sucBarPct { font-family:var(--font-mono); font-size:0.66rem; min-width:30px; text-align:right; font-weight:500; }
+
+.sucStats { display:flex; gap:0; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.sucStat { flex:1; display:flex; flex-direction:column; gap:3px; }
+.sucStat:not(:first-child) { padding-left:14px; border-left:1px solid var(--border); margin-left:14px; }
+.sucStatLabel { font-family:var(--font-body); font-size:0.62rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; }
+.sucStatVal { font-family:var(--font-mono); font-size:0.85rem; font-weight:500; color:var(--text-primary); }
+
+.sucArrow { position:absolute; right:16px; bottom:14px; }
+
+.tacoIndicator { display:flex; align-items:center; gap:5px; padding:7px 12px; background:rgba(255,255,255,0.02); border-top:1px solid var(--border); margin:0 -1px; }
+.tacoLabel { font-family:var(--font-body); font-size:0.72rem; font-weight:600; }
+
+/* ── Range mode branch cards ──────────────────────────────── */
+.sucRangoHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.sucRangoVenta {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rangoStats {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.rangoStat { flex:1; display:flex; flex-direction:column; gap:3px; padding:8px 8px; text-align:center; }
+.rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.5px; }
+.rangoStatVal { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; color:var(--text-primary); }
+.rangoStatDiv { width:1px; background:rgba(255,255,255,0.05); flex-shrink:0; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bar-fill {
+  from { width: 0 !important; }
+}
