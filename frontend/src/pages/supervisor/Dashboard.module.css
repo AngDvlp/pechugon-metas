@@ -532,3 +532,13 @@
 .rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.5px; }
 .rangoStatVal { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; color:var(--text-primary); }
 .rangoStatDiv { width:1px; background:rgba(255,255,255,0.05); flex-shrink:0; }
+
+/* ── Meta comparison in range mode ───────────────────────── */
+.rangoHeroTopRow { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.rangoHeroPct { font-family:var(--font-mono); font-size:1.05rem; font-weight:600; flex-shrink:0; }
+.rangoBar { height:4px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden; margin:6px 0 14px; }
+.rangoBarFill { height:100%; border-radius:99px; transition:width 0.7s ease; animation:bar-fill 0.7s ease both; }
+.rangoMetaRow { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.rangoMetaLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
+.rangoMetaVal { font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); }
+.rangoMetaDif { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; margin-left:auto; flex-shrink:0; }

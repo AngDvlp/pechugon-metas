@@ -149,7 +149,23 @@ export default function SuplenteDashboard() {
   const rangoVentaTotal  = sucursalesFiltradas.reduce((a, s) => a + (rangos[s.id]?.venta  ?? 0), 0)
   const rangoPollosTotal = sucursalesFiltradas.reduce((a, s) => a + (rangos[s.id]?.pollos ?? 0), 0)
   const rangoTicket      = rangoPollosTotal > 0 ? rangoVentaTotal / rangoPollosTotal : 0
-  const rangoConVenta    = sucursalesFiltradas.filter(s => (rangos[s.id]?.venta ?? 0) > 0).length
+  const fmtDif = v => (v >= 0 ? '+' : '−') + fmt(Math.abs(v))
+  function calcMetaEsperada(res) {
+    if (!res) return null
+    const m = res.meta_mensual ?? 0
+    const d = res.dias_totales || 30
+    if (filtroTiempo === 'hoy')    return d > 0 ? m / d : 0
+    if (filtroTiempo === 'semana') return res.meta_venta ?? 0
+    if (filtroTiempo === 'mes')    return m
+    if (filtroTiempo === 'custom' && customDesde && customHasta) {
+      const dias = Math.round((new Date(customHasta + 'T00:00:00') - new Date(customDesde + 'T00:00:00')) / 86400000) + 1
+      return d > 0 ? m * (dias / d) : 0
+    }
+    return null
+  }
+  const totalMetaEsperada = sucursalesFiltradas.reduce((a, s) => a + (calcMetaEsperada(resumenes[s.id]) ?? 0), 0)
+  const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
+  const avancePctRango    = totalMetaEsperada > 0 ? (rangoVentaTotal / totalMetaEsperada) * 100 : null
 
   const RANGO_LABELS = { hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes', custom: 'Personalizado' }
   const rangoLabel   = RANGO_LABELS[filtroTiempo] ?? ''
@@ -257,21 +273,38 @@ export default function SuplenteDashboard() {
       ) : (
         <div className={styles.rangoHeroCard}>
           <p className={styles.rangoHeroLabel}>{rangoLabel}{rutaLabel ? ` — ${rutaLabel}` : ''}</p>
-          <p className={styles.rangoHeroVenta}>{fmt(rangoVentaTotal)}</p>
+          <div className={styles.rangoHeroTopRow}>
+            <p className={styles.rangoHeroVenta} style={{ marginBottom: 0 }}>{fmt(rangoVentaTotal)}</p>
+            {avancePctRango !== null && (
+              <span className={styles.rangoHeroPct} style={{ color: avancePctRango >= 100 ? 'var(--success)' : avancePctRango >= 70 ? 'var(--yellow)' : 'var(--red)' }}>
+                {avancePctRango.toFixed(0)}%
+              </span>
+            )}
+          </div>
+          {avancePctRango !== null && (
+            <div className={styles.rangoBar}>
+              <div className={styles.rangoBarFill} style={{
+                width: `${Math.min(avancePctRango, 100)}%`,
+                background: avancePctRango >= 100 ? 'var(--success)' : avancePctRango >= 70 ? 'var(--yellow)' : 'var(--red)'
+              }} />
+            </div>
+          )}
           <div className={styles.rangoHeroStats}>
+            <div className={styles.rangoHeroStat}>
+              <span className={styles.rangoHeroStatLabel}>Meta esp.</span>
+              <span className={styles.rangoHeroStatVal}>{totalMetaEsperada > 0 ? fmt(totalMetaEsperada) : '—'}</span>
+            </div>
+            <div className={styles.rangoHeroDivider} />
+            <div className={styles.rangoHeroStat}>
+              <span className={styles.rangoHeroStatLabel}>Diferencia</span>
+              <span className={styles.rangoHeroStatVal} style={{ color: totalDiferencia >= 0 ? 'var(--success)' : 'var(--red)' }}>
+                {totalMetaEsperada > 0 ? fmtDif(totalDiferencia) : '—'}
+              </span>
+            </div>
+            <div className={styles.rangoHeroDivider} />
             <div className={styles.rangoHeroStat}>
               <span className={styles.rangoHeroStatLabel}>Pollos</span>
               <span className={styles.rangoHeroStatVal}>{fmtNum(rangoPollosTotal)}</span>
-            </div>
-            <div className={styles.rangoHeroDivider} />
-            <div className={styles.rangoHeroStat}>
-              <span className={styles.rangoHeroStatLabel}>Ticket prom.</span>
-              <span className={styles.rangoHeroStatVal}>{fmtDec(rangoTicket)}</span>
-            </div>
-            <div className={styles.rangoHeroDivider} />
-            <div className={styles.rangoHeroStat}>
-              <span className={styles.rangoHeroStatLabel}>Con registro</span>
-              <span className={styles.rangoHeroStatVal}>{rangoConVenta} / {sucursalesFiltradas.length}</span>
             </div>
           </div>
         </div>
@@ -377,36 +410,65 @@ export default function SuplenteDashboard() {
             // Range mode card
             const rango   = rangos[s.id]
             const hasData = rango && rango.venta > 0
+            const metaEsp = calcMetaEsperada(resumenes[s.id])
+            const dif     = (metaEsp !== null && hasData) ? rango.venta - metaEsp : null
+            const pct     = (metaEsp !== null && metaEsp > 0 && hasData) ? (rango.venta / metaEsp) * 100 : null
             return (
               <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/suplente/sucursal/${s.id}`)}>
                 <div className={styles.sucRangoHeader}>
                   <p className={styles.sucNombre}>{s.nombre}</p>
-                  <p className={styles.sucRangoVenta} style={{ color: hasData ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                    {hasData ? fmt(rango.venta) : 'Sin datos'}
-                  </p>
-                </div>
-                {hasData && (
-                  <div className={styles.rangoStats}>
-                    <div className={styles.rangoStat}>
-                      <span className={styles.rangoStatLabel}>Pollos</span>
-                      <span className={styles.rangoStatVal}>{fmtNum(rango.pollos)}</span>
-                    </div>
-                    <div className={styles.rangoStatDiv} />
-                    <div className={styles.rangoStat}>
-                      <span className={styles.rangoStatLabel}>Ticket</span>
-                      <span className={styles.rangoStatVal}>{fmtDec(rango.ticket)}</span>
-                    </div>
-                    <div className={styles.rangoStatDiv} />
-                    <div className={styles.rangoStat}>
-                      <span className={styles.rangoStatLabel}>Días</span>
-                      <span className={styles.rangoStatVal}>{rango.dias}</span>
-                    </div>
-                    <div className={styles.rangoStatDiv} />
-                    <div className={styles.rangoStat}>
-                      <span className={styles.rangoStatLabel}>Prom/día</span>
-                      <span className={styles.rangoStatVal}>{fmt(rango.promDia)}</span>
-                    </div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                    <p className={styles.sucRangoVenta} style={{ color: hasData ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                      {hasData ? fmt(rango.venta) : 'Sin datos'}
+                    </p>
+                    {pct !== null && (
+                      <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.75rem', fontWeight:600, color: pct >= 100 ? 'var(--success)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)' }}>
+                        {pct.toFixed(0)}%
+                      </span>
+                    )}
                   </div>
+                </div>
+                {pct !== null && (
+                  <div className={styles.rangoBar}>
+                    <div className={styles.rangoBarFill} style={{
+                      width: `${Math.min(pct, 100)}%`,
+                      background: pct >= 100 ? 'var(--success)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)'
+                    }} />
+                  </div>
+                )}
+                {hasData && (
+                  <>
+                    {metaEsp !== null && (
+                      <div className={styles.rangoMetaRow}>
+                        <span className={styles.rangoMetaLabel}>Meta esp.</span>
+                        <span className={styles.rangoMetaVal}>{fmt(metaEsp)}</span>
+                        <span className={styles.rangoMetaDif} style={{ color: dif >= 0 ? 'var(--success)' : 'var(--red)' }}>
+                          {fmtDif(dif)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={styles.rangoStats}>
+                      <div className={styles.rangoStat}>
+                        <span className={styles.rangoStatLabel}>Pollos</span>
+                        <span className={styles.rangoStatVal}>{fmtNum(rango.pollos)}</span>
+                      </div>
+                      <div className={styles.rangoStatDiv} />
+                      <div className={styles.rangoStat}>
+                        <span className={styles.rangoStatLabel}>Ticket</span>
+                        <span className={styles.rangoStatVal}>{fmtDec(rango.ticket)}</span>
+                      </div>
+                      <div className={styles.rangoStatDiv} />
+                      <div className={styles.rangoStat}>
+                        <span className={styles.rangoStatLabel}>Días</span>
+                        <span className={styles.rangoStatVal}>{rango.dias}</span>
+                      </div>
+                      <div className={styles.rangoStatDiv} />
+                      <div className={styles.rangoStat}>
+                        <span className={styles.rangoStatLabel}>Prom/día</span>
+                        <span className={styles.rangoStatVal}>{fmt(rango.promDia)}</span>
+                      </div>
+                    </div>
+                  </>
                 )}
                 <ChevronRight size={16} strokeWidth={2} color="var(--text-muted)" className={styles.sucArrow} />
               </div>
