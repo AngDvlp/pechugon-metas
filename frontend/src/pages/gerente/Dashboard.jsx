@@ -123,14 +123,15 @@ export default function GerenteDashboard() {
     if (!res) return null
     const m = res.meta_mensual ?? 0
     const d = res.dias_totales || 30
-    if (filtroTiempo === 'hoy')    return d > 0 ? m / d : 0
-    if (filtroTiempo === 'semana') return res.meta_venta ?? 0
-    if (filtroTiempo === 'mes')    return m
-    if (filtroTiempo === 'custom' && customDesde && customHasta) {
+    let v
+    if (filtroTiempo === 'hoy')    v = d > 0 ? m / d : 0
+    else if (filtroTiempo === 'semana') v = res.meta_venta ?? 0
+    else if (filtroTiempo === 'mes')    v = m
+    else if (filtroTiempo === 'custom' && customDesde && customHasta) {
       const dias = Math.round((new Date(customHasta + 'T00:00:00') - new Date(customDesde + 'T00:00:00')) / 86400000) + 1
-      return d > 0 ? m * (dias / d) : 0
-    }
-    return null
+      v = d > 0 ? m * (dias / d) : 0
+    } else return null
+    return v > 0 ? v : null
   }
   const totalMetaEsperada = sucursalesFiltradas.reduce((a, s) => a + (calcMetaEsperada(resumenes[s.id]) ?? 0), 0)
   const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
