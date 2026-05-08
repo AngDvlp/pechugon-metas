@@ -105,7 +105,7 @@ export default function RegistroAtrasado() {
       sucursal_id: sucursalId,
       fecha,
       venta_total:     parseFloat(venta),
-      pollos_vendidos: Math.round(parseFloat(pollos)),
+      pollos_vendidos: parseFloat(pollos),
     }
     const { error } = ventaExistente
       ? await supabase.from('ventas_diarias')

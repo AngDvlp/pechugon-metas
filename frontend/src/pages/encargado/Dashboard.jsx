@@ -76,7 +76,7 @@ export default function EncargadoDashboard() {
       encargado_id:   usuario.id,
       fecha:          hoyStr,
       venta_total:     parseFloat(form.venta_total),
-      pollos_vendidos: Math.round(parseFloat(form.pollos_vendidos)),
+      pollos_vendidos: parseFloat(form.pollos_vendidos),
     }
     const { error } = ventaHoy
       ? await supabase.from('ventas_diarias')

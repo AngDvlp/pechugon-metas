@@ -101,7 +101,7 @@ export default function SucursalDetalle({ backPath }) {
       sucursal_id: id,
       fecha: editFecha,
       venta_total:     parseFloat(editForm.venta_total),
-      pollos_vendidos: Math.round(parseFloat(editForm.pollos_vendidos)),
+      pollos_vendidos: parseFloat(editForm.pollos_vendidos),
     }
     const { error } = ventaExistente
       ? await supabase.from('ventas_diarias')
