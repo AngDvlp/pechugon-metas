@@ -49,12 +49,15 @@ export default function RegistroAtrasado() {
         const { data } = await supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
         sucs = data ?? []
       } else {
-        const { data: ss } = await supabase
-          .from('supervisor_sucursales')
-          .select('sucursal_id, sucursales(id, nombre)')
-          .eq('supervisor_id', usuario.id)
-        sucs = (ss?.map(r => r.sucursales).filter(Boolean) ?? [])
-          .sort((a, b) => a.nombre.localeCompare(b.nombre))
+        const rutaId = usuario?.ruta_id
+        if (rutaId) {
+          const { data: rs } = await supabase
+            .from('ruta_sucursales')
+            .select('sucursal_id, sucursales(id, nombre)')
+            .eq('ruta_id', rutaId)
+          sucs = (rs?.map(r => r.sucursales).filter(Boolean) ?? [])
+            .sort((a, b) => a.nombre.localeCompare(b.nombre))
+        }
       }
       setSucursales(sucs)
       if (sucs.length === 1) setSucursalId(sucs[0].id)

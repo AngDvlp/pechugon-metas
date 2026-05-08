@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  LayoutDashboard, Target, Store, Users, Download, LogOut, Home, CalendarPlus, Utensils
+  LayoutDashboard, Target, Store, Users, Download, LogOut, Home, CalendarPlus, Utensils, Route
 } from 'lucide-react'
 import styles from './Layout.module.css'
 
@@ -25,6 +25,7 @@ const NAV_ITEMS = {
     { to: '/gerente', label: 'Resumen', icon: LayoutDashboard, end: true },
     { to: '/gerente/metas', label: 'Metas', icon: Target },
     { to: '/gerente/pollos-taco', label: 'Taco', icon: Utensils },
+    { to: '/gerente/rutas', label: 'Rutas', icon: Route },
     { to: '/gerente/sucursales', label: 'Sucursal', icon: Store },
     { to: '/gerente/usuarios', label: 'Usuarios', icon: Users },
     { to: '/gerente/descarga', label: 'Exportar', icon: Download },

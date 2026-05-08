@@ -1,38 +1,33 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { UserPlus, X, CheckCircle, AlertCircle, Store, Mail, Lock, User } from 'lucide-react'
+import { UserPlus, X, CheckCircle, AlertCircle, Store, Mail, Lock, User, Route } from 'lucide-react'
 import styles from './Usuarios.module.css'
 
 export default function GerenteUsuarios() {
   const [usuarios,     setUsuarios]     = useState([])
   const [sucursales,   setSucursales]   = useState([])
   const [roles,        setRoles]        = useState([])
+  const [rutas,        setRutas]        = useState([])
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [msg,          setMsg]          = useState(null)
-  const [form,         setForm]         = useState({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '' })
-  const [supSucursales, setSupSucursales] = useState({})  // supervisorId → [{supervisor_id, sucursal_id, sucursales:{nombre}}]
+  const [form,         setForm]         = useState({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '', ruta_id: '' })
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const [{ data: usrs }, { data: sucs }, { data: rols }, { data: ss }] = await Promise.all([
-      supabase.from('usuarios').select('*, roles(nombre), sucursales(nombre)').order('nombre'),
+    const [{ data: usrs }, { data: sucs }, { data: rols }, { data: rs }] = await Promise.all([
+      supabase.from('usuarios').select('*, roles(nombre), sucursales(nombre), rutas(id, nombre)').order('nombre'),
       supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
       supabase.from('roles').select('*'),
-      supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id, sucursales(nombre)'),
+      supabase.from('rutas').select('id, nombre').eq('activa', true).order('nombre'),
     ])
     setUsuarios(usrs ?? [])
     setSucursales(sucs ?? [])
     setRoles(rols ?? [])
-    const map = {}
-    ss?.forEach(r => {
-      if (!map[r.supervisor_id]) map[r.supervisor_id] = []
-      map[r.supervisor_id].push(r)
-    })
-    setSupSucursales(map)
+    setRutas(rs ?? [])
     setLoading(false)
   }
 
@@ -42,6 +37,10 @@ export default function GerenteUsuarios() {
     e.preventDefault()
     setSaving(true)
     setMsg(null)
+
+    // Guardar sesión del gerente antes de signUp (signUp auto-inicia sesión como el nuevo usuario)
+    const { data: { session: gerenteSession } } = await supabase.auth.getSession()
+
     const { data: authData, error: authErr } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
@@ -49,63 +48,35 @@ export default function GerenteUsuarios() {
     if (authErr) { setMsg({ tipo: 'error', texto: 'Error: ' + authErr.message }); setSaving(false); return }
     const uid = authData.user?.id
     if (!uid) { setMsg({ tipo: 'error', texto: 'No se pudo obtener el ID del usuario' }); setSaving(false); return }
+
+    // Restaurar sesión del gerente para que el INSERT pase las políticas RLS
+    if (gerenteSession) {
+      await supabase.auth.setSession({
+        access_token:  gerenteSession.access_token,
+        refresh_token: gerenteSession.refresh_token,
+      })
+    }
+
     const { error: dbErr } = await supabase.from('usuarios').insert({
       id:          uid,
       nombre:      form.nombre.trim(),
       email:       form.email.trim(),
       rol_id:      parseInt(form.rol_id),
       sucursal_id: rolSeleccionado?.nombre === 'encargado' ? (form.sucursal_id || null) : null,
+      ruta_id:     rolSeleccionado?.nombre === 'supervisor' ? (form.ruta_id || null)    : null,
     })
     if (dbErr) { setMsg({ tipo: 'error', texto: 'Error en DB: ' + dbErr.message }); setSaving(false); return }
+
     setMsg({ tipo: 'ok', texto: `Usuario "${form.nombre.trim()}" creado` })
     setShowForm(false)
-    setForm({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '' })
+    setForm({ nombre: '', email: '', password: '', rol_id: '', sucursal_id: '', ruta_id: '' })
     await load()
     setSaving(false)
   }
 
-  // ── Asignar sucursal a supervisor — actualización optimista ──
-  async function handleAsignarSucursal(supervisorId, sucursalId) {
-    if (!sucursalId) return
-    const ya = supSucursales[supervisorId]?.find(s => s.sucursal_id === sucursalId)
-    if (ya) return
-
-    const sucursal = sucursales.find(s => s.id === sucursalId)
-    const newEntry = { supervisor_id: supervisorId, sucursal_id: sucursalId, sucursales: { nombre: sucursal?.nombre ?? '' } }
-
-    // Actualizar estado inmediatamente (sin scroll reset)
-    setSupSucursales(prev => ({
-      ...prev,
-      [supervisorId]: [...(prev[supervisorId] ?? []), newEntry],
-    }))
-
-    const { error } = await supabase.from('supervisor_sucursales')
-      .insert({ supervisor_id: supervisorId, sucursal_id: sucursalId })
-
-    if (error) {
-      // Revertir si falló
-      setSupSucursales(prev => ({
-        ...prev,
-        [supervisorId]: (prev[supervisorId] ?? []).filter(s => s.sucursal_id !== sucursalId),
-      }))
-    }
-  }
-
-  // ── Quitar sucursal de supervisor — actualización optimista ──
-  async function handleQuitarSucursal(supervisorId, sucursalId) {
-    // Quitar del estado inmediatamente
-    setSupSucursales(prev => ({
-      ...prev,
-      [supervisorId]: (prev[supervisorId] ?? []).filter(s => s.sucursal_id !== sucursalId),
-    }))
-
-    const { error } = await supabase.from('supervisor_sucursales').delete()
-      .eq('supervisor_id', supervisorId).eq('sucursal_id', sucursalId)
-
-    if (error) {
-      // Revertir si falló (recargar para estar seguros)
-      await load()
-    }
+  async function handleCambiarRuta(userId, rutaId) {
+    await supabase.from('usuarios').update({ ruta_id: rutaId || null }).eq('id', userId)
+    await load()
   }
 
   const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', suplente: 'var(--yellow)', encargado: 'var(--success)' }
@@ -173,6 +144,16 @@ export default function GerenteUsuarios() {
                 </select>
               </div>
             )}
+            {rolSeleccionado?.nombre === 'supervisor' && (
+              <div className={styles.field}>
+                <label className={styles.label}>Ruta</label>
+                <select className={styles.select} value={form.ruta_id}
+                  onChange={e => setForm(f => ({ ...f, ruta_id: e.target.value }))}>
+                  <option value="">Sin asignar</option>
+                  {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                </select>
+              </div>
+            )}
           </div>
           <button className={styles.saveBtn} type="submit" disabled={saving}>
             {saving ? 'Creando…' : 'Crear Usuario'}
@@ -183,13 +164,7 @@ export default function GerenteUsuarios() {
       {loading ? <div className={styles.empty}>Cargando…</div> : (
         <div className={styles.list}>
           {usuarios.map(u => {
-            const rolNombre  = u.roles?.nombre ?? '—'
-            const esSupervisor = rolNombre === 'supervisor'
-            const misSupSucs   = supSucursales[u.id] ?? []
-            // Sucursales que este supervisor aún no tiene asignadas
-            const sucursalesDisponibles = sucursales.filter(
-              s => !misSupSucs.find(ss => ss.sucursal_id === s.id)
-            )
+            const rolNombre = u.roles?.nombre ?? '—'
             return (
               <div key={u.id} className={styles.userCard}>
                 <div className={styles.userTop}>
@@ -215,40 +190,22 @@ export default function GerenteUsuarios() {
                   </p>
                 )}
 
-                {esSupervisor && (
+                {rolNombre === 'supervisor' && (
                   <div className={styles.supSection}>
-                    <p className={styles.supLabel}>
-                      Sucursales asignadas ({misSupSucs.length})
-                    </p>
-                    <div className={styles.supTags}>
-                      {misSupSucs.map(ss => (
-                        <span key={ss.sucursal_id} className={styles.supTag}>
-                          {ss.sucursales?.nombre}
-                          <button
-                            className={styles.quitarBtn}
-                            onClick={() => handleQuitarSucursal(u.id, ss.sucursal_id)}>
-                            <X size={12} strokeWidth={2.5} />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    {sucursalesDisponibles.length > 0 && (
-                      <select
-                        className={styles.selectSmall}
-                        value=""
-                        onChange={e => {
-                          if (e.target.value) handleAsignarSucursal(u.id, e.target.value)
-                          e.target.value = ''
-                        }}>
-                        <option value="">+ Asignar sucursal…</option>
-                        {sucursalesDisponibles.map(s => (
-                          <option key={s.id} value={s.id}>{s.nombre}</option>
-                        ))}
-                      </select>
+                    <p className={styles.supLabel}>Ruta asignada</p>
+                    {u.rutas?.nombre && (
+                      <div className={styles.rutaTag}>
+                        <Route size={11} strokeWidth={2} />
+                        {u.rutas.nombre}
+                      </div>
                     )}
-                    {sucursalesDisponibles.length === 0 && (
-                      <p className={styles.todasAsignadas}>Todas las sucursales asignadas</p>
-                    )}
+                    <select
+                      className={styles.selectSmall}
+                      value={u.ruta_id ?? ''}
+                      onChange={e => handleCambiarRuta(u.id, e.target.value)}>
+                      <option value="">Sin ruta</option>
+                      {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                    </select>
                   </div>
                 )}
               </div>

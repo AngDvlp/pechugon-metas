@@ -27,8 +27,8 @@ export default function SuplenteDashboard() {
   const manana = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
   const [sucursales,   setSucursales]   = useState([])
-  const [supervisores, setSupervisores] = useState([])
-  const [supSucMap,    setSupSucMap]    = useState({})
+  const [rutas,        setRutas]        = useState([])
+  const [rutaSucMap,   setRutaSucMap]   = useState({})
   const [resumenes,    setResumenes]    = useState({})
   const [ventasHoy,    setVentasHoy]    = useState({})
   const [tacoMap,      setTacoMap]      = useState({})
@@ -53,29 +53,29 @@ export default function SuplenteDashboard() {
     setLoading(true)
     const [
       { data: sucs },
-      { data: sups },
-      { data: ss },
+      { data: rutasData },
+      { data: rs },
       { data: hoyData },
       { data: tacoLotes },
       { data: minimos },
     ] = await Promise.all([
       supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
-      supabase.from('usuarios').select('id, nombre, roles!inner(nombre)').eq('roles.nombre', 'supervisor'),
-      supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id'),
+      supabase.from('rutas').select('id, nombre').eq('activa', true).order('nombre'),
+      supabase.from('ruta_sucursales').select('ruta_id, sucursal_id'),
       supabase.from('ventas_diarias').select('*').eq('fecha', hoy),
       supabase.from('pollos_taco').select('*'),
       supabase.from('pollos_taco_minimos').select('*'),
     ])
 
     setSucursales(sucs ?? [])
-    setSupervisores(sups ?? [])
+    setRutas(rutasData ?? [])
 
-    const supMap = {}
-    ss?.forEach(r => {
-      if (!supMap[r.supervisor_id]) supMap[r.supervisor_id] = []
-      supMap[r.supervisor_id].push(r.sucursal_id)
+    const rMap = {}
+    rs?.forEach(r => {
+      if (!rMap[r.ruta_id]) rMap[r.ruta_id] = []
+      rMap[r.ruta_id].push(r.sucursal_id)
     })
-    setSupSucMap(supMap)
+    setRutaSucMap(rMap)
 
     const hoyMap = {}
     hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
@@ -131,8 +131,8 @@ export default function SuplenteDashboard() {
 
   const sucursalesFiltradas = useMemo(() => {
     if (filtroRuta === 'todas') return sucursales
-    return sucursales.filter(s => (supSucMap[filtroRuta] ?? []).includes(s.id))
-  }, [sucursales, filtroRuta, supSucMap])
+    return sucursales.filter(s => (rutaSucMap[filtroRuta] ?? []).includes(s.id))
+  }, [sucursales, filtroRuta, rutaSucMap])
 
   const esRango = filtroTiempo !== 'periodo'
 
@@ -170,7 +170,7 @@ export default function SuplenteDashboard() {
 
   const RANGO_LABELS = { hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes', custom: 'Personalizado' }
   const rangoLabel   = RANGO_LABELS[filtroTiempo] ?? ''
-  const rutaLabel    = filtroRuta === 'todas' ? '' : (supervisores.find(s => s.id === filtroRuta)?.nombre ?? '')
+  const rutaLabel    = filtroRuta === 'todas' ? '' : (rutas.find(r => r.id === filtroRuta)?.nombre ?? '')
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -186,11 +186,11 @@ export default function SuplenteDashboard() {
             onClick={() => setFiltroRuta('todas')}>
             Todas
           </button>
-          {supervisores.map(sup => (
-            <button key={sup.id}
-              className={`${styles.rutaBtn} ${filtroRuta === sup.id ? styles.rutaBtnActive : ''}`}
-              onClick={() => setFiltroRuta(sup.id)}>
-              {sup.nombre.replace('Ruta ', '')}
+          {rutas.map(ruta => (
+            <button key={ruta.id}
+              className={`${styles.rutaBtn} ${filtroRuta === ruta.id ? styles.rutaBtnActive : ''}`}
+              onClick={() => setFiltroRuta(ruta.id)}>
+              {ruta.nombre}
             </button>
           ))}
         </div>

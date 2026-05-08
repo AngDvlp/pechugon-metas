@@ -15,13 +15,13 @@ export default function GerenteDashboard() {
   const navigate = useNavigate()
   const [sucursales,    setSucursales]    = useState([])
   const [resumenes,     setResumenes]     = useState({})
-  const [supervisores,  setSupervisores]  = useState([])
-  const [supSucMap,     setSupSucMap]     = useState({})
+  const [rutas,         setRutas]         = useState([])
+  const [rutaSucMap,    setRutaSucMap]    = useState({})
   const [rangos,        setRangos]        = useState({})
   const [loadingRangos, setLoadingRangos] = useState(false)
   const [loading,       setLoading]       = useState(true)
   const [busqueda,      setBusqueda]      = useState('')
-  const [filtroSup,     setFiltroSup]     = useState('todos')
+  const [filtroRuta,    setFiltroRuta]    = useState('todas')
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
@@ -43,19 +43,19 @@ export default function GerenteDashboard() {
   async function load() {
     setLoading(true)
     try {
-      const [{ data: sucs }, { data: sups }, { data: ss }] = await Promise.all([
+      const [{ data: sucs }, { data: rutasData }, { data: rs }] = await Promise.all([
         supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
-        supabase.from('usuarios').select('id, nombre, roles!inner(nombre)').eq('roles.nombre', 'supervisor'),
-        supabase.from('supervisor_sucursales').select('supervisor_id, sucursal_id'),
+        supabase.from('rutas').select('id, nombre').eq('activa', true).order('nombre'),
+        supabase.from('ruta_sucursales').select('ruta_id, sucursal_id'),
       ])
       setSucursales(sucs ?? [])
-      setSupervisores(sups ?? [])
+      setRutas(rutasData ?? [])
       const map = {}
-      ss?.forEach(r => {
-        if (!map[r.supervisor_id]) map[r.supervisor_id] = []
-        map[r.supervisor_id].push(r.sucursal_id)
+      rs?.forEach(r => {
+        if (!map[r.ruta_id]) map[r.ruta_id] = []
+        map[r.ruta_id].push(r.sucursal_id)
       })
-      setSupSucMap(map)
+      setRutaSucMap(map)
       if (sucs?.length) {
         const results = await Promise.all(
           sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
@@ -100,7 +100,7 @@ export default function GerenteDashboard() {
 
   const sucursalesFiltradas = sucursales.filter(s => {
     const matchBusqueda = s.nombre.toLowerCase().includes(busqueda.toLowerCase())
-    const matchSup = filtroSup === 'todos' || (supSucMap[filtroSup] ?? []).includes(s.id)
+    const matchSup = filtroRuta === 'todas' || (rutaSucMap[filtroRuta] ?? []).includes(s.id)
     return matchBusqueda && matchSup
   })
 
@@ -112,7 +112,7 @@ export default function GerenteDashboard() {
   const metaSemanalGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
   const ventaSemanaGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
   const avanceSemanalGrupo = metaSemanalGrupo > 0 ? (ventaSemanaGrupo / metaSemanalGrupo) * 100 : 0
-  const supSeleccionado = supervisores.find(s => s.id === filtroSup)
+  const rutaSeleccionada = rutas.find(r => r.id === filtroRuta)
 
   // Range aggregates
   const rangoVentaTotal  = sucursalesFiltradas.reduce((a, s) => a + (rangos[s.id]?.venta  ?? 0), 0)
@@ -146,7 +146,7 @@ export default function GerenteDashboard() {
         <div className={styles.globalTop}>
           <div>
             <p className={styles.globalLabel}>
-              {filtroSup === 'todos' ? 'Meta mensual global' : supSeleccionado?.nombre ?? 'Meta'}
+              {filtroRuta === 'todas' ? 'Meta mensual global' : rutaSeleccionada?.nombre ?? 'Meta'}
             </p>
             <p className={styles.globalMeta}>{fmt(totalMeta)}</p>
           </div>
@@ -196,7 +196,7 @@ export default function GerenteDashboard() {
       {/* ── Range KPI card ── */}
       {esRango && (
         <div className={styles.rangoGlobalCard}>
-          <p className={styles.rangoGlobalLabel}>{RANGO_LABELS[filtroTiempo] ?? ''}{supSeleccionado ? ` — ${supSeleccionado.nombre}` : ''}</p>
+          <p className={styles.rangoGlobalLabel}>{RANGO_LABELS[filtroTiempo] ?? ''}{rutaSeleccionada ? ` — ${rutaSeleccionada.nombre}` : ''}</p>
           <div className={styles.rangoHeroTopRow}>
             <p className={styles.rangoGlobalVenta} style={{ marginBottom: 0 }}>{fmt(rangoVentaTotal)}</p>
             {avancePctRango !== null && (
@@ -279,13 +279,13 @@ export default function GerenteDashboard() {
 
       {/* Filtro supervisor */}
       <div className={styles.filtroRow}>
-        <button className={`${styles.filtroBtn} ${filtroSup === 'todos' ? styles.filtroBtnActive : ''}`}
-          onClick={() => setFiltroSup('todos')}>Todas</button>
-        {supervisores.map(sup => (
-          <button key={sup.id}
-            className={`${styles.filtroBtn} ${filtroSup === sup.id ? styles.filtroBtnActive : ''}`}
-            onClick={() => setFiltroSup(sup.id)}>
-            {sup.nombre.replace('Ruta ', '')}
+        <button className={`${styles.filtroBtn} ${filtroRuta === 'todas' ? styles.filtroBtnActive : ''}`}
+          onClick={() => setFiltroRuta('todas')}>Todas</button>
+        {rutas.map(ruta => (
+          <button key={ruta.id}
+            className={`${styles.filtroBtn} ${filtroRuta === ruta.id ? styles.filtroBtnActive : ''}`}
+            onClick={() => setFiltroRuta(ruta.id)}>
+            {ruta.nombre}
           </button>
         ))}
       </div>
@@ -304,7 +304,7 @@ export default function GerenteDashboard() {
 
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
-        {filtroSup !== 'todos' && supSeleccionado ? ` — ${supSeleccionado.nombre}` : ''}
+        {rutaSeleccionada ? ` — ${rutaSeleccionada.nombre}` : ''}
       </p>
 
       {/* Lista sucursales */}

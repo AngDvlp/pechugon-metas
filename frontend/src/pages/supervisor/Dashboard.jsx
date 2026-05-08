@@ -45,12 +45,14 @@ export default function SupervisorDashboard() {
 
   async function load() {
     setLoading(true)
-    const { data: supSuc } = await supabase
-      .from('supervisor_sucursales')
+    const rutaId = usuario?.ruta_id
+    if (!rutaId) { setSucursales([]); setLoading(false); return }
+    const { data: rs } = await supabase
+      .from('ruta_sucursales')
       .select('sucursal_id, sucursales(id, nombre)')
-      .eq('supervisor_id', usuario.id)
-    const sids = supSuc?.map(s => s.sucursal_id) ?? []
-    const sucs = supSuc?.map(s => s.sucursales) ?? []
+      .eq('ruta_id', rutaId)
+    const sids = rs?.map(s => s.sucursal_id) ?? []
+    const sucs = rs?.map(s => s.sucursales).filter(Boolean) ?? []
     setSucursales(sucs)
     if (sids.length === 0) { setLoading(false); return }
     const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, ...resResults] = await Promise.all([

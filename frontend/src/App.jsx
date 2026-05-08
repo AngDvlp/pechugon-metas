@@ -13,6 +13,7 @@ import GerenteMetas from './pages/gerente/Metas'
 import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
 import GerenteDescarga from './pages/gerente/Descarga'
 import GerentePollosTaco from './pages/gerente/PollosTaco'
+import GerenteRutas from './pages/gerente/Rutas'
 import SupervisorPollosTaco from './pages/supervisor/PollosTaco'
 import SuplenteDashboard from './pages/suplente/Dashboard'
 import Layout from './components/Layout'
@@ -90,6 +91,7 @@ export default function App() {
         <Route path="sucursal/:id" element={<GerenteSucursalDetalle />} />
         <Route path="descarga" element={<GerenteDescarga />} />
         <Route path="pollos-taco" element={<GerentePollosTaco />} />
+        <Route path="rutas" element={<GerenteRutas />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
