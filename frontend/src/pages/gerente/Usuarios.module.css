@@ -260,6 +260,83 @@
 .selectSmall:focus { outline: none; border-color: rgba(245,196,0,0.4); box-shadow: 0 0 0 3px rgba(245,196,0,0.07); }
 .selectSmall option { background: var(--bg-elevated); }
 
+/* ── Edit button ─────────────────────────────────────────── */
+.userTopRight { display: flex; align-items: center; gap: 8px; }
+
+.editBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.editBtn:hover { border-color: var(--yellow); color: var(--yellow); background: rgba(245,196,0,0.07); }
+.editBtnActive { border-color: var(--border-active); color: var(--text-secondary); }
+.editBtnActive:hover { border-color: var(--red); color: var(--red); background: rgba(232,25,44,0.06); }
+
+.userCardEditing {
+  border-color: var(--border-active);
+  background: var(--bg-card-2);
+}
+
+/* ── Edit form ───────────────────────────────────────────── */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.editSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editSectionTitle {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.editHint {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.editHint strong { color: var(--text-secondary); font-weight: 600; }
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  transition: all 0.18s;
+  align-self: flex-start;
+}
+.resetBtn:hover:not(:disabled) { border-color: var(--info); color: var(--info); background: rgba(96,165,250,0.06); }
+.resetBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .rutaTag {
   display: inline-flex;
   align-items: center;
