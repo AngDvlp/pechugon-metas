@@ -607,3 +607,13 @@
   color: var(--text-muted);
   padding: 24px 0;
 }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width:380px) {
+  .sucursalNombre { font-size: 1.5rem; }
+  .tacoFormRow { grid-template-columns: 1fr; }
+  .histHead,
+  .histRow { grid-template-columns: 1fr 1fr 44px 1fr; padding: 9px 10px; }
+  .lotesHead,
+  .loteRow  { grid-template-columns: 1fr 52px 78px 56px; padding: 9px 10px; }
+}

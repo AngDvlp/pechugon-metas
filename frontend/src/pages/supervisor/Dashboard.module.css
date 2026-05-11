@@ -541,4 +541,12 @@
 .rangoMetaRow { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .rangoMetaLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
 .rangoMetaVal { font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width:360px) {
+  .supMeta     { font-size:1.6rem; }
+  .pctNum      { font-size:2rem; }
+  .supStatVal  { font-size:0.78rem; }
+  .rangoStatVal { font-size:0.72rem; }
+}
 .rangoMetaDif { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; margin-left:auto; flex-shrink:0; }

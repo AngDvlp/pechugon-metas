@@ -205,3 +205,9 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
+
+/* Compact nav items when 7+ tabs are rendered */
+@media (max-width:390px) {
+  .navItem { padding: 8px 2px 7px; gap: 2px; }
+  .navLabel { font-size: 0.5rem; letter-spacing: 0; }
+}

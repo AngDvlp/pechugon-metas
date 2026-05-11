@@ -352,6 +352,106 @@
   margin-left:auto; font-size:0.6rem; opacity:0.6;
 }
 
+/* ── Periodo btn badge ───────────────────────────────────── */
+.periodoBtnActive {
+  border-color:var(--info); color:var(--info);
+  background:rgba(79,142,247,0.07);
+}
+
+.periodoBadge {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--info); color:#fff;
+  font-family:var(--font-body); font-size:0.55rem; font-weight:800;
+  border-radius:99px; min-width:15px; height:15px; padding:0 4px;
+  line-height:1;
+}
+
+/* ── Periodo panel sub-labels ────────────────────────────── */
+.periodoSubLabel {
+  font-family:var(--font-body); font-size:0.62rem; font-weight:800;
+  color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px;
+  margin-bottom:8px;
+}
+
+.subLabelCount { color:var(--info); }
+
+/* ── Periodos nuevos section ─────────────────────────────── */
+.periodoNuevosSection {
+  display:flex; flex-direction:column; gap:10px;
+  border-top:1px solid var(--border); padding-top:14px;
+}
+
+.periodoNuevosHeader {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:0;
+}
+
+.addPeriodoBtn {
+  display:flex; align-items:center; gap:5px;
+  background:rgba(79,142,247,0.1); border:1px solid rgba(79,142,247,0.25);
+  border-radius:var(--radius-sm); color:var(--info);
+  cursor:pointer; font-family:var(--font-body); font-size:0.75rem;
+  font-weight:700; padding:6px 12px; transition:all 0.18s;
+}
+.addPeriodoBtn:hover { background:rgba(79,142,247,0.18); border-color:rgba(79,142,247,0.4); }
+
+/* ── Periodo nuevo item card ─────────────────────────────── */
+.periodoNuevoItem {
+  background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:var(--radius-md); padding:14px;
+  display:flex; flex-direction:column; gap:10px;
+  position:relative;
+}
+
+.periodoNuevoTop {
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+.periodoNuevoIdx {
+  font-family:var(--font-body); font-size:0.62rem; font-weight:800;
+  color:var(--info); text-transform:uppercase; letter-spacing:1px;
+}
+
+.delPeriodoBtn {
+  display:flex; align-items:center; justify-content:center;
+  background:none; border:1px solid var(--border); border-radius:6px;
+  color:var(--text-muted); cursor:pointer; padding:4px 6px; transition:all 0.18s;
+}
+.delPeriodoBtn:hover { color:var(--red); background:var(--danger-dim); border-color:rgba(232,25,44,0.25); }
+
+/* ── Btns row dentro del item ────────────────────────────── */
+.periodoNuevoBtns { display:flex; gap:8px; }
+
+.periodoApplyBtn {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+  background:linear-gradient(135deg,rgba(79,142,247,0.15) 0%,rgba(79,142,247,0.08) 100%);
+  border:1px solid rgba(79,142,247,0.35); border-radius:var(--radius-sm);
+  color:var(--info); cursor:pointer; font-family:var(--font-body);
+  font-size:0.82rem; font-weight:700; padding:11px 14px;
+  transition:all 0.2s;
+  box-shadow: 0 2px 10px rgba(79,142,247,0.1);
+}
+.periodoApplyBtn:hover:not(:disabled) {
+  background:linear-gradient(135deg,rgba(79,142,247,0.25) 0%,rgba(79,142,247,0.15) 100%);
+  border-color:rgba(79,142,247,0.55);
+  box-shadow: 0 3px 16px rgba(79,142,247,0.2);
+}
+.periodoApplyBtn:active:not(:disabled) { transform:scale(0.98); }
+.periodoApplyBtn:disabled { opacity:0.45; cursor:not-allowed; box-shadow:none; }
+
+/* ── Ya existe hint ──────────────────────────────────────── */
+.yaExisteHint {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--font-body); font-size:0.71rem;
+  color:var(--success); margin-top:-2px;
+}
+
+/* ── Pill with sem count ─────────────────────────────────── */
+.pillSem {
+  display:inline-block; margin-left:6px;
+  font-size:0.6rem; opacity:0.7;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:600px) {
   .twoCol   { grid-template-columns:1fr; }

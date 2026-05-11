@@ -5,7 +5,7 @@ import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
   Plus, X, Trash2, Bird, DollarSign, Calendar,
-  CheckCircle, Clock, AlertCircle, Settings, AlertTriangle
+  CheckCircle, Clock, AlertCircle, Settings, AlertTriangle, Zap
 } from 'lucide-react'
 import styles from './Metas.module.css'
 
@@ -38,30 +38,38 @@ function currentMonthPeriod() {
   }
 }
 
+function nextMonthPeriod() {
+  const hoy = new Date()
+  const next = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
+  return {
+    desde: format(startOfMonth(next), 'yyyy-MM-dd'),
+    hasta: format(endOfMonth(next), 'yyyy-MM-dd'),
+  }
+}
+
 const FORM_EMPTY = { sucursal_id: '', pollos_meta: '', ticket_promedio_meta: '', periodoKey: '' }
 
 export default function GerenteMetas() {
   const { usuario } = useAuth()
-  const [sucursales,    setSucursales]    = useState([])
-  const [metas,         setMetas]         = useState([])
-  const [loading,       setLoading]       = useState(true)
-  const [showForm,      setShowForm]      = useState(false)
-  const [showPeriodo,   setShowPeriodo]   = useState(false)
-  const [showHistorial, setShowHistorial] = useState(false)
-  const [saving,        setSaving]        = useState(false)
-  const [msg,           setMsg]           = useState(null)
+  const [sucursales,     setSucursales]     = useState([])
+  const [metas,          setMetas]          = useState([])
+  const [loading,        setLoading]        = useState(true)
+  const [showForm,       setShowForm]       = useState(false)
+  const [showPeriodo,    setShowPeriodo]    = useState(false)
+  const [showHistorial,  setShowHistorial]  = useState(false)
+  const [saving,         setSaving]         = useState(false)
+  const [applyingKey,    setApplyingKey]    = useState(null)
+  const [msg,            setMsg]            = useState(null)
 
   const hoy    = new Date()
   const hoyStr = format(hoy, 'yyyy-MM-dd')
 
-  // Fechas del nuevo periodo (solo para configurar, nunca se guardan solas en DB)
-  const cmp = currentMonthPeriod()
-  const [periodoDesde, setPeriodoDesde] = useState(cmp.desde)
-  const [periodoHasta, setPeriodoHasta] = useState(cmp.hasta)
+  // Array of draft periods: { id, desde, hasta }
+  const [periodosNuevos, setPeriodosNuevos] = useState([])
 
   const [form, setForm] = useState(FORM_EMPTY)
 
-  // ── Periodos disponibles: únicos de las metas existentes + el nuevo si no está ──
+  // ── Periodos disponibles: únicos de las metas existentes + los nuevos drafts ──
   const periodosDisponibles = useMemo(() => {
     const map = new Map()
     metas.forEach(m => {
@@ -69,13 +77,14 @@ export default function GerenteMetas() {
       const k = `${m.fecha_inicio}|${m.fecha_fin}`
       if (!map.has(k)) map.set(k, { key: k, fecha_inicio: m.fecha_inicio, fecha_fin: m.fecha_fin, esNuevo: false })
     })
-    // Agregar nuevo periodo configurado si no coincide con ninguno existente
-    if (periodoDesde && periodoHasta) {
-      const nk = `${periodoDesde}|${periodoHasta}`
-      if (!map.has(nk)) map.set(nk, { key: nk, fecha_inicio: periodoDesde, fecha_fin: periodoHasta, esNuevo: true })
-    }
+    periodosNuevos.forEach(p => {
+      if (p.desde && p.hasta) {
+        const nk = `${p.desde}|${p.hasta}`
+        if (!map.has(nk)) map.set(nk, { key: nk, fecha_inicio: p.desde, fecha_fin: p.hasta, esNuevo: true })
+      }
+    })
     return [...map.values()].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio))
-  }, [metas, periodoDesde, periodoHasta])
+  }, [metas, periodosNuevos])
 
   // Derivar periodo y semanas del form
   const formPeriodo = form.periodoKey
@@ -105,11 +114,79 @@ export default function GerenteMetas() {
   }
 
   function abrirForm() {
-    // Pre-seleccionar el periodo más reciente al abrir el formulario
     const primerPeriodo = periodosDisponibles[0]
     setForm({ ...FORM_EMPTY, periodoKey: primerPeriodo?.key ?? '' })
     setShowForm(v => !v)
     setMsg(null)
+  }
+
+  // ── Helpers para gestión de periodos nuevos ──────────────────────
+  function addNuevoPeriodo() {
+    const cmp = currentMonthPeriod()
+    const nmp = nextMonthPeriod()
+    const defaults = periodosNuevos.length === 0 ? cmp : nmp
+    setPeriodosNuevos(prev => [...prev, { id: Date.now(), desde: defaults.desde, hasta: defaults.hasta }])
+  }
+
+  function removePeriodo(id) {
+    setPeriodosNuevos(prev => prev.filter(p => p.id !== id))
+  }
+
+  function updatePeriodo(id, field, value) {
+    setPeriodosNuevos(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p))
+  }
+
+  // ── Aplicar periodo a todas las metas vigentes ───────────────────
+  async function handleBulkApply(desde, hasta) {
+    const metasVigentesAhora = metas.filter(m => m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr)
+    if (!metasVigentesAhora.length) {
+      setMsg({ tipo: 'error', texto: 'No hay metas vigentes para aplicar este periodo' })
+      setTimeout(() => setMsg(null), 4000)
+      return
+    }
+
+    // Una meta por sucursal (la más reciente)
+    const sucMap = new Map()
+    metasVigentesAhora.forEach(m => {
+      if (!sucMap.has(m.sucursal_id)) sucMap.set(m.sucursal_id, m)
+    })
+
+    const semanas = semanasEntreFechas(desde, hasta)
+    const label = periodoLabel(desde, hasta)
+    const ok = window.confirm(
+      `Crear ${sucMap.size} meta${sucMap.size !== 1 ? 's' : ''} para el periodo:\n${label}\n\nSe usarán los pollos y ticket promedio de las metas vigentes actuales.`
+    )
+    if (!ok) return
+
+    const key = `${desde}|${hasta}`
+    setApplyingKey(key)
+    setMsg(null)
+
+    const inserts = [...sucMap.values()].map(m => ({
+      sucursal_id:          m.sucursal_id,
+      meta_venta:           (m.pollos_meta ?? 0) * (m.ticket_promedio_meta ?? 0),
+      pollos_meta:          m.pollos_meta,
+      ticket_promedio_meta: m.ticket_promedio_meta,
+      semanas_mes:          semanas,
+      fecha_inicio:         desde,
+      fecha_fin:            hasta,
+      creado_por:           usuario.id,
+    }))
+
+    const { data, error } = await supabase
+      .from('metas')
+      .insert(inserts)
+      .select('*, sucursales(nombre)')
+
+    if (error) {
+      setMsg({ tipo: 'error', texto: 'Error al crear metas: ' + error.message })
+    } else {
+      setMetas(prev => [...data, ...prev])
+      setPeriodosNuevos(prev => prev.filter(p => `${p.desde}|${p.hasta}` !== key))
+      setMsg({ tipo: 'ok', texto: `${data.length} meta${data.length !== 1 ? 's' : ''} creadas para el nuevo periodo` })
+      setTimeout(() => setMsg(null), 4000)
+    }
+    setApplyingKey(null)
   }
 
   async function handleSave(e) {
@@ -157,7 +234,6 @@ export default function GerenteMetas() {
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {
-      // Actualizar estado local sin recargar (no hay scroll reset)
       setMetas(prev => [nuevaMeta, ...prev])
       setMsg({ tipo: 'ok', texto: 'Meta creada correctamente' })
       setShowForm(false)
@@ -169,12 +245,11 @@ export default function GerenteMetas() {
 
   async function handleDelete(id) {
     if (!window.confirm('¿Eliminar esta meta?')) return
-    // Optimista: quitar del estado inmediatamente
     setMetas(prev => prev.filter(m => m.id !== id))
     const { error } = await supabase.from('metas').delete().eq('id', id)
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error al eliminar: ' + error.message })
-      await load() // Restaurar si falló
+      await load()
     }
   }
 
@@ -183,8 +258,8 @@ export default function GerenteMetas() {
   const metasFuturas   = metas.filter(m => m.fecha_inicio > hoyStr)
   const metasExpiradas = metas.filter(m => m.fecha_fin < hoyStr)
 
-  const periodoActivo         = metasVigentes[0]
-  const diasRestantesPeriodo  = periodoActivo
+  const periodoActivo        = metasVigentes[0]
+  const diasRestantesPeriodo = periodoActivo
     ? Math.round((new Date(periodoActivo.fecha_fin + 'T23:59:59') - hoy) / 86400000)
     : null
 
@@ -194,9 +269,12 @@ export default function GerenteMetas() {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Metas</h1>
         <div className={styles.headerBtns}>
-          <button className={styles.periodoBtn} onClick={() => setShowPeriodo(v => !v)}>
+          <button className={`${styles.periodoBtn} ${showPeriodo ? styles.periodoBtnActive : ''}`} onClick={() => setShowPeriodo(v => !v)}>
             <Settings size={14} strokeWidth={2.5} />
-            {showPeriodo ? 'Cerrar' : 'Nuevo periodo'}
+            Periodos
+            {periodosNuevos.length > 0 && (
+              <span className={styles.periodoBadge}>{periodosNuevos.length}</span>
+            )}
           </button>
           <button className={styles.addBtn} onClick={abrirForm}>
             {showForm
@@ -227,69 +305,144 @@ export default function GerenteMetas() {
                 ? 'El periodo activo termina hoy'
                 : `El periodo activo vence en ${diasRestantesPeriodo} día${diasRestantesPeriodo !== 1 ? 's' : ''}`}
             </strong>
-            {' — '}Crea el próximo periodo y sus metas con anticipación.
+            {' — '}Crea el próximo periodo con anticipación.
           </div>
         </div>
       )}
 
-      {/* Panel: configurar nuevo periodo */}
+      {/* ── Panel: gestión de periodos ── */}
       {showPeriodo && (
         <div className={styles.periodoCard}>
           <div className={styles.periodoCardHeader}>
-            <p className={styles.periodoCardTitle}>Agregar nuevo periodo</p>
+            <p className={styles.periodoCardTitle}>Gestión de periodos</p>
             <p className={styles.periodoCardSub}>
-              Define las fechas. Después podrás crear metas eligiendo este periodo en el formulario.
-              Los periodos anteriores no se modifican.
+              Crea varios periodos y aplícalos en bloque a las metas vigentes, o selecciona el periodo al crear cada meta individualmente.
             </p>
           </div>
-          <div className={styles.periodoForm}>
-            <div className={styles.twoCol}>
-              <div className={styles.field}>
-                <label className={styles.label}>Fecha inicio</label>
-                <input className={styles.input2} type="date" value={periodoDesde}
-                  onChange={e => setPeriodoDesde(e.target.value)} />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Fecha fin</label>
-                <input className={styles.input2} type="date" value={periodoHasta}
-                  min={periodoDesde} onChange={e => setPeriodoHasta(e.target.value)} />
+
+          {/* Periodos existentes */}
+          {periodosDisponibles.filter(p => !p.esNuevo).length > 0 && (
+            <div>
+              <p className={styles.periodoSubLabel}>Periodos guardados</p>
+              <div className={styles.periodosRow}>
+                {periodosDisponibles.filter(p => !p.esNuevo).map(p => {
+                  const vig = p.fecha_inicio <= hoyStr && p.fecha_fin >= hoyStr
+                  const exp = p.fecha_fin < hoyStr
+                  return (
+                    <span key={p.key}
+                      className={`${styles.periodoPill} ${vig ? styles.pillVig : exp ? styles.pillExp : styles.pillFut}`}>
+                      {format(parseISO(p.fecha_inicio), 'd MMM', { locale: es })}
+                      {' — '}
+                      {format(parseISO(p.fecha_fin), 'd MMM', { locale: es })}
+                      <span className={styles.pillSem}>{semanasEntreFechas(p.fecha_inicio, p.fecha_fin)} sem</span>
+                    </span>
+                  )
+                })}
               </div>
             </div>
-            {periodoDesde && periodoHasta && (
-              <div className={styles.periodoResumen}>
-                <div className={styles.periodoResumenItem}>
-                  <span className={styles.periodoResumenLabel}>Semanas</span>
-                  <span className={styles.periodoResumenVal}>{semanasEntreFechas(periodoDesde, periodoHasta)}</span>
-                </div>
-                <div className={styles.periodoResumenDivider} />
-                <div className={styles.periodoResumenItem}>
-                  <span className={styles.periodoResumenLabel}>Días</span>
-                  <span className={styles.periodoResumenVal}>{diasEntreFechas(periodoDesde, periodoHasta)}</span>
-                </div>
-                <div className={styles.periodoResumenDivider} />
-                <div className={styles.periodoResumenItem}>
-                  <span className={styles.periodoResumenLabel}>Rango</span>
-                  <span className={styles.periodoResumenVal} style={{ textTransform: 'capitalize' }}>
-                    {format(new Date(periodoDesde + 'T12:00:00'), 'd MMM', { locale: es })}
-                    {' — '}
-                    {format(new Date(periodoHasta + 'T12:00:00'), 'd MMM', { locale: es })}
-                  </span>
-                </div>
-              </div>
+          )}
+
+          {/* Periodos nuevos */}
+          <div className={styles.periodoNuevosSection}>
+            <div className={styles.periodoNuevosHeader}>
+              <p className={styles.periodoSubLabel}>
+                Periodos nuevos
+                {periodosNuevos.length > 0 && <span className={styles.subLabelCount}> ({periodosNuevos.length})</span>}
+              </p>
+              <button className={styles.addPeriodoBtn} onClick={addNuevoPeriodo}>
+                <Plus size={12} strokeWidth={2.5} />
+                Agregar
+              </button>
+            </div>
+
+            {periodosNuevos.length === 0 && (
+              <p className={styles.periodoNota}>
+                Agrega uno o varios periodos para asignarlos a metas o aplicarlos en bloque.
+              </p>
             )}
-            <button className={styles.periodoSaveBtn} type="button" onClick={() => setShowPeriodo(false)}>
-              <CheckCircle size={14} strokeWidth={2.5} />
-              Listo — usar este periodo
-            </button>
-            <p className={styles.periodoNota}>
-              Este periodo ya aparece como opción en el formulario "Nueva meta". No se guarda hasta que crees una meta con él.
-            </p>
+
+            {periodosNuevos.map((p, idx) => {
+              const key = `${p.desde}|${p.hasta}`
+              const isApplying = applyingKey === key
+              const yaExiste   = periodosDisponibles.some(pd => !pd.esNuevo && pd.key === key)
+              return (
+                <div key={p.id} className={styles.periodoNuevoItem}>
+                  <div className={styles.periodoNuevoTop}>
+                    <span className={styles.periodoNuevoIdx}>#{idx + 1}</span>
+                    <button className={styles.delPeriodoBtn} onClick={() => removePeriodo(p.id)}>
+                      <X size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                  <div className={styles.twoCol}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Fecha inicio</label>
+                      <input className={styles.input2} type="date" value={p.desde}
+                        onChange={e => updatePeriodo(p.id, 'desde', e.target.value)} />
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Fecha fin</label>
+                      <input className={styles.input2} type="date" value={p.hasta}
+                        min={p.desde}
+                        onChange={e => updatePeriodo(p.id, 'hasta', e.target.value)} />
+                    </div>
+                  </div>
+
+                  {p.desde && p.hasta && (
+                    <div className={styles.periodoResumen}>
+                      <div className={styles.periodoResumenItem}>
+                        <span className={styles.periodoResumenLabel}>Semanas</span>
+                        <span className={styles.periodoResumenVal}>{semanasEntreFechas(p.desde, p.hasta)}</span>
+                      </div>
+                      <div className={styles.periodoResumenDivider} />
+                      <div className={styles.periodoResumenItem}>
+                        <span className={styles.periodoResumenLabel}>Días</span>
+                        <span className={styles.periodoResumenVal}>{diasEntreFechas(p.desde, p.hasta)}</span>
+                      </div>
+                      <div className={styles.periodoResumenDivider} />
+                      <div className={styles.periodoResumenItem}>
+                        <span className={styles.periodoResumenLabel}>Rango</span>
+                        <span className={styles.periodoResumenVal} style={{ textTransform: 'capitalize' }}>
+                          {format(new Date(p.desde + 'T12:00:00'), 'd MMM', { locale: es })}
+                          {' — '}
+                          {format(new Date(p.hasta + 'T12:00:00'), 'd MMM', { locale: es })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {yaExiste && (
+                    <p className={styles.yaExisteHint}>
+                      <CheckCircle size={11} strokeWidth={2.5} />
+                      Este periodo ya está guardado
+                    </p>
+                  )}
+
+                  <div className={styles.periodoNuevoBtns}>
+                    <button
+                      className={styles.periodoApplyBtn}
+                      disabled={!p.desde || !p.hasta || !!applyingKey || metasVigentes.length === 0}
+                      onClick={() => handleBulkApply(p.desde, p.hasta)}>
+                      <Zap size={13} strokeWidth={2.5} />
+                      {isApplying
+                        ? 'Creando metas…'
+                        : metasVigentes.length === 0
+                        ? 'Sin metas vigentes'
+                        : `Aplicar a ${metasVigentes.length} meta${metasVigentes.length !== 1 ? 's' : ''} vigentes`}
+                    </button>
+                  </div>
+
+                  <p className={styles.periodoNota}>
+                    O bien, selecciona este periodo al crear cada meta individualmente con "Nueva meta".
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* Periodos disponibles (vista rápida) */}
-      {!loading && periodosDisponibles.length > 0 && (
+      {/* Periodos disponibles (vista rápida) — ocultos si el panel está abierto */}
+      {!loading && !showPeriodo && periodosDisponibles.length > 0 && (
         <div className={styles.periodosRow}>
           {periodosDisponibles.map(p => {
             const vig = p.fecha_inicio <= hoyStr && p.fecha_fin >= hoyStr
@@ -330,7 +483,7 @@ export default function GerenteMetas() {
               {periodosDisponibles.length === 0 ? (
                 <p className={styles.fieldHint}>
                   <AlertTriangle size={11} strokeWidth={2.5} />
-                  No hay periodos — usa el botón "Nuevo periodo" para crear uno primero
+                  No hay periodos — usa "Periodos" para crear uno primero
                 </p>
               ) : (
                 <select
@@ -429,7 +582,7 @@ export default function GerenteMetas() {
         <div className={styles.loading}>Cargando…</div>
       ) : metas.length === 0 ? (
         <div className={styles.empty}>
-          No hay metas. Crea un periodo con el botón "Nuevo periodo" y luego agrega metas.
+          No hay metas. Usa "Periodos" para crear uno y luego agrega metas.
         </div>
       ) : (
         <>

@@ -583,7 +583,7 @@
 /* Range row in sucursal list */
 .sucRangoRow { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:6px; }
 .sucRangoVenta { font-family:var(--font-mono); font-size:1rem; font-weight:600; flex-shrink:0; color:var(--text-primary); }
-.rangoMiniStats { display:flex; gap:12px; }
+.rangoMiniStats { display:flex; gap:12px; flex-wrap:wrap; }
 .rangoMiniStat { display:flex; flex-direction:column; gap:2px; }
 .rangoMiniLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; }
 .rangoMiniVal { font-family:var(--font-mono); font-size:0.8rem; font-weight:500; color:var(--text-secondary); }
@@ -597,3 +597,13 @@
 .rangoMetaLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
 .rangoMetaVal { font-family:var(--font-mono); font-size:0.78rem; color:var(--text-secondary); }
 .rangoMetaDif { font-family:var(--font-mono); font-size:0.78rem; font-weight:600; margin-left:auto; flex-shrink:0; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width:360px) {
+  .globalMeta  { font-size:1.2rem; }
+  .pctNum      { font-size:1.8rem; }
+  .kpiVal      { font-size:0.68rem; }
+  .kpiLabel    { font-size:0.48rem; }
+  .acciones    { grid-template-columns: repeat(3,1fr); gap:6px; }
+  .accionBtn   { padding:10px 4px; font-size:0.65rem; }
+}

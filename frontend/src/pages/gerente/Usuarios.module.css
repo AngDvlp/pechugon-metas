@@ -113,6 +113,7 @@
 .select option { background: var(--bg-elevated); }
 
 .twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width:380px) { .twoCol { grid-template-columns: 1fr; } }
 
 .saveBtn {
   background: linear-gradient(135deg, #F5C400 0%, #FFD740 100%);
