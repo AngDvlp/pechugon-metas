@@ -452,6 +452,138 @@
   font-size:0.6rem; opacity:0.7;
 }
 
+/* ── Apply select panel ──────────────────────────────────── */
+.applySelectPanel {
+  display:flex; flex-direction:column; gap:10px;
+  background:var(--bg-elevated); border:1px solid rgba(79,142,247,0.2);
+  border-radius:var(--radius-md); padding:14px;
+}
+
+.applySelectTitle {
+  display:flex; align-items:center; gap:6px;
+  font-family:var(--font-body); font-size:0.78rem;
+  font-weight:600; color:var(--text-secondary); line-height:1.4;
+}
+
+.toggleTodasBtn {
+  display:inline-flex; align-items:center;
+  background:none; border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted);
+  cursor:pointer; font-family:var(--font-body);
+  font-size:0.71rem; font-weight:700; padding:5px 10px;
+  transition:all 0.18s; align-self:flex-start;
+}
+.toggleTodasBtn:hover { border-color:var(--border-active); color:var(--text-secondary); }
+
+.applySelectList {
+  display:flex; flex-direction:column; gap:4px;
+  max-height:220px; overflow-y:auto;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--bg-card);
+}
+
+.applySelectRow {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; cursor:pointer; transition:background 0.15s;
+  border-bottom:1px solid var(--border);
+}
+.applySelectRow:last-child { border-bottom:none; }
+.applySelectRow:hover { background:var(--bg-card-2); }
+
+.applySelectRowActive { background:rgba(79,142,247,0.05); }
+
+.applyCheckbox {
+  width:16px; height:16px; cursor:pointer; flex-shrink:0;
+  accent-color:var(--info);
+}
+
+.applySelectInfo {
+  display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;
+}
+
+.applySelectNombre {
+  font-family:var(--font-display); font-size:0.9rem;
+  font-weight:700; color:var(--text-primary);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+.applySelectOldPeriod {
+  font-family:var(--font-mono); font-size:0.65rem;
+  color:var(--text-muted);
+}
+
+.applySelectBtns {
+  display:flex; gap:8px;
+}
+
+.applySelectCancel {
+  flex:1; background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted);
+  cursor:pointer; font-family:var(--font-body); font-size:0.8rem;
+  font-weight:700; padding:10px; transition:all 0.18s;
+}
+.applySelectCancel:hover { border-color:var(--border-active); color:var(--text-secondary); }
+
+.applySelectConfirm {
+  flex:2; background:linear-gradient(135deg,rgba(79,142,247,0.2) 0%,rgba(79,142,247,0.12) 100%);
+  border:1px solid rgba(79,142,247,0.4); border-radius:var(--radius-sm);
+  color:var(--info); cursor:pointer; font-family:var(--font-body);
+  font-size:0.82rem; font-weight:700; padding:10px; transition:all 0.2s;
+}
+.applySelectConfirm:hover:not(:disabled) {
+  background:linear-gradient(135deg,rgba(79,142,247,0.3) 0%,rgba(79,142,247,0.2) 100%);
+  border-color:rgba(79,142,247,0.6);
+}
+.applySelectConfirm:disabled { opacity:0.45; cursor:not-allowed; }
+
+/* ── Meta: edición de periodo inline ────────────────────── */
+.metaDatesRow {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+
+.editPeriodBtn {
+  display:flex; align-items:center; justify-content:center;
+  background:none; border:1px solid var(--border); border-radius:5px;
+  color:var(--text-muted); cursor:pointer; padding:4px 6px;
+  transition:all 0.18s; flex-shrink:0;
+}
+.editPeriodBtn:hover { color:var(--info); border-color:rgba(79,142,247,0.4); background:rgba(79,142,247,0.07); }
+
+.metaPeriodEdit {
+  display:flex; flex-direction:column; gap:8px;
+  padding:10px 12px;
+  background:rgba(79,142,247,0.05); border:1px solid rgba(79,142,247,0.2);
+  border-radius:var(--radius-sm);
+}
+
+.metaPeriodSelect {
+  background:var(--bg-elevated); border:1px solid rgba(79,142,247,0.3);
+  border-radius:var(--radius-sm); color:var(--text-primary);
+  font-family:var(--font-body); font-size:0.85rem; font-weight:500;
+  padding:9px 11px; width:100%; appearance:none; cursor:pointer;
+  transition:border-color 0.2s;
+}
+.metaPeriodSelect:focus { outline:none; border-color:rgba(79,142,247,0.6); }
+.metaPeriodSelect option { background:var(--bg-elevated); }
+
+.metaPeriodEditBtns { display:flex; gap:8px; }
+
+.metaPeriodSaveBtn {
+  flex:2; background:var(--info); border:none; border-radius:var(--radius-sm);
+  color:#fff; cursor:pointer; font-family:var(--font-body);
+  font-size:0.78rem; font-weight:700; padding:8px 12px; transition:opacity 0.18s;
+}
+.metaPeriodSaveBtn:hover:not(:disabled) { opacity:0.85; }
+.metaPeriodSaveBtn:disabled { opacity:0.45; cursor:not-allowed; }
+
+.metaPeriodCancelBtn {
+  flex:1; background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted);
+  cursor:pointer; font-family:var(--font-body);
+  font-size:0.78rem; font-weight:700; padding:8px 12px; transition:all 0.18s;
+}
+.metaPeriodCancelBtn:hover:not(:disabled) { border-color:var(--border-active); color:var(--text-secondary); }
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:600px) {
   .twoCol   { grid-template-columns:1fr; }
