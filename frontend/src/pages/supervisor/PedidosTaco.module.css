@@ -249,3 +249,13 @@
   font-style: italic;
   margin-top: -4px;
 }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .pedidoCantVal { font-size: 1.2rem; }
+  .formCard { border-radius: var(--radius-md); }
+}
+@media (min-width: 600px) {
+  .form { padding: 20px; }
+  .pedidoCard { padding: 16px 20px; }
+}

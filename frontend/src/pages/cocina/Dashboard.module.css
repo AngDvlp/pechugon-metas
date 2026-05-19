@@ -201,3 +201,16 @@
   color: var(--text-muted);
   padding: 12px 0;
 }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .kpiVal { font-size: 1.4rem; }
+  .kpiLabel { font-size: 0.58rem; }
+  .loteItem { grid-template-columns: 1fr 76px 64px; gap: 5px; }
+  .stockNum { font-size: 1.3rem; }
+}
+@media (min-width: 600px) {
+  .kpiVal { font-size: 2rem; }
+  .cardHeader { padding: 18px 22px; }
+  .cardBody { padding: 16px 22px 20px; }
+}

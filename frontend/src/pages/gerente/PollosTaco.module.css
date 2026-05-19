@@ -281,3 +281,15 @@
   color: var(--text-muted);
   padding: 8px 0;
 }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .kpiRow { gap: 6px; }
+  .kpiVal { font-size: 1.4rem; }
+  .kpiLabel { font-size: 0.58rem; }
+  .loteDetailRow { grid-template-columns: 1fr 68px 68px; gap: 5px; }
+}
+@media (min-width: 600px) {
+  .kpiVal { font-size: 2rem; }
+  .sucRowHeader { padding: 16px 20px; }
+}

@@ -439,3 +439,18 @@
   color: var(--text-muted);
   padding: 12px 0;
 }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .kpiRow { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .kpiVal { font-size: 1.4rem; }
+  .kpiLabel { font-size: 0.58rem; }
+  .loteItem { grid-template-columns: 1fr 76px 64px 44px; gap: 5px; padding: 8px 10px; }
+  .addFormRow { grid-template-columns: 1fr; }
+  .stockNum { font-size: 1.3rem; }
+}
+@media (min-width: 600px) {
+  .sucCardHeader { padding: 18px 22px; }
+  .sucCardBody   { padding: 16px 22px 20px; }
+  .kpiVal        { font-size: 2rem; }
+}
