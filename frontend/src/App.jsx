@@ -6,6 +6,7 @@ import SupervisorDashboard from './pages/supervisor/Dashboard'
 import SupervisorSucursal from './pages/supervisor/Sucursal'
 import SupervisorDescarga from './pages/supervisor/Descarga'
 import SupervisorRegistro from './pages/supervisor/RegistroAtrasado'
+import SupervisorPedidosTaco from './pages/supervisor/PedidosTaco'
 import GerenteDashboard from './pages/gerente/Dashboard'
 import GerenteSucursales from './pages/gerente/Sucursales'
 import GerenteUsuarios from './pages/gerente/Usuarios'
@@ -16,6 +17,8 @@ import GerentePollosTaco from './pages/gerente/PollosTaco'
 import GerenteRutas from './pages/gerente/Rutas'
 import SupervisorPollosTaco from './pages/supervisor/PollosTaco'
 import SuplenteDashboard from './pages/suplente/Dashboard'
+import CocinaDashboard from './pages/cocina/Dashboard'
+import CocinaPedidos from './pages/cocina/Pedidos'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
@@ -34,6 +37,7 @@ function RootRedirect() {
   if (rol === 'supervisor') return <Navigate to="/supervisor" replace />
   if (rol === 'suplente') return <Navigate to="/suplente" replace />
   if (rol === 'gerente') return <Navigate to="/gerente" replace />
+  if (rol === 'cocina') return <Navigate to="/cocina" replace />
   return <Navigate to="/login" replace />
 }
 
@@ -63,6 +67,7 @@ export default function App() {
         <Route path="registro" element={<SupervisorRegistro />} />
         <Route path="descarga" element={<SupervisorDescarga />} />
         <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
+        <Route path="pedido-taco" element={<SupervisorPedidosTaco />} />
       </Route>
 
       {/* SUPLENTE */}
@@ -76,6 +81,17 @@ export default function App() {
         <Route path="registro" element={<SupervisorRegistro />} />
         <Route path="descarga" element={<SupervisorDescarga />} />
         <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
+        <Route path="pedido-taco" element={<SupervisorPedidosTaco />} />
+      </Route>
+
+      {/* COCINA */}
+      <Route path="/cocina" element={
+        <RequireAuth rolesPermitidos={['cocina']}>
+          <Layout rol="cocina" />
+        </RequireAuth>
+      }>
+        <Route index element={<CocinaDashboard />} />
+        <Route path="pedidos" element={<CocinaPedidos />} />
       </Route>
 
       {/* GERENTE */}

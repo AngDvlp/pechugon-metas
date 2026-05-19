@@ -22,7 +22,11 @@
       "Bash(Get-ChildItem -Recurse -Directory)",
       "Bash(Select-Object FullName)",
       "Bash(Format-Table -AutoSize)",
-      "PowerShell(cd \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\\\\src\"; Get-ChildItem -Recurse | Select-Object FullName | Where-Object {$_ -notmatch 'node_modules'})"
+      "PowerShell(cd \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\\\\src\"; Get-ChildItem -Recurse | Select-Object FullName | Where-Object {$_ -notmatch 'node_modules'})",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Force)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(Select-String \"recharts|lucide|date-fns\")"
     ]
   }
 }

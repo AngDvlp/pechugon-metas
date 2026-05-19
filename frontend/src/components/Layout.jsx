@@ -1,7 +1,8 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  LayoutDashboard, Target, Store, Users, Download, LogOut, Home, CalendarPlus, Utensils, Route
+  LayoutDashboard, Target, Store, Users, Download, LogOut, Home,
+  CalendarPlus, Utensils, Route, Package, ChefHat
 } from 'lucide-react'
 import styles from './Layout.module.css'
 
@@ -12,12 +13,14 @@ const NAV_ITEMS = {
   supervisor: [
     { to: '/supervisor', label: 'Tiendas', icon: Store, end: true },
     { to: '/supervisor/pollos-taco', label: 'Taco', icon: Utensils },
+    { to: '/supervisor/pedido-taco', label: 'Pedido', icon: Package },
     { to: '/supervisor/registro', label: 'Registrar', icon: CalendarPlus },
     { to: '/supervisor/descarga', label: 'Exportar', icon: Download },
   ],
   suplente: [
     { to: '/suplente', label: 'Tiendas', icon: Store, end: true },
     { to: '/suplente/pollos-taco', label: 'Taco', icon: Utensils },
+    { to: '/suplente/pedido-taco', label: 'Pedido', icon: Package },
     { to: '/suplente/registro', label: 'Registrar', icon: CalendarPlus },
     { to: '/suplente/descarga', label: 'Exportar', icon: Download },
   ],
@@ -30,6 +33,10 @@ const NAV_ITEMS = {
     { to: '/gerente/usuarios', label: 'Usuarios', icon: Users },
     { to: '/gerente/descarga', label: 'Exportar', icon: Download },
   ],
+  cocina: [
+    { to: '/cocina', label: 'Existencia', icon: ChefHat, end: true },
+    { to: '/cocina/pedidos', label: 'Pedidos', icon: Package },
+  ],
 }
 
 const ROL_LABELS = {
@@ -37,6 +44,7 @@ const ROL_LABELS = {
   supervisor: 'Supervisor',
   suplente: 'Supervisor Suplente',
   gerente: 'Gerente General',
+  cocina: 'Cocina',
 }
 
 export default function Layout({ rol }) {
