@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
+import * as XLSX from 'xlsx'
+import { Eye, Download, Calendar, Check } from 'lucide-react'
 import styles from './Descarga.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
@@ -17,12 +19,10 @@ export default function Descarga({ allSucursales = false }) {
   const [descargando, setDescargando] = useState(false)
   const [preview, setPreview] = useState(null)
 
-  // Filtros de periodo
   const [tipoPeriodo, setTipoPeriodo] = useState('semana_actual')
   const [desde, setDesde] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [hasta, setHasta] = useState(format(new Date(), 'yyyy-MM-dd'))
 
-  // Opciones de contenido
   const [incluirDetalle, setIncluirDetalle] = useState(true)
   const [incluirResumen, setIncluirResumen] = useState(true)
   const [incluirTicket, setIncluirTicket] = useState(true)
@@ -89,32 +89,42 @@ export default function Descarga({ allSucursales = false }) {
     setDescargando(true)
     const { desde: d, hasta: h } = getFechas()
 
-    const { data } = await supabase.from('ventas_diarias')
-      .select('fecha, venta_total, pollos_vendidos, ticket_promedio, sucursal_id, sucursales(nombre)')
-      .in('sucursal_id', seleccionadas)
-      .gte('fecha', d).lte('fecha', h)
-      .order('sucursal_id').order('fecha')
+    const [{ data: ventas }, { data: pollosTaco }] = await Promise.all([
+      supabase.from('ventas_diarias')
+        .select('fecha, venta_total, pollos_vendidos, ticket_promedio, sucursal_id, sucursales(nombre)')
+        .in('sucursal_id', seleccionadas)
+        .gte('fecha', d).lte('fecha', h)
+        .order('sucursal_id').order('fecha'),
+      supabase.from('pollos_taco')
+        .select('id, sucursal_id, fecha_ingreso, cantidad, caducidad, sucursales(nombre)')
+        .in('sucursal_id', seleccionadas)
+        .order('sucursal_id').order('fecha_ingreso'),
+    ])
 
-    if (!data?.length) { alert('Sin datos para el periodo seleccionado'); setDescargando(false); return }
+    if (!ventas?.length && !pollosTaco?.length) {
+      alert('Sin datos para el periodo seleccionado')
+      setDescargando(false)
+      return
+    }
 
-    const filas = []
+    const wb = XLSX.utils.book_new()
+    const hoy = new Date()
+    const generadoLabel = format(hoy, "d 'de' MMMM yyyy HH:mm", { locale: es })
 
-    // ENCABEZADO
-    filas.push([`REPORTE DE VENTAS — El Pechugón`])
-    filas.push([`Periodo: ${d} al ${h}`])
-    filas.push([`Sucursales: ${seleccionadas.length} de ${sucursales.length}`])
-    filas.push([`Generado: ${format(new Date(), "d 'de' MMMM yyyy HH:mm", { locale: es })}`])
-    filas.push([])
+    // Hoja 1: Detalle Diario
+    if (incluirDetalle && ventas?.length) {
+      const filas = []
+      filas.push(['REVISIÓN DE RESULTADOS TUX — DETALLE DIARIO'])
+      filas.push([`Periodo: ${d} al ${h}`])
+      filas.push([`Generado: ${generadoLabel}`])
+      filas.push([])
 
-    if (incluirDetalle) {
-      filas.push(['─── DETALLE POR DÍA ───'])
       const cols = ['Sucursal', 'Fecha', 'Día', 'Venta Total', 'Pollos Vendidos']
       if (incluirTicket) cols.push('Ticket Promedio')
       filas.push(cols)
 
-      // Agrupar por sucursal
       const porSucursal = {}
-      data.forEach(r => {
+      ventas.forEach(r => {
         const nombre = r.sucursales?.nombre ?? r.sucursal_id
         if (!porSucursal[nombre]) porSucursal[nombre] = []
         porSucursal[nombre].push(r)
@@ -132,26 +142,33 @@ export default function Descarga({ allSucursales = false }) {
           if (incluirTicket) fila.push(parseFloat(r.ticket_promedio ?? 0))
           filas.push(fila)
         })
-        // Subtotal por sucursal
         const subtotalVenta = rows.reduce((a, r) => a + r.venta_total, 0)
         const subtotalPollos = rows.reduce((a, r) => a + parseFloat(r.pollos_vendidos), 0)
         const subtotalTicket = subtotalPollos > 0 ? subtotalVenta / subtotalPollos : 0
         const subtotalFila = [`Subtotal ${nombre}`, '', '', subtotalVenta, subtotalPollos]
-        if (incluirTicket) subtotalFila.push(subtotalTicket.toFixed(2))
+        if (incluirTicket) subtotalFila.push(parseFloat(subtotalTicket.toFixed(2)))
         filas.push(subtotalFila)
         filas.push([])
       })
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(filas), 'Detalle Diario')
     }
 
-    if (incluirResumen) {
-      filas.push(['─── RESUMEN POR SUCURSAL ───'])
+    // Hoja 2: Resumen
+    if (incluirResumen && ventas?.length) {
+      const filas = []
+      filas.push(['REVISIÓN DE RESULTADOS TUX — RESUMEN POR SUCURSAL'])
+      filas.push([`Periodo: ${d} al ${h}`])
+      filas.push([`Generado: ${generadoLabel}`])
+      filas.push([])
+
       const colsRes = ['Sucursal', 'Días registrados', 'Venta Total', 'Pollos Totales']
       if (incluirTicket) colsRes.push('Ticket Promedio')
-      colsRes.push('Promedio diario')
+      colsRes.push('Promedio diario', 'Día más alto (fecha)', 'Venta más alta', 'Día más bajo (fecha)', 'Venta más baja')
       filas.push(colsRes)
 
       const porSucursal = {}
-      data.forEach(r => {
+      ventas.forEach(r => {
         const nombre = r.sucursales?.nombre ?? r.sucursal_id
         if (!porSucursal[nombre]) porSucursal[nombre] = []
         porSucursal[nombre].push(r)
@@ -167,32 +184,87 @@ export default function Descarga({ allSucursales = false }) {
         grandTotalVenta += totalVenta
         grandTotalPollos += totalPollos
         grandTotalDias += rows.length
-        const fila = [nombre, rows.length, totalVenta, totalPollos.toFixed(1)]
-        if (incluirTicket) fila.push(ticket.toFixed(2))
-        fila.push(promDia.toFixed(2))
+
+        const maxRow = rows.reduce((a, b) => a.venta_total > b.venta_total ? a : b)
+        const minRow = rows.reduce((a, b) => a.venta_total < b.venta_total ? a : b)
+
+        const fila = [nombre, rows.length, totalVenta, parseFloat(totalPollos.toFixed(1))]
+        if (incluirTicket) fila.push(parseFloat(ticket.toFixed(2)))
+        fila.push(
+          parseFloat(promDia.toFixed(2)),
+          format(parseISO(maxRow.fecha), 'dd/MM/yyyy EEEE', { locale: es }),
+          maxRow.venta_total,
+          format(parseISO(minRow.fecha), 'dd/MM/yyyy EEEE', { locale: es }),
+          minRow.venta_total,
+        )
         filas.push(fila)
       })
 
-      // Gran total
       filas.push([])
-      const gtFila = ['TOTAL GENERAL', grandTotalDias, grandTotalVenta, grandTotalPollos.toFixed(1)]
-      if (incluirTicket) gtFila.push((grandTotalPollos > 0 ? grandTotalVenta / grandTotalPollos : 0).toFixed(2))
-      gtFila.push((grandTotalVenta / (grandTotalDias || 1)).toFixed(2))
+      const gtFila = ['TOTAL GENERAL', grandTotalDias, grandTotalVenta, parseFloat(grandTotalPollos.toFixed(1))]
+      if (incluirTicket) gtFila.push(parseFloat((grandTotalPollos > 0 ? grandTotalVenta / grandTotalPollos : 0).toFixed(2)))
+      gtFila.push(parseFloat((grandTotalVenta / (grandTotalDias || 1)).toFixed(2)), '', '', '', '')
       filas.push(gtFila)
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(filas), 'Resumen')
     }
 
-    const csvContent = '\uFEFF' + filas.map(row =>
-      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-    ).join('\r\n')
+    // Hoja 3: Pollo para Taco
+    if (pollosTaco?.length) {
+      const filas = []
+      filas.push(['REVISIÓN DE RESULTADOS TUX — POLLO PARA TACO'])
+      filas.push([`Generado: ${generadoLabel}`])
+      filas.push([])
+      filas.push(['Sucursal', 'Fecha ingreso', 'Cantidad', 'Caducidad', 'Días restantes', 'Estado'])
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
+      const porSucTaco = {}
+
+      pollosTaco.forEach(r => {
+        const nombre = r.sucursales?.nombre ?? r.sucursal_id
+        const caducidad = r.caducidad ? parseISO(r.caducidad) : null
+        const diasRestantes = caducidad ? differenceInDays(caducidad, hoy) : null
+        let estado = 'Sin fecha'
+        if (diasRestantes !== null) {
+          if (diasRestantes < 0) estado = 'Caducado'
+          else if (diasRestantes === 0) estado = 'Último día'
+          else if (diasRestantes <= 2) estado = 'Por caducar'
+          else estado = 'Vigente'
+        }
+
+        filas.push([
+          nombre,
+          r.fecha_ingreso ? format(parseISO(r.fecha_ingreso), 'dd/MM/yyyy') : '',
+          parseFloat(r.cantidad ?? 0),
+          r.caducidad ? format(parseISO(r.caducidad), 'dd/MM/yyyy') : '',
+          diasRestantes !== null ? diasRestantes : '',
+          estado,
+        ])
+
+        if (!porSucTaco[nombre]) porSucTaco[nombre] = { vigente: 0, total: 0 }
+        porSucTaco[nombre].total += parseFloat(r.cantidad ?? 0)
+        if (estado === 'Vigente' || estado === 'Último día') {
+          porSucTaco[nombre].vigente += parseFloat(r.cantidad ?? 0)
+        }
+      })
+
+      filas.push([])
+      filas.push(['STOCK VIGENTE POR SUCURSAL'])
+      filas.push(['Sucursal', 'Stock vigente', 'Stock total (incl. caducados)'])
+      Object.entries(porSucTaco).forEach(([nombre, v]) => {
+        filas.push([nombre, v.vigente, v.total])
+      })
+
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(filas), 'Pollo para Taco')
+    }
+
+    if (wb.SheetNames.length === 0) {
+      alert('Sin datos para exportar')
+      setDescargando(false)
+      return
+    }
+
     const periodoLabel = tipoPeriodo === 'rango' ? `${d}_${h}` : tipoPeriodo
-    link.download = `pechugon_ventas_${periodoLabel}.csv`
-    link.click()
-    URL.revokeObjectURL(url)
+    XLSX.writeFile(wb, `pechugon_ventas_${periodoLabel}.xlsx`)
     setDescargando(false)
   }
 
@@ -238,7 +310,8 @@ export default function Descarga({ allSucursales = false }) {
         )}
 
         <div className={styles.periodoInfo}>
-          📅 {dPreview} al {hPreview}
+          <Calendar size={13} style={{ flexShrink: 0 }} />
+          {dPreview} al {hPreview}
         </div>
       </div>
 
@@ -255,7 +328,9 @@ export default function Descarga({ allSucursales = false }) {
             <div key={s.id}
               className={`${styles.sucItem} ${seleccionadas.includes(s.id) ? styles.sucItemActive : ''}`}
               onClick={() => toggleSucursal(s.id)}>
-              <span className={styles.sucCheck}>{seleccionadas.includes(s.id) ? '✓' : ''}</span>
+              <span className={styles.sucCheck}>
+                {seleccionadas.includes(s.id) ? <Check size={11} strokeWidth={3} /> : null}
+              </span>
               <span className={styles.sucNombre}>{s.nombre}</span>
             </div>
           ))}
@@ -273,7 +348,9 @@ export default function Descarga({ allSucursales = false }) {
           ].map(o => (
             <div key={o.key} className={`${styles.opcionItem} ${o.val ? styles.opcionActive : ''}`}
               onClick={() => o.set(v => !v)}>
-              <span className={styles.opcionCheck}>{o.val ? '✓' : ''}</span>
+              <span className={styles.opcionCheck}>
+                {o.val ? <Check size={11} strokeWidth={3} /> : null}
+              </span>
               <span className={styles.opcionLabel}>{o.label}</span>
             </div>
           ))}
@@ -283,10 +360,10 @@ export default function Descarga({ allSucursales = false }) {
       {/* Botones */}
       <div className={styles.botonesRow}>
         <button className={styles.previewBtn} onClick={cargarPreview} disabled={seleccionadas.length === 0}>
-          👁 Vista previa
+          <Eye size={15} /> Vista previa
         </button>
         <button className={styles.descargaBtn} onClick={descargar} disabled={descargando || seleccionadas.length === 0}>
-          {descargando ? 'Generando…' : '⬇ Descargar Excel'}
+          {descargando ? 'Generando…' : <><Download size={15} /> Descargar Excel</>}
         </button>
       </div>
 
