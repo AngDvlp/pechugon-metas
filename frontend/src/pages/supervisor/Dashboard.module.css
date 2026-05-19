@@ -550,3 +550,121 @@
   .rangoStatVal { font-size:0.72rem; }
 }
 .rangoMetaDif { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; margin-left:auto; flex-shrink:0; }
+
+/* ── Status chips ─────────────────────────────────────────── */
+.statusChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.statusChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+.statusChipDanger { background: rgba(232,25,44,0.1);  color: var(--red);     border-color: rgba(232,25,44,0.3); }
+.statusChipWarn   { background: rgba(245,196,0,0.08); color: var(--yellow);  border-color: rgba(245,196,0,0.28); }
+.statusChipInfo   { background: rgba(79,142,247,0.08); color: var(--info);   border-color: rgba(79,142,247,0.25); }
+
+/* ── Search + Sort controls ───────────────────────────────── */
+.controlsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.searchBox:focus-within {
+  border-color: rgba(245,196,0,0.35);
+  box-shadow: 0 0 0 3px rgba(245,196,0,0.06);
+}
+.searchInputField {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 12px 0;
+  min-width: 0;
+}
+.searchInputField:focus { outline: none; }
+.searchInputField::placeholder { color: var(--text-muted); }
+.searchClear {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.searchClear:hover { color: var(--text-primary); }
+
+.ordenRow {
+  display: flex;
+  gap: 6px;
+}
+.ordenBtn {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 7px 10px;
+  transition: all 0.15s;
+  text-align: center;
+}
+.ordenBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.ordenBtnActive {
+  background: rgba(245,196,0,0.1);
+  border-color: rgba(245,196,0,0.4);
+  color: var(--yellow);
+}
+
+/* ── Pace strip (bottom of store card) ───────────────────── */
+.paceStrip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 7px 0 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* ── Rank badge ───────────────────────────────────────────── */
+.rankBadge {
+  position: absolute;
+  top: 14px;
+  right: 48px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid;
+}

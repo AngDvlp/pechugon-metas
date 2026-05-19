@@ -33,6 +33,7 @@ export default function EncargadoDashboard() {
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState(null)
+  const [resumen,  setResumen]  = useState(null)
 
   // — Pollos Taco —
   const [lotesTaco,      setLotesTaco]      = useState([])
@@ -51,17 +52,19 @@ export default function EncargadoDashboard() {
 
   async function load() {
     setLoading(true)
-    const [{ data: hoyData }, { data: histData }, { data: tacoData }, { data: minData }] = await Promise.all([
+    const [{ data: hoyData }, { data: histData }, { data: tacoData }, { data: minData }, { data: resData }] = await Promise.all([
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoyStr).maybeSingle(),
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).order('fecha', { ascending: false }).limit(14),
       supabase.from('pollos_taco').select('*').eq('sucursal_id', sucursalId).order('fecha_rostizado', { ascending: false }).limit(30),
       supabase.from('pollos_taco_minimos').select('cantidad_minima').eq('sucursal_id', sucursalId).maybeSingle(),
+      supabase.rpc('resumen_sucursal', { p_sucursal_id: sucursalId }).maybeSingle(),
     ])
     setVentaHoy(hoyData)
     setUltimas(histData ?? [])
     if (hoyData) setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
     setLotesTaco(tacoData ?? [])
     setMinimoTaco(minData?.cantidad_minima ?? 0)
+    setResumen(resData ?? null)
     setLoading(false)
   }
 
@@ -154,6 +157,20 @@ export default function EncargadoDashboard() {
     ? parseFloat(form.venta_total) / parseFloat(form.pollos_vendidos)
     : null
 
+  // — Pace (derived) —
+  const metaMensual     = resumen?.meta_mensual ?? 0
+  const ventaAcumulada  = resumen?.venta_acumulada ?? 0
+  const avancePct       = resumen?.avance_porcentaje ?? 0
+  const _hoyD           = new Date()
+  const _diaActual      = _hoyD.getDate()
+  const _diasEnMes      = new Date(_hoyD.getFullYear(), _hoyD.getMonth() + 1, 0).getDate()
+  const diasRestantesM  = _diasEnMes - _diaActual
+  const paceEsperado    = (_diaActual / _diasEnMes) * 100
+  const onTrack         = avancePct >= paceEsperado * 0.92
+  const faltaMeta       = Math.max(0, metaMensual - ventaAcumulada)
+  const necesitaPorDia  = diasRestantesM > 0 ? faltaMeta / diasRestantesM : 0
+  const proyeccion      = ventaAcumulada + (necesitaPorDia > 0 ? necesitaPorDia * diasRestantesM : 0)
+
   if (loading) return <div className={styles.empty}>Cargando…</div>
   if (!sucursalId) return (
     <div className={styles.page}>
@@ -173,6 +190,54 @@ export default function EncargadoDashboard() {
           {format(new Date(), "EEEE d 'de' MMMM yyyy", { locale: es })}
         </p>
       </div>
+
+      {/* ── Meta Card ── */}
+      {resumen && metaMensual > 0 && (
+        <div className={styles.metaCard}>
+          <div className={styles.metaCardTop}>
+            <div className={styles.metaCardLeft}>
+              <p className={styles.metaCardLabel}>Meta mensual</p>
+              <p className={styles.metaCardMeta}>{fmt(metaMensual)}</p>
+            </div>
+            <div className={styles.metaCardPct}>
+              <span className={styles.metaPctNum}>{Math.round(avancePct)}</span>
+              <span className={styles.metaPctSym}>%</span>
+            </div>
+          </div>
+          <div className={styles.metaTrack}>
+            <div
+              className={styles.metaFill}
+              style={{
+                width: `${Math.min(100, avancePct)}%`,
+                background: avancePct >= 100 ? 'var(--success)' : onTrack ? 'var(--yellow)' : 'var(--red)',
+              }}
+            />
+          </div>
+          <div className={styles.metaKpiRow}>
+            <div className={styles.metaKpi}>
+              <span className={styles.metaKpiVal}>{fmt(ventaAcumulada)}</span>
+              <span className={styles.metaKpiLabel}>Vendido</span>
+            </div>
+            <div className={styles.metaKpiDiv} />
+            <div className={styles.metaKpi}>
+              <span className={styles.metaKpiVal}>{fmt(faltaMeta)}</span>
+              <span className={styles.metaKpiLabel}>Falta</span>
+            </div>
+            <div className={styles.metaKpiDiv} />
+            <div className={styles.metaKpi}>
+              <span className={styles.metaKpiVal}>{diasRestantesM}d</span>
+              <span className={styles.metaKpiLabel}>Restantes</span>
+            </div>
+          </div>
+          <div className={styles.metaPaceStrip} style={{ color: onTrack ? 'var(--success)' : 'var(--red)' }}>
+            {avancePct >= 100
+              ? 'Meta cumplida este mes'
+              : onTrack
+                ? `En ritmo · proyección ${fmt(metaMensual)}`
+                : `Necesita ${fmt(necesitaPorDia)}/día · ${diasRestantesM} días restantes`}
+          </div>
+        </div>
+      )}
 
       {/* ── Formulario ventas ── */}
       <div className={styles.formCard}>

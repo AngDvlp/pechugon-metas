@@ -33,7 +33,7 @@
 /* ── KPIs ── */
 .kpiRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
 }
 .kpiCard {
@@ -124,6 +124,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.sucCardRightInner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.coberturaBadge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
 }
 .stockBig { display: flex; align-items: baseline; gap: 2px; }
 .stockNum {

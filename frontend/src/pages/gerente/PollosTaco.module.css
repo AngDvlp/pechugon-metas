@@ -58,11 +58,11 @@
 /* ── KPIs ── */
 .kpiRow {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
 }
 @media (max-width: 480px) {
-  .kpiRow { grid-template-columns: repeat(2, 1fr); }
+  .kpiRow { grid-template-columns: repeat(3, 1fr); }
 }
 .kpiCard {
   background: var(--bg-card);

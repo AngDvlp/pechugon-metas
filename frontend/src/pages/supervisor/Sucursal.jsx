@@ -132,9 +132,19 @@ export default function SucursalDetalle({ backPath }) {
 
   const avance = resumen?.avance_porcentaje ?? 0
   const avanceSem = resumen?.avance_semanal ?? 0
-  const promDiario = ventas.length > 0 ? ventas.reduce((a, v) => a + v.venta_total, 0) / ventas.length : 0
+  // Use last 14 days for projection (more reactive to recent performance)
+  const ultimas14 = ventas.slice(-14)
+  const promDiario = ultimas14.length > 0 ? ultimas14.reduce((a, v) => a + v.venta_total, 0) / ultimas14.length : 0
   const diasRestantes = resumen ? resumen.dias_totales - resumen.dias_transcurridos : 0
   const proyeccion = resumen ? resumen.venta_acumulada + (promDiario * diasRestantes) : 0
+  const metaMensual = resumen?.meta_mensual ?? resumen?.meta_venta ?? 0
+  const faltaMeta = Math.max(0, metaMensual - (resumen?.venta_acumulada ?? 0))
+  const necesitaPorDia = diasRestantes > 0 ? faltaMeta / diasRestantes : 0
+  const hoyD = new Date()
+  const diaActual = hoyD.getDate()
+  const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+  const paceEsperado = (diaActual / diasEnMes) * 100
+  const onTrack = avance >= paceEsperado * 0.92
 
   const ventasSem = semanaData.filter(d => d.registrado)
   const totalVentaSem = ventasSem.reduce((a, d) => a + (d.venta_total ?? 0), 0)
@@ -204,8 +214,15 @@ export default function SucursalDetalle({ backPath }) {
             <div className={styles.metaStat}><span className={styles.metaStatLabel}>Pollos</span><span className={styles.metaStatVal}>{fmtNum(resumen.pollos_totales)}</span></div>
           </div>
           <div className={styles.proyeccion}>
-            <span className={styles.proyLabel}>Proyección final</span>
-            <span className={styles.proyVal} style={{ color: proyeccion >= (resumen.meta_mensual ?? resumen.meta_venta) ? 'var(--success)' : 'var(--red)' }}>{fmt(proyeccion)}</span>
+            <span className={styles.proyLabel}>Proyección fin de mes</span>
+            <span className={styles.proyVal} style={{ color: proyeccion >= metaMensual ? 'var(--success)' : 'var(--red)' }}>{fmt(proyeccion)}</span>
+          </div>
+          <div className={styles.paceRow} style={{ color: avance >= 100 ? 'var(--success)' : onTrack ? 'var(--success)' : 'var(--red)' }}>
+            {avance >= 100
+              ? 'Meta cumplida este mes'
+              : onTrack
+                ? `En ritmo · promedio ${fmt(promDiario)}/día (últ. 14d)`
+                : `Necesita ${fmt(necesitaPorDia)}/día · ${diasRestantes} días restantes`}
           </div>
         </div>
       ) : (

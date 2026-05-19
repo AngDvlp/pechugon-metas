@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { format, addDays, startOfWeek, startOfMonth } from 'date-fns'
 import {
   ChevronRight, TrendingUp, TrendingDown,
-  CheckCircle, Clock, Utensils
+  CheckCircle, Clock, Utensils, Search, X, AlertTriangle
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 
@@ -40,6 +40,22 @@ export default function SuplenteDashboard() {
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
+  const [busqueda,      setBusqueda]      = useState('')
+  const [ordenarPor,    setOrdenarPor]    = useState('default')
+
+  function calcPace(res) {
+    if (!res?.meta_mensual) return null
+    const meta = res.meta_mensual
+    const acumulado = res.venta_acumulada ?? 0
+    const hoyD = new Date()
+    const diaActual = hoyD.getDate()
+    const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+    const diasRestantes = diasEnMes - diaActual
+    const avancePct = meta > 0 ? (acumulado / meta) * 100 : 0
+    const onTrack = avancePct >= (diaActual / diasEnMes) * 100 * 0.92
+    const necesitaPorDia = diasRestantes > 0 ? Math.max(0, meta - acumulado) / diasRestantes : 0
+    return { onTrack, necesitaPorDia, diasRestantes }
+  }
 
   useEffect(() => { load() }, [])
 
@@ -130,9 +146,22 @@ export default function SuplenteDashboard() {
   }
 
   const sucursalesFiltradas = useMemo(() => {
-    if (filtroRuta === 'todas') return sucursales
-    return sucursales.filter(s => (rutaSucMap[filtroRuta] ?? []).includes(s.id))
-  }, [sucursales, filtroRuta, rutaSucMap])
+    let filtered = filtroRuta === 'todas'
+      ? sucursales
+      : sucursales.filter(s => (rutaSucMap[filtroRuta] ?? []).includes(s.id))
+    if (busqueda.trim()) {
+      const b = busqueda.toLowerCase()
+      filtered = filtered.filter(s => s.nombre.toLowerCase().includes(b))
+    }
+    if (ordenarPor === 'ranking') {
+      filtered = [...filtered].sort((a, b) => (resumenes[b.id]?.avance_porcentaje ?? 0) - (resumenes[a.id]?.avance_porcentaje ?? 0))
+    } else if (ordenarPor === 'riesgo') {
+      filtered = [...filtered].sort((a, b) => (resumenes[a.id]?.avance_porcentaje ?? 100) - (resumenes[b.id]?.avance_porcentaje ?? 100))
+    } else if (ordenarPor === 'sinreg') {
+      filtered = [...filtered].sort((a, b) => (!ventasHoy[a.id] ? 0 : 1) - (!ventasHoy[b.id] ? 0 : 1))
+    }
+    return filtered
+  }, [sucursales, filtroRuta, rutaSucMap, busqueda, ordenarPor, resumenes, ventasHoy])
 
   const esRango = filtroTiempo !== 'periodo'
 
@@ -171,6 +200,8 @@ export default function SuplenteDashboard() {
   const RANGO_LABELS = { hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes', custom: 'Personalizado' }
   const rangoLabel   = RANGO_LABELS[filtroTiempo] ?? ''
   const rutaLabel    = filtroRuta === 'todas' ? '' : (rutas.find(r => r.id === filtroRuta)?.nombre ?? '')
+  const sinRegistroHoy = sucursalesFiltradas.filter(s => !ventasHoy[s.id]).length
+  const enRiesgo       = sucursalesFiltradas.filter(s => (resumenes[s.id]?.avance_porcentaje ?? 100) < 70).length
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -220,6 +251,60 @@ export default function SuplenteDashboard() {
           <span className={styles.rangoSep}>—</span>
           <input className={styles.rangoDateInput} type="date"
             value={customHasta} min={customDesde} onChange={e => setCustomHasta(e.target.value)} />
+        </div>
+      )}
+
+      {/* ── Status chips ── */}
+      {!esRango && (
+        <div className={styles.statusChips}>
+          {sinRegistroHoy > 0 && (
+            <span className={`${styles.statusChip} ${styles.statusChipDanger}`}>
+              <AlertTriangle size={11} strokeWidth={2.5} />
+              {sinRegistroHoy} sin registro
+            </span>
+          )}
+          {enRiesgo > 0 && (
+            <span className={`${styles.statusChip} ${styles.statusChipWarn}`}>
+              {enRiesgo} en riesgo
+            </span>
+          )}
+          {sucursalesFiltradas.length - enRiesgo - sinRegistroHoy > 0 && (
+            <span className={`${styles.statusChip} ${styles.statusChipInfo}`}>
+              {sucursalesFiltradas.length - enRiesgo - sinRegistroHoy} en camino
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* ── Search + Sort ── */}
+      <div className={styles.searchWrap}>
+        <Search size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+        <input
+          className={styles.searchInput}
+          placeholder="Buscar sucursal…"
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+        />
+        {busqueda && (
+          <button className={styles.searchClearBtn} onClick={() => setBusqueda('')}>
+            <X size={13} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
+      {!esRango && (
+        <div className={styles.sortRow}>
+          {[
+            { key: 'default', label: 'Posición' },
+            { key: 'ranking', label: 'Ranking' },
+            { key: 'riesgo',  label: 'En riesgo' },
+            { key: 'sinreg',  label: 'Sin registro' },
+          ].map(o => (
+            <button key={o.key}
+              className={`${styles.sortBtn} ${ordenarPor === o.key ? styles.sortBtnActive : ''}`}
+              onClick={() => setOrdenarPor(o.key)}>
+              {o.label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -326,6 +411,8 @@ export default function SuplenteDashboard() {
               const hv          = ventasHoy[s.id]
               const avanceMesSuc = res?.avance_porcentaje ?? 0
               const avanceSemSuc = res?.avance_semanal ?? 0
+              const pace        = calcPace(res)
+              const rankIdx     = ordenarPor === 'ranking' ? sucursalesFiltradas.indexOf(s) : -1
               let barColor = 'var(--text-muted)'
               let statusLabel = 'Sin meta'
               let StatusIcon = Clock
@@ -344,13 +431,21 @@ export default function SuplenteDashboard() {
                         {statusLabel}
                       </p>
                     </div>
-                    <div className={styles.sucPct}>
-                      {!res ? <span className={styles.noMeta}>—</span> : (
-                        <>
-                          <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
-                          <span className={styles.sucPctSym}>%</span>
-                        </>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      {!hv && <span className={styles.sinRegBadge}>Sin reg.</span>}
+                      {rankIdx >= 0 && (
+                        <span className={styles.rankBadge} style={{
+                          color: rankIdx === 0 ? '#FFD700' : rankIdx === 1 ? '#C0C0C0' : rankIdx === 2 ? '#CD7F32' : 'var(--text-muted)'
+                        }}>#{rankIdx + 1}</span>
                       )}
+                      <div className={styles.sucPct}>
+                        {!res ? <span className={styles.noMeta}>—</span> : (
+                          <>
+                            <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
+                            <span className={styles.sucPctSym}>%</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {res && (
@@ -391,6 +486,11 @@ export default function SuplenteDashboard() {
                       </span>
                     </div>
                   </div>
+                  {pace && !pace.onTrack && pace.diasRestantes > 0 && (
+                    <div className={styles.paceStrip} style={{ color: 'var(--red)' }}>
+                      Necesita {fmt(pace.necesitaPorDia)}/día · {pace.diasRestantes} días
+                    </div>
+                  )}
                   {tacoMap[s.id] && (
                     <div className={styles.tacoIndicator}>
                       <Utensils size={11} strokeWidth={2} color={tacoMap[s.id].deficit?'var(--red)':tacoMap[s.id].expirando?'var(--yellow)':'var(--info)'} />

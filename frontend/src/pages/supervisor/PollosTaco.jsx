@@ -156,6 +156,14 @@ export default function SupervisorPollosTaco() {
   const sucConExpirando  = sucursales.filter(s =>
     lotesMap[s.id]?.some(l => l.fecha_caducidad === mananaStr)
   )
+  const coberturas = sucursales
+    .map(s => {
+      const stock = lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0
+      const min   = minimosMap[s.id] ?? 0
+      return min > 0 ? Math.floor(stock / min) : null
+    })
+    .filter(c => c !== null)
+  const coberturaMin = coberturas.length > 0 ? Math.min(...coberturas) : null
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -191,6 +199,14 @@ export default function SupervisorPollosTaco() {
           </span>
           <span className={styles.kpiLabel}>Caducan hoy</span>
         </div>
+        {coberturaMin !== null && (
+          <div className={`${styles.kpiCard} ${coberturaMin === 0 ? styles.kpiCardDanger : coberturaMin === 1 ? styles.kpiCardWarn : ''}`}>
+            <span className={styles.kpiVal} style={{ color: coberturaMin === 0 ? 'var(--red)' : coberturaMin === 1 ? 'var(--yellow)' : 'var(--success)' }}>
+              {coberturaMin === 0 ? '<1' : coberturaMin}d
+            </span>
+            <span className={styles.kpiLabel}>Cobertura mín.</span>
+          </div>
+        )}
       </div>
 
       {/* ── Alertas críticas ── */}
@@ -228,6 +244,7 @@ export default function SupervisorPollosTaco() {
           const isEditingMin = editMinSuc === suc.id
 
           const pct = minimo > 0 ? Math.min((stock / minimo) * 100, 100) : 100
+          const diasCobertura = minimo > 0 ? Math.floor(stock / minimo) : null
           let statusColor = 'var(--success)'
           let statusLabel = 'Stock OK'
           if (hayDeficit) { statusColor = 'var(--red)'; statusLabel = 'Déficit' }
@@ -248,9 +265,20 @@ export default function SupervisorPollosTaco() {
                   </span>
                 </div>
                 <div className={styles.sucCardRight}>
-                  <div className={styles.stockBig}>
-                    <span className={styles.stockNum}>{stock}</span>
-                    {minimo > 0 && <span className={styles.stockMin}>/{minimo}</span>}
+                  <div className={styles.sucCardRightInner}>
+                    <div className={styles.stockBig}>
+                      <span className={styles.stockNum}>{stock}</span>
+                      {minimo > 0 && <span className={styles.stockMin}>/{minimo}</span>}
+                    </div>
+                    {diasCobertura !== null && (
+                      <span className={styles.coberturaBadge} style={{
+                        color: diasCobertura === 0 ? 'var(--red)' : diasCobertura === 1 ? 'var(--yellow)' : 'var(--success)',
+                        borderColor: diasCobertura === 0 ? 'rgba(232,25,44,0.3)' : diasCobertura === 1 ? 'rgba(245,196,0,0.3)' : 'rgba(0,211,149,0.3)',
+                        background:  diasCobertura === 0 ? 'rgba(232,25,44,0.08)' : diasCobertura === 1 ? 'rgba(245,196,0,0.08)' : 'rgba(0,211,149,0.08)',
+                      }}>
+                        {diasCobertura === 0 ? '<1 día' : `${diasCobertura}d`}
+                      </span>
+                    )}
                   </div>
                   {isExpanded ? <ChevronUp size={16} strokeWidth={2} color="var(--text-muted)" /> : <ChevronDown size={16} strokeWidth={2} color="var(--text-muted)" />}
                 </div>

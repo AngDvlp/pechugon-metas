@@ -608,6 +608,163 @@
   padding: 24px 0;
 }
 
+/* ── META CARD ──────────────────────────────────────────── */
+.metaCard {
+  background: linear-gradient(155deg,
+    rgba(27, 58, 140, 0.45) 0%,
+    rgba(6, 10, 20, 0.97) 60%,
+    rgba(27, 58, 140, 0.12) 100%
+  );
+  border: 1px solid rgba(27, 58, 140, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 36px rgba(0,0,0,0.5);
+}
+
+.metaCard::before {
+  content: '';
+  position: absolute;
+  top: -32px; right: -32px;
+  width: 160px; height: 160px;
+  background: radial-gradient(ellipse, rgba(245,196,0,0.07) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.metaCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metaCardLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metaCardLabel {
+  font-family: var(--font-body);
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.metaCardMeta {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.metaCardPct {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.metaPctNum {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--yellow);
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(245,196,0,0.3);
+}
+
+.metaPctSym {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--yellow);
+  opacity: 0.6;
+}
+
+.metaTrack {
+  height: 5px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.metaFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.9s cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation: bar-fill 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  box-shadow: 0 0 10px rgba(245,196,0,0.35);
+}
+
+.metaKpiRow {
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: var(--radius-md);
+  padding: 9px 0;
+}
+
+.metaKpi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  min-width: 0;
+}
+
+.metaKpiVal {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+.metaKpiLabel {
+  font-family: var(--font-body);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.metaKpiDiv {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.metaPaceStrip {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:380px) {
   .sucursalNombre { font-size: 1.5rem; }

@@ -5,12 +5,28 @@ import { useAuth } from '../../contexts/AuthContext'
 import { format, addDays, startOfWeek, startOfMonth } from 'date-fns'
 import {
   ChevronRight, TrendingUp, TrendingDown,
-  CheckCircle, Clock, Utensils
+  CheckCircle, Clock, Utensils, Search, X, AlertTriangle
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
+
+function calcPace(res) {
+  if (!res || !res.meta_mensual) return null
+  const meta = res.meta_mensual
+  const acumulado = res.venta_acumulada ?? 0
+  const hoyD = new Date()
+  const diaActual = hoyD.getDate()
+  const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+  const diasRestantes = diasEnMes - diaActual
+  const paceEsperadoPct = (diaActual / diasEnMes) * 100
+  const avancePct = meta > 0 ? (acumulado / meta) * 100 : 0
+  const onTrack = avancePct >= paceEsperadoPct * 0.92
+  const falta = Math.max(0, meta - acumulado)
+  const necesitaPorDia = diasRestantes > 0 ? falta / diasRestantes : 0
+  return { onTrack, necesitaPorDia, diasRestantes }
+}
 
 export default function SupervisorDashboard() {
   const { usuario } = useAuth()
@@ -26,6 +42,8 @@ export default function SupervisorDashboard() {
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
+  const [busqueda,      setBusqueda]      = useState('')
+  const [ordenarPor,    setOrdenarPor]    = useState('default')
   const hoy    = format(new Date(), 'yyyy-MM-dd')
   const manana = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
@@ -67,8 +85,6 @@ export default function SupervisorDashboard() {
     const resMap = {}
     sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
     setResumenes(resMap)
-
-    // Taco map
     const mMap = {}
     minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
     setMinimosMap(mMap)
@@ -78,12 +94,7 @@ export default function SupervisorDashboard() {
       const vigentes = lotes.filter(l => l.fecha_caducidad > hoy)
       const stock    = vigentes.reduce((a, l) => a + l.cantidad, 0)
       const minimo   = mMap[id] ?? 0
-      tMap[id] = {
-        stock,
-        deficit:    minimo > 0 && stock < minimo,
-        expirando:  vigentes.some(l => l.fecha_caducidad === manana),
-        minimo,
-      }
+      tMap[id] = { stock, deficit: minimo > 0 && stock < minimo, expirando: vigentes.some(l => l.fecha_caducidad === manana), minimo }
     })
     setTacoMap(tMap)
     setLoading(false)
@@ -117,8 +128,8 @@ export default function SupervisorDashboard() {
   const fmtDif           = v => (v >= 0 ? '+' : '−') + fmt(Math.abs(v))
   const rangoVentaTotal  = sucursales.reduce((a, s) => a + (rangos[s.id]?.venta  ?? 0), 0)
   const rangoPollosTotal = sucursales.reduce((a, s) => a + (rangos[s.id]?.pollos ?? 0), 0)
-  const rangoTicket      = rangoPollosTotal > 0 ? rangoVentaTotal / rangoPollosTotal : 0
   const RANGO_LABELS     = { hoy:'Hoy', semana:'Esta semana', mes:'Este mes', custom:'Personalizado' }
+
   function calcMetaEsperada(res) {
     if (!res) return null
     const m = res.meta_mensual ?? 0
@@ -133,17 +144,30 @@ export default function SupervisorDashboard() {
     } else return null
     return v > 0 ? v : null
   }
+
   const totalMetaEsperada = sucursales.reduce((a, s) => a + (calcMetaEsperada(resumenes[s.id]) ?? 0), 0)
   const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
   const avancePctRango    = totalMetaEsperada > 0 ? (rangoVentaTotal / totalMetaEsperada) * 100 : null
-
-  const metaMensualTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_mensual ?? 0), 0)
-  const acumuladoTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
-  const ventaHoyTotal = Object.values(ventasHoy).reduce((a, v) => a + (v?.venta_total ?? 0), 0)
-  const metaSemanalTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_venta ?? 0), 0)
-  const ventaSemanaTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_semana_actual ?? 0), 0)
+  const metaMensualTotal  = Object.values(resumenes).reduce((a, r) => a + (r?.meta_mensual ?? 0), 0)
+  const acumuladoTotal    = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
+  const ventaHoyTotal     = Object.values(ventasHoy).reduce((a, v) => a + (v?.venta_total ?? 0), 0)
+  const metaSemanalTotal  = Object.values(resumenes).reduce((a, r) => a + (r?.meta_venta ?? 0), 0)
+  const ventaSemanaTotal  = Object.values(resumenes).reduce((a, r) => a + (r?.venta_semana_actual ?? 0), 0)
   const avanceMes = metaMensualTotal > 0 ? (acumuladoTotal / metaMensualTotal) * 100 : 0
   const avanceSem = metaSemanalTotal > 0 ? (ventaSemanaTotal / metaSemanalTotal) * 100 : 0
+
+  // Filter + sort
+  const sucursalesFiltradas = sucursales
+    .filter(s => s.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a, b) => {
+      if (ordenarPor === 'ranking') return (resumenes[b.id]?.avance_porcentaje ?? 0) - (resumenes[a.id]?.avance_porcentaje ?? 0)
+      if (ordenarPor === 'riesgo')  return (resumenes[a.id]?.avance_porcentaje ?? 100) - (resumenes[b.id]?.avance_porcentaje ?? 100)
+      return 0
+    })
+
+  const sinRegistroHoy = sucursales.filter(s => !ventasHoy[s.id]).length
+  const enRiesgo       = sucursales.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje < 70).length
+  const enCamino       = sucursales.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70 && resumenes[s.id].avance_porcentaje < 100).length
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -176,7 +200,7 @@ export default function SupervisorDashboard() {
         </div>
       )}
 
-      {/* ── Range hero card (non-periodo mode) ── */}
+      {/* ── Range hero card ── */}
       {esRango && (
         <div className={styles.rangoHeroCard}>
           <p className={styles.rangoHeroLabel}>{RANGO_LABELS[filtroTiempo] ?? ''}</p>
@@ -211,73 +235,135 @@ export default function SupervisorDashboard() {
             <div className={styles.rangoHeroDivider} />
             <div className={styles.rangoHeroStat}>
               <span className={styles.rangoHeroStatLabel}>Pollos</span>
-              <span className={styles.rangoHeroStatVal}>{new Intl.NumberFormat('es-MX',{maximumFractionDigits:1}).format(rangoPollosTotal)}</span>
+              <span className={styles.rangoHeroStatVal}>{fmtNum(rangoPollosTotal)}</span>
             </div>
           </div>
         </div>
       )}
 
       {/* ── Periodo hero card ── */}
-      {!esRango && <div className={styles.supervisorCard}>
-        <div className={styles.supTop}>
-          <div>
-            <p className={styles.supLabel}>Meta mensual</p>
-            <p className={styles.supMeta}>{fmt(metaMensualTotal)}</p>
+      {!esRango && (
+        <div className={styles.supervisorCard}>
+          <div className={styles.supTop}>
+            <div>
+              <p className={styles.supLabel}>Meta mensual</p>
+              <p className={styles.supMeta}>{fmt(metaMensualTotal)}</p>
+            </div>
+            <div className={styles.supPct}>
+              <span className={styles.pctNum}>{avanceMes.toFixed(1)}</span>
+              <span className={styles.pctSym}>%</span>
+            </div>
           </div>
-          <div className={styles.supPct}>
-            <span className={styles.pctNum}>{avanceMes.toFixed(1)}</span>
-            <span className={styles.pctSym}>%</span>
+          <div className={styles.barRow}>
+            <span className={styles.barLabel}>Mes</span>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressFill} style={{ width: `${Math.min(avanceMes, 100)}%` }} />
+            </div>
+          </div>
+          <div className={styles.barRow}>
+            <span className={styles.barLabel}>Semana</span>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressFill} style={{
+                width: `${Math.min(avanceSem, 100)}%`,
+                background: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
+              }} />
+            </div>
+            <span className={styles.barPct} style={{
+              color: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
+            }}>{avanceSem.toFixed(0)}%</span>
+          </div>
+          <div className={styles.supBottom}>
+            <div className={styles.supStat}>
+              <span className={styles.supStatLabel}>Acumulado</span>
+              <span className={styles.supStatVal}>{fmt(acumuladoTotal)}</span>
+            </div>
+            <div className={styles.supDivider} />
+            <div className={styles.supStat}>
+              <span className={styles.supStatLabel}>Esta semana</span>
+              <span className={styles.supStatVal}>{fmt(ventaSemanaTotal)}</span>
+            </div>
+            <div className={styles.supDivider} />
+            <div className={styles.supStat}>
+              <span className={styles.supStatLabel}>Hoy</span>
+              <span className={styles.supStatVal}>{fmt(ventaHoyTotal)}</span>
+            </div>
           </div>
         </div>
-        <div className={styles.barRow}>
-          <span className={styles.barLabel}>Mes</span>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{ width: `${Math.min(avanceMes, 100)}%` }} />
-          </div>
-        </div>
-        <div className={styles.barRow}>
-          <span className={styles.barLabel}>Semana</span>
-          <div className={styles.progressTrack}>
-            <div className={styles.progressFill} style={{
-              width: `${Math.min(avanceSem, 100)}%`,
-              background: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
-            }} />
-          </div>
-          <span className={styles.barPct} style={{
-            color: avanceSem >= 100 ? 'var(--success)' : avanceSem >= 70 ? 'var(--yellow)' : 'var(--red)'
-          }}>{avanceSem.toFixed(0)}%</span>
-        </div>
-        <div className={styles.supBottom}>
-          <div className={styles.supStat}>
-            <span className={styles.supStatLabel}>Acumulado</span>
-            <span className={styles.supStatVal}>{fmt(acumuladoTotal)}</span>
-          </div>
-          <div className={styles.supDivider} />
-          <div className={styles.supStat}>
-            <span className={styles.supStatLabel}>Esta semana</span>
-            <span className={styles.supStatVal}>{fmt(ventaSemanaTotal)}</span>
-          </div>
-          <div className={styles.supDivider} />
-          <div className={styles.supStat}>
-            <span className={styles.supStatLabel}>Hoy</span>
-            <span className={styles.supStatVal}>{fmt(ventaHoyTotal)}</span>
-          </div>
-        </div>
-      </div>}
+      )}
 
-      <p className={styles.secTitle}>Mis Sucursales</p>
+      {/* ── Status chips ── */}
+      {!esRango && sucursales.length > 0 && (
+        <div className={styles.statusChips}>
+          {sinRegistroHoy > 0 && (
+            <div className={`${styles.statusChip} ${styles.statusChipDanger}`}>
+              <AlertTriangle size={11} strokeWidth={2.5} />
+              {sinRegistroHoy} sin registro
+            </div>
+          )}
+          {enRiesgo > 0 && (
+            <div className={`${styles.statusChip} ${styles.statusChipWarn}`}>
+              <TrendingDown size={11} strokeWidth={2.5} />
+              {enRiesgo} por debajo
+            </div>
+          )}
+          {enCamino > 0 && (
+            <div className={`${styles.statusChip} ${styles.statusChipInfo}`}>
+              <TrendingUp size={11} strokeWidth={2.5} />
+              {enCamino} en camino
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Search + Sort ── */}
+      <div className={styles.controlsWrap}>
+        <div className={styles.searchBox}>
+          <Search size={14} strokeWidth={2} color="var(--text-muted)" />
+          <input
+            className={styles.searchInputField}
+            type="text"
+            placeholder="Buscar sucursal…"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+          />
+          {busqueda && (
+            <button className={styles.searchClear} onClick={() => setBusqueda('')}>
+              <X size={13} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+        <div className={styles.ordenRow}>
+          {[
+            { key: 'default', label: 'Posición' },
+            { key: 'ranking', label: 'Ranking' },
+            { key: 'riesgo',  label: 'En riesgo' },
+          ].map(o => (
+            <button key={o.key}
+              className={`${styles.ordenBtn} ${ordenarPor === o.key ? styles.ordenBtnActive : ''}`}
+              onClick={() => setOrdenarPor(o.key)}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p className={styles.secTitle}>
+        {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
+        {ordenarPor === 'ranking' ? ' — mejor avance primero' : ordenarPor === 'riesgo' ? ' — en riesgo primero' : ''}
+      </p>
       {sucursales.length === 0 && <div className={styles.empty}>No tienes sucursales asignadas</div>}
 
       {esRango && loadingRangos ? (
         <div className={styles.empty}>Cargando datos…</div>
       ) : (
         <div className={styles.cards}>
-          {sucursales.map(s => {
+          {sucursalesFiltradas.map((s, idx) => {
             if (!esRango) {
               const res = resumenes[s.id]
               const hv = ventasHoy[s.id]
               const avanceMesSuc = res?.avance_porcentaje ?? 0
               const avanceSemSuc = res?.avance_semanal ?? 0
+              const pace = calcPace(res)
               let barColor = 'var(--text-muted)'
               let statusLabel = 'Sin meta'
               let StatusIcon = Clock
@@ -286,8 +372,16 @@ export default function SupervisorDashboard() {
                 else if (avanceMesSuc >= 70) { barColor = 'var(--yellow)'; statusLabel = 'En camino'; StatusIcon = TrendingUp }
                 else { barColor = 'var(--red)'; statusLabel = 'Por debajo'; StatusIcon = TrendingDown }
               }
+              const showRank = ordenarPor === 'ranking'
               return (
                 <div key={s.id} className={styles.sucCard} onClick={() => navigate(`/supervisor/sucursal/${s.id}`)}>
+                  {showRank && (
+                    <div className={styles.rankBadge} style={{
+                      color: idx === 0 ? '#F5C400' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : 'var(--text-muted)',
+                      borderColor: idx === 0 ? 'rgba(245,196,0,0.35)' : idx === 1 ? 'rgba(192,192,192,0.25)' : idx === 2 ? 'rgba(205,127,50,0.3)' : 'var(--border)',
+                      background: idx === 0 ? 'rgba(245,196,0,0.1)' : idx === 1 ? 'rgba(192,192,192,0.07)' : idx === 2 ? 'rgba(205,127,50,0.08)' : 'transparent',
+                    }}>#{idx + 1}</div>
+                  )}
                   <div className={styles.sucHeader}>
                     <div>
                       <p className={styles.sucNombre}>{s.nombre}</p>
@@ -343,6 +437,14 @@ export default function SupervisorDashboard() {
                       </span>
                     </div>
                   </div>
+                  {pace && (
+                    <div className={styles.paceStrip} style={{ color: pace.onTrack ? 'var(--success)' : 'var(--red)' }}>
+                      {pace.onTrack
+                        ? <><TrendingUp size={11} strokeWidth={2.5} /> En ritmo para la meta</>
+                        : <><AlertTriangle size={11} strokeWidth={2.5} /> Necesita {fmt(pace.necesitaPorDia)}/día · {pace.diasRestantes} días restantes</>
+                      }
+                    </div>
+                  )}
                   {tacoMap[s.id] && (
                     <div className={styles.tacoIndicator}>
                       <Utensils size={11} strokeWidth={2} color={tacoMap[s.id].deficit ? 'var(--red)' : tacoMap[s.id].expirando ? 'var(--yellow)' : 'var(--info)'} />
@@ -401,25 +503,13 @@ export default function SupervisorDashboard() {
                       </div>
                     )}
                     <div className={styles.rangoStats}>
-                      <div className={styles.rangoStat}>
-                        <span className={styles.rangoStatLabel}>Pollos</span>
-                        <span className={styles.rangoStatVal}>{new Intl.NumberFormat('es-MX',{maximumFractionDigits:1}).format(rango.pollos)}</span>
-                      </div>
+                      <div className={styles.rangoStat}><span className={styles.rangoStatLabel}>Pollos</span><span className={styles.rangoStatVal}>{fmtNum(rango.pollos)}</span></div>
                       <div className={styles.rangoStatDiv} />
-                      <div className={styles.rangoStat}>
-                        <span className={styles.rangoStatLabel}>Ticket</span>
-                        <span className={styles.rangoStatVal}>{fmtDec(rango.ticket)}</span>
-                      </div>
+                      <div className={styles.rangoStat}><span className={styles.rangoStatLabel}>Ticket</span><span className={styles.rangoStatVal}>{fmtDec(rango.ticket)}</span></div>
                       <div className={styles.rangoStatDiv} />
-                      <div className={styles.rangoStat}>
-                        <span className={styles.rangoStatLabel}>Días</span>
-                        <span className={styles.rangoStatVal}>{rango.dias}</span>
-                      </div>
+                      <div className={styles.rangoStat}><span className={styles.rangoStatLabel}>Días</span><span className={styles.rangoStatVal}>{rango.dias}</span></div>
                       <div className={styles.rangoStatDiv} />
-                      <div className={styles.rangoStat}>
-                        <span className={styles.rangoStatLabel}>Prom/día</span>
-                        <span className={styles.rangoStatVal}>{fmt(rango.promDia)}</span>
-                      </div>
+                      <div className={styles.rangoStat}><span className={styles.rangoStatLabel}>Prom/día</span><span className={styles.rangoStatVal}>{fmt(rango.promDia)}</span></div>
                     </div>
                   </>
                 )}

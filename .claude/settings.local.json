@@ -26,7 +26,10 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Force)",
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table FullName)",
-      "Bash(Select-String \"recharts|lucide|date-fns\")"
+      "Bash(Select-String \"recharts|lucide|date-fns\")",
+      "Bash(Get-ChildItem -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ]
   }
 }

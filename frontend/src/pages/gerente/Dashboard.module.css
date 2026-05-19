@@ -598,6 +598,111 @@
 .rangoMetaVal { font-family:var(--font-mono); font-size:0.78rem; color:var(--text-secondary); }
 .rangoMetaDif { font-family:var(--font-mono); font-size:0.78rem; font-weight:600; margin-left:auto; flex-shrink:0; }
 
+/* ── HEALTH CHIPS ───────────────────────────────────────── */
+.healthRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.healthChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.healthChipDanger  { background: rgba(232,25,44,0.1);  border-color: rgba(232,25,44,0.25);  color: var(--red); }
+.healthChipWarn    { background: rgba(245,196,0,0.1);  border-color: rgba(245,196,0,0.25);  color: var(--yellow); }
+.healthChipInfo    { background: rgba(79,142,247,0.1); border-color: rgba(79,142,247,0.25); color: var(--info); }
+.healthChipOk      { background: rgba(0,211,149,0.1);  border-color: rgba(0,211,149,0.25);  color: var(--success); }
+.healthChipNeutral { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: var(--text-muted); }
+
+/* ── SORT ROW ────────────────────────────────────────────── */
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.sortRow::-webkit-scrollbar { display: none; }
+
+.sortLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sortBtn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sortBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.sortBtnActive {
+  background: rgba(245,196,0,0.1);
+  border-color: rgba(245,196,0,0.4);
+  color: var(--yellow);
+}
+
+/* ── PER-ROW INDICATORS ─────────────────────────────────── */
+.rankNum {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sinRegBadge {
+  font-family: var(--font-body);
+  font-size: 0.56rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(232,25,44,0.12);
+  border: 1px solid rgba(232,25,44,0.2);
+  color: var(--red);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.paceHint {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--red);
+  opacity: 0.75;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:360px) {
   .globalMeta  { font-size:1.2rem; }

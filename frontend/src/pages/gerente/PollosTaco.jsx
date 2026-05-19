@@ -102,6 +102,10 @@ export default function GerentePollosTaco() {
   const totalDeficit    = sucursalesFiltradas.filter(s => getDeficit(s.id)).length
   const totalExpirando  = sucursalesFiltradas.filter(s => getExpirando(s.id).length > 0).length
   const totalLotes      = sucursalesFiltradas.reduce((a, s) => a + (lotesMap[s.id] ?? []).filter(l => l.fecha_caducidad > hoyStr).length, 0)
+  const coberturas = sucursalesFiltradas
+    .map(s => { const m = minimosMap[s.id] ?? 0; return m > 0 ? Math.floor(getStock(s.id) / m) : null })
+    .filter(c => c !== null)
+  const coberturaMin = coberturas.length > 0 ? Math.min(...coberturas) : null
 
   // Data para gráfica
   const chartData = sucursalesFiltradas.map(s => ({
@@ -163,6 +167,14 @@ export default function GerentePollosTaco() {
           <span className={styles.kpiVal}>{totalLotes}</span>
           <span className={styles.kpiLabel}>Lotes activos</span>
         </div>
+        {coberturaMin !== null && (
+          <div className={`${styles.kpiCard} ${coberturaMin === 0 ? styles.kpiDanger : coberturaMin === 1 ? styles.kpiWarn : ''}`}>
+            <span className={styles.kpiVal} style={{ color: coberturaMin === 0 ? 'var(--red)' : coberturaMin === 1 ? 'var(--yellow)' : 'var(--success)' }}>
+              {coberturaMin === 0 ? '<1' : coberturaMin}d
+            </span>
+            <span className={styles.kpiLabel}>Cobertura mín.</span>
+          </div>
+        )}
       </div>
 
       {/* ── Alertas ── */}
@@ -237,6 +249,7 @@ export default function GerentePollosTaco() {
           const deficit   = minimo > 0 && stock < minimo
           const isExpanded = expandedSuc[suc.id] ?? false
           const pct = minimo > 0 ? Math.min((stock / minimo) * 100, 100) : 100
+          const diasCob = minimo > 0 ? Math.floor(stock / minimo) : null
           let barColor = 'var(--success)'
           if (deficit) barColor = 'var(--red)'
           else if (expirando.length > 0) barColor = 'var(--yellow)'
@@ -268,9 +281,22 @@ export default function GerentePollosTaco() {
                   </div>
                 </div>
                 <div className={styles.sucRowRight}>
-                  <div className={styles.stockDisp}>
-                    <span className={styles.stockVal} style={{ color: barColor }}>{stock}</span>
-                    {minimo > 0 && <span className={styles.stockOf}>/{minimo}</span>}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                    <div className={styles.stockDisp}>
+                      <span className={styles.stockVal} style={{ color: barColor }}>{stock}</span>
+                      {minimo > 0 && <span className={styles.stockOf}>/{minimo}</span>}
+                    </div>
+                    {diasCob !== null && (
+                      <span style={{
+                        fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700,
+                        padding: '1px 6px', borderRadius: 5, border: '1px solid',
+                        color:   diasCob === 0 ? 'var(--red)' : diasCob === 1 ? 'var(--yellow)' : 'var(--success)',
+                        borderColor: diasCob === 0 ? 'rgba(232,25,44,0.3)' : diasCob === 1 ? 'rgba(245,196,0,0.3)' : 'rgba(0,211,149,0.3)',
+                        background:  diasCob === 0 ? 'rgba(232,25,44,0.08)' : diasCob === 1 ? 'rgba(245,196,0,0.08)' : 'rgba(0,211,149,0.08)',
+                      }}>
+                        {diasCob === 0 ? '<1d' : `${diasCob}d`}
+                      </span>
+                    )}
                   </div>
                   {isExpanded ? <ChevronUp size={14} strokeWidth={2} color="var(--text-muted)" /> : <ChevronDown size={14} strokeWidth={2} color="var(--text-muted)" />}
                 </div>
