@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Target, Store, Users, Download, LogOut, Home,
-  CalendarPlus, Utensils, Route, Package, ChefHat
+  CalendarPlus, Utensils, Route, Package
 } from 'lucide-react'
 import styles from './Layout.module.css'
 
@@ -34,7 +34,7 @@ const NAV_ITEMS = {
     { to: '/gerente/descarga', label: 'Exportar', icon: Download },
   ],
   cocina: [
-    { to: '/cocina', label: 'Existencia', icon: ChefHat, end: true },
+    { to: '/cocina', label: 'Existencia', icon: Utensils, end: true },
     { to: '/cocina/pedidos', label: 'Pedidos', icon: Package },
   ],
 }
