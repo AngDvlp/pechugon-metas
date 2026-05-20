@@ -139,7 +139,7 @@ export default function Descarga({ allSucursales = false }) {
             r.venta_total,
             parseFloat(r.pollos_vendidos),
           ]
-          if (incluirTicket) fila.push(parseFloat(r.ticket_promedio ?? 0))
+          if (incluirTicket) fila.push(parseFloat(r.pollos_vendidos) > 0 ? parseFloat((r.venta_total / parseFloat(r.pollos_vendidos)).toFixed(2)) : 0)
           filas.push(fila)
         })
         const subtotalVenta = rows.reduce((a, r) => a + r.venta_total, 0)
@@ -384,7 +384,7 @@ export default function Descarga({ allSucursales = false }) {
                   <span className={styles.ptFecha}>{format(parseISO(r.fecha), 'd MMM', { locale: es })}</span>
                   <span className={styles.ptVenta}>{fmt(r.venta_total)}</span>
                   <span className={styles.ptPollos}>{fmtNum(r.pollos_vendidos)}</span>
-                  <span className={styles.ptTicket}>{fmtDec(r.ticket_promedio)}</span>
+                  <span className={styles.ptTicket}>{fmtDec(parseFloat(r.pollos_vendidos) > 0 ? r.venta_total / parseFloat(r.pollos_vendidos) : 0)}</span>
                 </div>
               ))}
               {preview.length > 50 && <p className={styles.masRegistros}>… y {preview.length - 50} registros más en el archivo</p>}

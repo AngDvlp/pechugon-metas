@@ -120,7 +120,16 @@
   width: fit-content;
 }
 
-.cardRight { display: flex; align-items: center; gap: 12px; }
+.cardRight { display: flex; align-items: center; gap: 8px; }
+.cobBadge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+}
 .stockBig  { display: flex; align-items: baseline; gap: 2px; }
 .stockNum {
   font-family: var(--font-mono);

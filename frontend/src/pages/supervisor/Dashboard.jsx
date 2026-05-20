@@ -162,6 +162,7 @@ export default function SupervisorDashboard() {
     .sort((a, b) => {
       if (ordenarPor === 'ranking') return (resumenes[b.id]?.avance_porcentaje ?? 0) - (resumenes[a.id]?.avance_porcentaje ?? 0)
       if (ordenarPor === 'riesgo')  return (resumenes[a.id]?.avance_porcentaje ?? 100) - (resumenes[b.id]?.avance_porcentaje ?? 100)
+      if (ordenarPor === 'sinreg')  return (ventasHoy[a.id] ? 1 : 0) - (ventasHoy[b.id] ? 1 : 0)
       return 0
     })
 
@@ -337,6 +338,7 @@ export default function SupervisorDashboard() {
             { key: 'default', label: 'Posición' },
             { key: 'ranking', label: 'Ranking' },
             { key: 'riesgo',  label: 'En riesgo' },
+            { key: 'sinreg',  label: 'Sin registro' },
           ].map(o => (
             <button key={o.key}
               className={`${styles.ordenBtn} ${ordenarPor === o.key ? styles.ordenBtnActive : ''}`}
@@ -349,7 +351,7 @@ export default function SupervisorDashboard() {
 
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
-        {ordenarPor === 'ranking' ? ' — mejor avance primero' : ordenarPor === 'riesgo' ? ' — en riesgo primero' : ''}
+        {ordenarPor === 'ranking' ? ' — mejor avance primero' : ordenarPor === 'riesgo' ? ' — en riesgo primero' : ordenarPor === 'sinreg' ? ' — sin registro primero' : ''}
       </p>
       {sucursales.length === 0 && <div className={styles.empty}>No tienes sucursales asignadas</div>}
 
@@ -390,13 +392,16 @@ export default function SupervisorDashboard() {
                         {statusLabel}
                       </p>
                     </div>
-                    <div className={styles.sucPct}>
-                      {!res ? <span className={styles.noMeta}>—</span> : (
-                        <>
-                          <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
-                          <span className={styles.sucPctSym}>%</span>
-                        </>
-                      )}
+                    <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                      {!hv && <span className={styles.sinRegBadge}>Sin reg.</span>}
+                      <div className={styles.sucPct}>
+                        {!res ? <span className={styles.noMeta}>—</span> : (
+                          <>
+                            <span className={styles.sucPctNum}>{avanceMesSuc.toFixed(0)}</span>
+                            <span className={styles.sucPctSym}>%</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {res && (

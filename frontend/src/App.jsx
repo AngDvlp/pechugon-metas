@@ -15,6 +15,7 @@ import GerenteSucursalDetalle from './pages/gerente/SucursalDetalle'
 import GerenteDescarga from './pages/gerente/Descarga'
 import GerentePollosTaco from './pages/gerente/PollosTaco'
 import GerenteRutas from './pages/gerente/Rutas'
+import GerenteReporte from './pages/gerente/Reporte'
 import SupervisorPollosTaco from './pages/supervisor/PollosTaco'
 import SuplenteDashboard from './pages/suplente/Dashboard'
 import CocinaDashboard from './pages/cocina/Dashboard'
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="descarga" element={<SupervisorDescarga />} />
         <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
         <Route path="pedido-taco" element={<SupervisorPedidosTaco />} />
+        <Route path="reporte" element={<GerenteReporte />} />
       </Route>
 
       {/* SUPLENTE */}
@@ -82,6 +84,7 @@ export default function App() {
         <Route path="descarga" element={<SupervisorDescarga />} />
         <Route path="pollos-taco" element={<SupervisorPollosTaco />} />
         <Route path="pedido-taco" element={<SupervisorPedidosTaco />} />
+        <Route path="reporte" element={<GerenteReporte />} />
       </Route>
 
       {/* COCINA */}
@@ -108,6 +111,7 @@ export default function App() {
         <Route path="descarga" element={<GerenteDescarga />} />
         <Route path="pollos-taco" element={<GerentePollosTaco />} />
         <Route path="rutas" element={<GerenteRutas />} />
+        <Route path="reporte" element={<GerenteReporte />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

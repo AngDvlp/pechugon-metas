@@ -270,7 +270,7 @@ export default function RegistroAtrasado() {
                 </span>
                 <span className={styles.hVal}>{fmt(r.venta_total)}</span>
                 <span className={styles.hNum}>{fmtNum(r.pollos_vendidos)}</span>
-                <span className={styles.hTicket}>{fmtDec(r.ticket_promedio)}</span>
+                <span className={styles.hTicket}>{fmtDec(parseFloat(r.pollos_vendidos) > 0 ? r.venta_total / parseFloat(r.pollos_vendidos) : 0)}</span>
               </div>
             ))}
           </div>

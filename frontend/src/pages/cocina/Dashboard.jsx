@@ -130,6 +130,8 @@ export default function CocinaDashboard() {
           if (hayDeficit) { statusColor = 'var(--red)'; statusLabel = 'Déficit' }
           else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Caduca hoy' }
           const isExpanded = expanded[suc.id] ?? false
+          const diasCob = minimo > 0 ? Math.floor(stock / minimo) : null
+          const cobColor = diasCob === null ? 'var(--text-muted)' : diasCob >= 2 ? 'var(--success)' : diasCob === 1 ? 'var(--yellow)' : 'var(--red)'
 
           return (
             <div key={suc.id} className={styles.card}>
@@ -151,6 +153,15 @@ export default function CocinaDashboard() {
                   </span>
                 </div>
                 <div className={styles.cardRight}>
+                  {diasCob !== null && (
+                    <span className={styles.cobBadge} style={{
+                      color: cobColor,
+                      borderColor: cobColor + '50',
+                      background: cobColor + '12',
+                    }}>
+                      {diasCob === 0 ? '<1d' : `${diasCob}d`}
+                    </span>
+                  )}
                   <div className={styles.stockBig}>
                     <span className={styles.stockNum}>{stock}</span>
                     {minimo > 0 && <span className={styles.stockMin}>/{minimo}</span>}

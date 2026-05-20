@@ -399,6 +399,7 @@ export default function SuplenteDashboard() {
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
         {rutaLabel ? ` — ${rutaLabel}` : ''}
+        {ordenarPor === 'ranking' ? ' · mejor avance primero' : ordenarPor === 'riesgo' ? ' · en riesgo primero' : ordenarPor === 'sinreg' ? ' · sin registro primero' : ''}
       </p>
 
       {esRango && loadingRangos ? (

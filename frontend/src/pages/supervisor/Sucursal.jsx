@@ -68,7 +68,7 @@ export default function SucursalDetalle({ backPath }) {
         fecha: fechaStr,
         venta_total: v?.venta_total ?? null,
         pollos_vendidos: v?.pollos_vendidos ?? null,
-        ticket_promedio: v ? parseFloat(v.ticket_promedio ?? 0) : null,
+        ticket_promedio: v && parseFloat(v.pollos_vendidos) > 0 ? v.venta_total / parseFloat(v.pollos_vendidos) : null,
         registrado: !!v,
         esFutura: fechaStr > hoyStr,
         ventaObj: v ?? null,

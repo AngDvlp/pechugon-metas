@@ -355,14 +355,14 @@ export default function EncargadoDashboard() {
             <div className={styles.histHead}>
               <span>Fecha</span><span>Venta</span><span>Pollos</span><span>T.P.</span>
             </div>
-            {ultimas.map(v => (
+            {ultimas.slice(0, 14).map(v => (
               <div key={v.id} className={`${styles.histRow} ${v.fecha === hoyStr ? styles.histRowHoy : ''}`}>
                 <span className={styles.histFecha}>
                   {v.fecha === hoyStr ? 'Hoy' : format(parseISO(v.fecha), 'EEE d MMM', { locale: es })}
                 </span>
                 <span className={styles.histVenta}>{fmt(v.venta_total)}</span>
                 <span className={styles.histPollos}>{fmtNum(v.pollos_vendidos)}</span>
-                <span className={styles.histTicket}>{fmtDec(v.ticket_promedio)}</span>
+                <span className={styles.histTicket}>{fmtDec(parseFloat(v.pollos_vendidos) > 0 ? v.venta_total / parseFloat(v.pollos_vendidos) : 0)}</span>
               </div>
             ))}
           </div>
