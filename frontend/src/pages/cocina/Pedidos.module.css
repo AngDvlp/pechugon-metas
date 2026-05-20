@@ -78,6 +78,18 @@
   border-radius: 5px;
   letter-spacing: 1px;
 }
+.mlTacosBadge {
+  background: rgba(0,211,149,0.12);
+  color: var(--success);
+  border: 1px solid rgba(0,211,149,0.25);
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
 .mlBody {
   padding: 0 16px 16px;
   border-top: 1px solid var(--border);
@@ -227,6 +239,12 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
+}
+.pedidoCantEq {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 1px;
 }
 
 .pedidoNota {

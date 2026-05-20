@@ -150,7 +150,7 @@ export default function SupervisorPedidosTaco() {
             </div>
 
             <div className={styles.formField}>
-              <label className={styles.formLabel}>Cantidad de pollos</label>
+              <label className={styles.formLabel}>Cantidad de bolsas</label>
               <input
                 className={styles.formInput}
                 type="number"
@@ -161,6 +161,10 @@ export default function SupervisorPedidosTaco() {
                 required
                 autoFocus
               />
+              <p className={styles.formHint}>1 bolsa = 2 kg · 80 tacos</p>
+              {cantidad && parseInt(cantidad) > 0 && (
+                <p className={styles.formCalc}>≈ {parseInt(cantidad) * 80} tacos</p>
+              )}
             </div>
 
             <div className={styles.formField}>
@@ -231,14 +235,16 @@ export default function SupervisorPedidosTaco() {
                 <div className={styles.pedidoCants}>
                   <div className={styles.pedidoCant}>
                     <span className={styles.pedidoCantVal}>{pedido.cantidad_solicitada}</span>
-                    <span className={styles.pedidoCantLabel}>Solicitados</span>
+                    <span className={styles.pedidoCantLabel}>Bolsas solicitadas</span>
+                    <span className={styles.pedidoCantEq}>≈ {pedido.cantidad_solicitada * 80} tacos</span>
                   </div>
                   {pedido.cantidad_enviada != null && (
                     <div className={styles.pedidoCant}>
                       <span className={styles.pedidoCantVal} style={{ color: cfg.color }}>
                         {pedido.cantidad_enviada}
                       </span>
-                      <span className={styles.pedidoCantLabel}>Enviados</span>
+                      <span className={styles.pedidoCantLabel}>Bolsas enviadas</span>
+                      <span className={styles.pedidoCantEq}>≈ {pedido.cantidad_enviada * 80} tacos</span>
                     </div>
                   )}
                 </div>

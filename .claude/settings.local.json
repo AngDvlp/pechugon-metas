@@ -29,7 +29,8 @@
       "Bash(Select-String \"recharts|lucide|date-fns\")",
       "Bash(Get-ChildItem -Recurse -File)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Directory)"
     ]
   }
 }

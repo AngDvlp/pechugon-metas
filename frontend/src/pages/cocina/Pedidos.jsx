@@ -55,12 +55,13 @@ const ESTADO_CFG = {
 }
 
 export default function CocinaPedidos() {
-  const [pedidos,      setPedidos]      = useState([])
-  const [sucMap,       setSucMap]       = useState({})
-  const [supMap,       setSupMap]       = useState({})
-  const [predicciones, setPredicciones] = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [showML,       setShowML]       = useState(true)
+  const [pedidos,       setPedidos]       = useState([])
+  const [sucMap,        setSucMap]        = useState({})
+  const [supMap,        setSupMap]        = useState({})
+  const [predicciones,  setPredicciones]  = useState([])
+  const [usandoTacos,   setUsandoTacos]   = useState(false)
+  const [loading,       setLoading]       = useState(true)
+  const [showML,        setShowML]        = useState(true)
 
   // Modal responder
   const [respondiendo,    setRespondiendo]    = useState(null)
@@ -88,7 +89,7 @@ export default function CocinaPedidos() {
       supabase.from('sucursales').select('id, nombre'),
       supabase
         .from('ventas_diarias')
-        .select('fecha, pollos_vendidos')
+        .select('fecha, pollos_vendidos, tacos_vendidos')
         .gte('fecha', hace56)
         .lte('fecha', hoy)
         .order('fecha', { ascending: true }),
@@ -112,17 +113,28 @@ export default function CocinaPedidos() {
       setSupMap(sm2)
     }
 
-    // ML: agrupar ventas por fecha (total del día)
+    // ML: agrupar por fecha
     const porFecha = {}
     ventasData?.forEach(v => {
-      if (!porFecha[v.fecha]) porFecha[v.fecha] = { fecha: v.fecha, pollos_vendidos: 0 }
+      if (!porFecha[v.fecha]) porFecha[v.fecha] = { fecha: v.fecha, pollos_vendidos: 0, tacos_vendidos: 0 }
       porFecha[v.fecha].pollos_vendidos += v.pollos_vendidos || 0
+      porFecha[v.fecha].tacos_vendidos  += v.tacos_vendidos  || 0
     })
     const historial = Object.values(porFecha).sort((a, b) => a.fecha.localeCompare(b.fecha))
 
     if (historial.length >= 7) {
-      const dowAvg = entrenarModelo(historial)
-      setPredicciones(predecir(dowAvg, 7))
+      // Preferir predicción de tacos si hay datos de tacos
+      const conTacos = historial.filter(d => d.tacos_vendidos > 0)
+      if (conTacos.length >= 7) {
+        const histTacos = historial.map(d => ({ ...d, pollos_vendidos: d.tacos_vendidos }))
+        const dowAvg = entrenarModelo(histTacos)
+        setPredicciones(predecir(dowAvg, 7))
+        setUsandoTacos(true)
+      } else {
+        const dowAvg = entrenarModelo(historial)
+        setPredicciones(predecir(dowAvg, 7))
+        setUsandoTacos(false)
+      }
     }
 
     setLoading(false)
@@ -199,8 +211,9 @@ export default function CocinaPedidos() {
         <button className={styles.mlHeader} onClick={() => setShowML(v => !v)}>
           <div className={styles.mlTitleRow}>
             <Brain size={15} strokeWidth={2} color="var(--info)" />
-            <span className={styles.mlTitle}>Predicción de demanda</span>
+            <span className={styles.mlTitle}>Predicción de {usandoTacos ? 'tacos' : 'demanda'}</span>
             <span className={styles.mlAiBadge}>IA</span>
+            {usandoTacos && <span className={styles.mlTacosBadge}>Tacos</span>}
           </div>
           {showML
             ? <ChevronUp size={15} strokeWidth={2} color="var(--text-muted)" />
@@ -217,7 +230,7 @@ export default function CocinaPedidos() {
             ) : (
               <>
                 <p className={styles.mlDesc}>
-                  Estimación basada en patrones de los últimos 56 días · Pesos exponenciales por día de semana
+                  Estimación {usandoTacos ? 'de tacos vendidos' : 'de pollos vendidos'} — últimos 56 días · pesos exponenciales por día de semana
                 </p>
                 <div className={styles.mlChart}>
                   <ResponsiveContainer width="100%" height={150}>
@@ -243,7 +256,7 @@ export default function CocinaPedidos() {
                         }}
                         labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700 }}
                         itemStyle={{ color: 'var(--info)' }}
-                        formatter={v => [`${v} pollos`, 'Predicción']}
+                        formatter={v => [`${v} ${usandoTacos ? 'tacos' : 'pollos'}`, 'Predicción']}
                       />
                       <Bar dataKey="prediccion" fill="var(--info)" radius={[4, 4, 0, 0]} opacity={0.85} />
                     </BarChart>
@@ -254,7 +267,7 @@ export default function CocinaPedidos() {
                     <div key={p.fecha} className={styles.mlPill}>
                       <span className={styles.mlPillDay}>{p.label.split(' ')[0]}</span>
                       <span className={styles.mlPillVal}>{p.prediccion}</span>
-                      <span className={styles.mlPillUnit}>pollos</span>
+                      <span className={styles.mlPillUnit}>{usandoTacos ? 'tacos' : 'pollos'}</span>
                     </div>
                   ))}
                 </div>
@@ -328,9 +341,12 @@ export default function CocinaPedidos() {
                 <span className={styles.modalRowVal}>{supMap[respondiendo.solicitado_por] ?? '—'}</span>
               </div>
               <div className={styles.modalRow}>
-                <span className={styles.modalRowLabel}>Solicitados</span>
+                <span className={styles.modalRowLabel}>Solicitadas</span>
                 <span className={styles.modalRowVal} style={{ color: 'var(--info)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                  {respondiendo.cantidad_solicitada} pollos
+                  {respondiendo.cantidad_solicitada} bolsas
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
+                    ≈ {respondiendo.cantidad_solicitada * 80} tacos
+                  </span>
                 </span>
               </div>
               {respondiendo.notas_supervisor && (
@@ -345,7 +361,7 @@ export default function CocinaPedidos() {
 
             <form onSubmit={handleResponder} className={styles.modalForm}>
               <div className={styles.modalField}>
-                <label className={styles.modalLabel}>¿Cuántos pollos vas a mandar?</label>
+                <label className={styles.modalLabel}>¿Cuántas bolsas vas a mandar?</label>
                 <input
                   className={styles.modalInput}
                   type="number"
@@ -356,11 +372,16 @@ export default function CocinaPedidos() {
                   required
                   autoFocus
                 />
+                {cantidadEnviada !== '' && !isNaN(parseInt(cantidadEnviada)) && parseInt(cantidadEnviada) > 0 && (
+                  <p className={styles.modalHint} style={{ color: 'var(--info)' }}>
+                    ≈ {parseInt(cantidadEnviada) * 80} tacos
+                  </p>
+                )}
                 {prevEstado && (
                   <p className={styles.modalHint} style={{ color: ESTADO_CFG[prevEstado].color }}>
                     {prevEstado === 'rechazado' && '→ Se marcará como Rechazado'}
                     {prevEstado === 'aceptado'  && '→ Se marcará como Aceptado (pedido completo)'}
-                    {prevEstado === 'parcial'   && `→ Se marcará como Parcial (${prevEnviada}/${respondiendo.cantidad_solicitada} pollos)`}
+                    {prevEstado === 'parcial'   && `→ Se marcará como Parcial (${prevEnviada}/${respondiendo.cantidad_solicitada} bolsas)`}
                   </p>
                 )}
               </div>
@@ -423,14 +444,16 @@ function PedidoCard({ pedido, sucNombre, supNombre, onResponder, readonly }) {
       <div className={styles.pedidoCants}>
         <div className={styles.pedidoCant}>
           <span className={styles.pedidoCantVal}>{pedido.cantidad_solicitada}</span>
-          <span className={styles.pedidoCantLabel}>Solicitados</span>
+          <span className={styles.pedidoCantLabel}>Bolsas solicitadas</span>
+          <span className={styles.pedidoCantEq}>≈ {pedido.cantidad_solicitada * 80} tacos</span>
         </div>
         {pedido.cantidad_enviada != null && (
           <div className={styles.pedidoCant}>
             <span className={styles.pedidoCantVal} style={{ color: cfg.color }}>
               {pedido.cantidad_enviada}
             </span>
-            <span className={styles.pedidoCantLabel}>Enviados</span>
+            <span className={styles.pedidoCantLabel}>Bolsas enviadas</span>
+            <span className={styles.pedidoCantEq}>≈ {pedido.cantidad_enviada * 80} tacos</span>
           </div>
         )}
       </div>

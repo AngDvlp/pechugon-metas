@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { format, addDays, parseISO } from 'date-fns'
+import { format, addDays, subDays, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Utensils, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 import styles from './Dashboard.module.css'
@@ -18,6 +18,7 @@ export default function CocinaDashboard() {
   const [sucursales, setSucursales] = useState([])
   const [lotesMap,   setLotesMap]   = useState({})
   const [minimosMap, setMinimosMap] = useState({})
+  const [tacosMap,   setTacosMap]   = useState({})   // sucursalId → existencia tacos (últimos 3 días)
   const [loading,    setLoading]    = useState(true)
   const [expanded,   setExpanded]   = useState({})
 
@@ -34,35 +35,42 @@ export default function CocinaDashboard() {
     setSucursales(sucs ?? [])
 
     if (!sucs?.length) { setLoading(false); return }
-    const sids = sucs.map(s => s.id)
+    const sids  = sucs.map(s => s.id)
+    const hace3 = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
-    const [{ data: lotes }, { data: minimos }] = await Promise.all([
+    const [{ data: lotes }, { data: minimos }, { data: ventasTacos }] = await Promise.all([
       supabase
         .from('pollos_taco')
         .select('*')
         .in('sucursal_id', sids)
         .order('fecha_rostizado', { ascending: false }),
       supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
+      supabase.from('ventas_diarias')
+        .select('sucursal_id, tacos_producidos, tacos_vendidos')
+        .in('sucursal_id', sids)
+        .gte('fecha', hace3),
     ])
 
-    const lMap = {}; const mMap = {}
-    sids.forEach(id => { lMap[id] = []; mMap[id] = 0 })
+    const lMap = {}; const mMap = {}; const tMap = {}
+    sids.forEach(id => { lMap[id] = []; mMap[id] = 0; tMap[id] = 0 })
     lotes?.forEach(l => { if (lMap[l.sucursal_id]) lMap[l.sucursal_id].push(l) })
     minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
+    ventasTacos?.forEach(v => {
+      if (tMap[v.sucursal_id] !== undefined) {
+        tMap[v.sucursal_id] += (v.tacos_producidos || 0) - (v.tacos_vendidos || 0)
+      }
+    })
 
     setLotesMap(lMap)
     setMinimosMap(mMap)
+    setTacosMap(tMap)
     setLoading(false)
   }
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
-  const totalStock = sucursales.reduce((a, s) =>
-    a + (lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0), 0)
-  const sucConDeficit = sucursales.filter(s => {
-    const stock = lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0
-    return minimosMap[s.id] > 0 && stock < minimosMap[s.id]
-  })
+  const totalExistenciaTacos = sucursales.reduce((a, s) => a + Math.max(0, tacosMap[s.id] ?? 0), 0)
+  const sucSinTacos = sucursales.filter(s => (tacosMap[s.id] ?? 0) <= 0)
   const sucCaducando = sucursales.filter(s =>
     lotesMap[s.id]?.some(l => l.fecha_caducidad === mananaStr)
   )
@@ -82,28 +90,28 @@ export default function CocinaDashboard() {
 
       <div className={styles.kpiRow}>
         <div className={styles.kpiCard}>
-          <span className={styles.kpiVal}>{totalStock}</span>
-          <span className={styles.kpiLabel}>Stock total</span>
+          <span className={styles.kpiVal} style={{ color: 'var(--info)' }}>{totalExistenciaTacos}</span>
+          <span className={styles.kpiLabel}>Existencia tacos</span>
         </div>
-        <div className={`${styles.kpiCard} ${sucConDeficit.length > 0 ? styles.kpiDanger : ''}`}>
-          <span className={styles.kpiVal} style={{ color: sucConDeficit.length > 0 ? 'var(--red)' : 'var(--success)' }}>
-            {sucConDeficit.length}
+        <div className={`${styles.kpiCard} ${sucSinTacos.length > 0 ? styles.kpiDanger : ''}`}>
+          <span className={styles.kpiVal} style={{ color: sucSinTacos.length > 0 ? 'var(--red)' : 'var(--success)' }}>
+            {sucSinTacos.length}
           </span>
-          <span className={styles.kpiLabel}>Con déficit</span>
+          <span className={styles.kpiLabel}>Sin tacos</span>
         </div>
         <div className={`${styles.kpiCard} ${sucCaducando.length > 0 ? styles.kpiWarn : ''}`}>
           <span className={styles.kpiVal} style={{ color: sucCaducando.length > 0 ? 'var(--yellow)' : 'var(--text-muted)' }}>
             {sucCaducando.length}
           </span>
-          <span className={styles.kpiLabel}>Caducan hoy</span>
+          <span className={styles.kpiLabel}>Pollos caducan</span>
         </div>
       </div>
 
-      {sucConDeficit.length > 0 && (
+      {sucSinTacos.length > 0 && (
         <div className={styles.alertBanner} style={{ borderColor: 'rgba(232,25,44,0.3)', background: 'rgba(232,25,44,0.07)' }}>
           <AlertTriangle size={15} strokeWidth={2.5} color="var(--red)" />
           <span style={{ color: 'var(--red)' }}>
-            <strong>Déficit:</strong> {sucConDeficit.map(s => s.nombre).join(', ')}
+            <strong>Sin tacos:</strong> {sucSinTacos.map(s => s.nombre).join(', ')}
           </span>
         </div>
       )}
@@ -118,20 +126,15 @@ export default function CocinaDashboard() {
 
       <div className={styles.cards}>
         {sucursales.map(suc => {
-          const lotes    = lotesMap[suc.id] ?? []
-          const minimo   = minimosMap[suc.id] ?? 0
-          const vigentes = lotes.filter(l => l.fecha_caducidad > hoyStr)
-          const stock    = vigentes.reduce((a, l) => a + l.cantidad, 0)
-          const hayDeficit  = minimo > 0 && stock < minimo
-          const expirando   = vigentes.filter(l => l.fecha_caducidad === mananaStr)
-          const pct = minimo > 0 ? Math.min((stock / minimo) * 100, 100) : 100
-          let statusColor = 'var(--success)'
-          let statusLabel = 'OK'
-          if (hayDeficit) { statusColor = 'var(--red)'; statusLabel = 'Déficit' }
-          else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Caduca hoy' }
+          const lotes           = lotesMap[suc.id] ?? []
+          const vigentes        = lotes.filter(l => l.fecha_caducidad > hoyStr)
+          const expirando       = vigentes.filter(l => l.fecha_caducidad === mananaStr)
+          const existenciaTacos = Math.max(0, tacosMap[suc.id] ?? 0)
           const isExpanded = expanded[suc.id] ?? false
-          const diasCob = minimo > 0 ? Math.floor(stock / minimo) : null
-          const cobColor = diasCob === null ? 'var(--text-muted)' : diasCob >= 2 ? 'var(--success)' : diasCob === 1 ? 'var(--yellow)' : 'var(--red)'
+          let statusColor = 'var(--success)'
+          let statusLabel = 'Con tacos'
+          if (existenciaTacos === 0) { statusColor = 'var(--red)'; statusLabel = 'Sin tacos' }
+          else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Pollos caducan' }
 
           return (
             <div key={suc.id} className={styles.card}>
@@ -145,7 +148,7 @@ export default function CocinaDashboard() {
                     className={styles.statusBadge}
                     style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}
                   >
-                    {(hayDeficit || expirando.length > 0)
+                    {(existenciaTacos === 0 || expirando.length > 0)
                       ? <AlertTriangle size={10} strokeWidth={2.5} />
                       : <CheckCircle size={10} strokeWidth={2.5} />
                     }
@@ -153,18 +156,11 @@ export default function CocinaDashboard() {
                   </span>
                 </div>
                 <div className={styles.cardRight}>
-                  {diasCob !== null && (
-                    <span className={styles.cobBadge} style={{
-                      color: cobColor,
-                      borderColor: cobColor + '50',
-                      background: cobColor + '12',
-                    }}>
-                      {diasCob === 0 ? '<1d' : `${diasCob}d`}
-                    </span>
-                  )}
                   <div className={styles.stockBig}>
-                    <span className={styles.stockNum}>{stock}</span>
-                    {minimo > 0 && <span className={styles.stockMin}>/{minimo}</span>}
+                    <span className={styles.stockNum} style={{ color: existenciaTacos > 0 ? 'var(--info)' : 'var(--red)' }}>
+                      {existenciaTacos}
+                    </span>
+                    <span className={styles.stockMin}> tacos</span>
                   </div>
                   {isExpanded
                     ? <ChevronUp size={16} strokeWidth={2} color="var(--text-muted)" />
@@ -172,12 +168,6 @@ export default function CocinaDashboard() {
                   }
                 </div>
               </div>
-
-              {minimo > 0 && (
-                <div className={styles.bar}>
-                  <div className={styles.barFill} style={{ width: `${pct}%`, background: statusColor }} />
-                </div>
-              )}
 
               {isExpanded && (
                 <div className={styles.cardBody}>

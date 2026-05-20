@@ -250,6 +250,31 @@
   margin-top: -4px;
 }
 
+/* Bolsas helpers */
+.formHint {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: -2px;
+}
+.formCalc {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--info);
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.18);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-top: 2px;
+}
+.pedidoCantEq {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 360px) {
   .pedidoCantVal { font-size: 1.2rem; }

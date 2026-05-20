@@ -328,6 +328,7 @@
 .tacoStockOk      { background: rgba(0,211,149,0.07); border-color: rgba(0,211,149,0.2); }
 .tacoStockWarn    { background: rgba(245,196,0,0.07); border-color: rgba(245,196,0,0.25); }
 .tacoStockDeficit { background: rgba(232,25,44,0.07); border-color: rgba(232,25,44,0.2); }
+.tacoStockNeutral { background: rgba(79,142,247,0.06); border-color: rgba(79,142,247,0.18); }
 
 .tacoStockLeft {
   display: flex;
@@ -371,7 +372,7 @@
   color: var(--text-secondary);
 }
 
-.tacoBadgeOk, .tacoDeficitBadge {
+.tacoBadgeOk, .tacoDeficitBadge, .tacoBadgeNeutral {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -383,6 +384,49 @@
 }
 .tacoBadgeOk      { background: rgba(0,211,149,0.12); color: var(--success); }
 .tacoDeficitBadge { background: rgba(232,25,44,0.12);  color: var(--red); }
+.tacoBadgeNeutral { background: rgba(79,142,247,0.1);  color: var(--info); }
+
+/* ── Taco form divider ──────────────────────────────────── */
+.tacoFormDivider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--info);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 4px 0 2px;
+  border-top: 1px solid rgba(79,142,247,0.15);
+  margin-top: 2px;
+}
+
+/* Existencia preview inline */
+.tacoExistenciaPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(79,142,247,0.07);
+  border: 1px solid rgba(79,142,247,0.18);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.tacoExistenciaLabel {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--info);
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tacoExistenciaVal {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--info);
+}
 
 /* Alert banner */
 .tacoAlert {

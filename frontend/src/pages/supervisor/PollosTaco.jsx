@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, addDays } from 'date-fns'
+import { format, parseISO, addDays, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
   Utensils, AlertTriangle, CheckCircle, AlertCircle, Plus, X,
@@ -23,6 +23,7 @@ export default function SupervisorPollosTaco() {
   const [sucursales,   setSucursales]   = useState([])
   const [lotesMap,     setLotesMap]     = useState({})   // sucursalId → lotes[]
   const [minimosMap,   setMinimosMap]   = useState({})   // sucursalId → cantidad_minima
+  const [tacosMap,     setTacosMap]     = useState({})   // sucursalId → existencia tacos (últimos 3 días)
   const [loading,      setLoading]      = useState(true)
 
   // UI state
@@ -54,21 +55,33 @@ export default function SupervisorPollosTaco() {
 
     if (!sucs.length) { setLoading(false); return }
 
-    const sids = sucs.map(s => s.id)
+    const sids    = sucs.map(s => s.id)
+    const hace3   = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
-    const [{ data: lotes }, { data: minimos }] = await Promise.all([
+    const [{ data: lotes }, { data: minimos }, { data: ventasTacos }] = await Promise.all([
       supabase.from('pollos_taco').select('*').in('sucursal_id', sids).order('fecha_rostizado', { ascending: false }),
       supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
+      supabase.from('ventas_diarias')
+        .select('sucursal_id, tacos_producidos, tacos_vendidos')
+        .in('sucursal_id', sids)
+        .gte('fecha', hace3),
     ])
 
     const lMap = {}
     const mMap = {}
-    sids.forEach(id => { lMap[id] = []; mMap[id] = 0 })
+    const tMap = {}
+    sids.forEach(id => { lMap[id] = []; mMap[id] = 0; tMap[id] = 0 })
     lotes?.forEach(l => { if (lMap[l.sucursal_id]) lMap[l.sucursal_id].push(l) })
     minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
+    ventasTacos?.forEach(v => {
+      if (tMap[v.sucursal_id] !== undefined) {
+        tMap[v.sucursal_id] += (v.tacos_producidos || 0) - (v.tacos_vendidos || 0)
+      }
+    })
 
     setLotesMap(lMap)
     setMinimosMap(mMap)
+    setTacosMap(tMap)
 
     // Init form defaults
     const fMap = {}
@@ -148,22 +161,11 @@ export default function SupervisorPollosTaco() {
   }
 
   // — Cálculos globales —
-  const totalStock       = sucursales.reduce((a, s) => a + (lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0), 0)
-  const sucConDeficit    = sucursales.filter(s => {
-    const stock = lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0
-    return minimosMap[s.id] > 0 && stock < minimosMap[s.id]
-  })
-  const sucConExpirando  = sucursales.filter(s =>
+  const totalExistenciaTacos = sucursales.reduce((a, s) => a + Math.max(0, tacosMap[s.id] ?? 0), 0)
+  const sucSinTacos          = sucursales.filter(s => (tacosMap[s.id] ?? 0) <= 0)
+  const sucConExpirando      = sucursales.filter(s =>
     lotesMap[s.id]?.some(l => l.fecha_caducidad === mananaStr)
   )
-  const coberturas = sucursales
-    .map(s => {
-      const stock = lotesMap[s.id]?.filter(l => l.fecha_caducidad > hoyStr).reduce((x, l) => x + l.cantidad, 0) ?? 0
-      const min   = minimosMap[s.id] ?? 0
-      return min > 0 ? Math.floor(stock / min) : null
-    })
-    .filter(c => c !== null)
-  const coberturaMin = coberturas.length > 0 ? Math.min(...coberturas) : null
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
 
@@ -184,37 +186,29 @@ export default function SupervisorPollosTaco() {
       {/* ── KPIs globales ── */}
       <div className={styles.kpiRow}>
         <div className={styles.kpiCard}>
-          <span className={styles.kpiVal}>{totalStock}</span>
-          <span className={styles.kpiLabel}>Stock vigente</span>
+          <span className={styles.kpiVal} style={{ color: 'var(--info)' }}>{totalExistenciaTacos}</span>
+          <span className={styles.kpiLabel}>Existencia tacos</span>
         </div>
-        <div className={`${styles.kpiCard} ${sucConDeficit.length > 0 ? styles.kpiCardDanger : ''}`}>
-          <span className={styles.kpiVal} style={{ color: sucConDeficit.length > 0 ? 'var(--red)' : 'var(--success)' }}>
-            {sucConDeficit.length}
+        <div className={`${styles.kpiCard} ${sucSinTacos.length > 0 ? styles.kpiCardDanger : ''}`}>
+          <span className={styles.kpiVal} style={{ color: sucSinTacos.length > 0 ? 'var(--red)' : 'var(--success)' }}>
+            {sucSinTacos.length}
           </span>
-          <span className={styles.kpiLabel}>Con déficit</span>
+          <span className={styles.kpiLabel}>Sin tacos</span>
         </div>
         <div className={`${styles.kpiCard} ${sucConExpirando.length > 0 ? styles.kpiCardWarn : ''}`}>
           <span className={styles.kpiVal} style={{ color: sucConExpirando.length > 0 ? 'var(--yellow)' : 'var(--text-muted)' }}>
             {sucConExpirando.length}
           </span>
-          <span className={styles.kpiLabel}>Caducan hoy</span>
+          <span className={styles.kpiLabel}>Pollos caducan</span>
         </div>
-        {coberturaMin !== null && (
-          <div className={`${styles.kpiCard} ${coberturaMin === 0 ? styles.kpiCardDanger : coberturaMin === 1 ? styles.kpiCardWarn : ''}`}>
-            <span className={styles.kpiVal} style={{ color: coberturaMin === 0 ? 'var(--red)' : coberturaMin === 1 ? 'var(--yellow)' : 'var(--success)' }}>
-              {coberturaMin === 0 ? '<1' : coberturaMin}d
-            </span>
-            <span className={styles.kpiLabel}>Cobertura mín.</span>
-          </div>
-        )}
       </div>
 
       {/* ── Alertas críticas ── */}
-      {sucConDeficit.length > 0 && (
+      {sucSinTacos.length > 0 && (
         <div className={styles.alertBanner} style={{ borderColor: 'rgba(232,25,44,0.3)', background: 'rgba(232,25,44,0.07)' }}>
           <AlertTriangle size={15} strokeWidth={2.5} color="var(--red)" />
           <span style={{ color: 'var(--red)' }}>
-            <strong>Déficit:</strong> {sucConDeficit.map(s => s.nombre).join(', ')}
+            <strong>Sin tacos:</strong> {sucSinTacos.map(s => s.nombre).join(', ')}
           </span>
         </div>
       )}
@@ -230,25 +224,22 @@ export default function SupervisorPollosTaco() {
       {/* ── Tarjetas por sucursal ── */}
       <div className={styles.sucCards}>
         {sucursales.map(suc => {
-          const lotes        = lotesMap[suc.id] ?? []
-          const minimo       = minimosMap[suc.id] ?? 0
-          const vigentes     = lotes.filter(l => l.fecha_caducidad > hoyStr)
-          const expirados    = lotes.filter(l => l.fecha_caducidad <= hoyStr)
-          const stock        = vigentes.reduce((a, l) => a + l.cantidad, 0)
-          const expirando    = vigentes.filter(l => l.fecha_caducidad === mananaStr)
-          const hayDeficit   = minimo > 0 && stock < minimo
-          const isExpanded   = expandedSuc[suc.id] ?? false
-          const isAdding     = addingMap[suc.id] ?? false
-          const form         = formMap[suc.id] ?? { cantidad: '', fecha_rostizado: hoyStr }
-          const msg          = msgs[suc.id]
-          const isEditingMin = editMinSuc === suc.id
+          const lotes            = lotesMap[suc.id] ?? []
+          const minimo           = minimosMap[suc.id] ?? 0
+          const existenciaTacos  = Math.max(0, tacosMap[suc.id] ?? 0)
+          const vigentes         = lotes.filter(l => l.fecha_caducidad > hoyStr)
+          const expirados        = lotes.filter(l => l.fecha_caducidad <= hoyStr)
+          const expirando        = vigentes.filter(l => l.fecha_caducidad === mananaStr)
+          const isExpanded       = expandedSuc[suc.id] ?? false
+          const isAdding         = addingMap[suc.id] ?? false
+          const form             = formMap[suc.id] ?? { cantidad: '', fecha_rostizado: hoyStr }
+          const msg              = msgs[suc.id]
+          const isEditingMin     = editMinSuc === suc.id
 
-          const pct = minimo > 0 ? Math.min((stock / minimo) * 100, 100) : 100
-          const diasCobertura = minimo > 0 ? Math.floor(stock / minimo) : null
           let statusColor = 'var(--success)'
-          let statusLabel = 'Stock OK'
-          if (hayDeficit) { statusColor = 'var(--red)'; statusLabel = 'Déficit' }
-          else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Caduca hoy' }
+          let statusLabel = 'Con tacos'
+          if (existenciaTacos === 0) { statusColor = 'var(--red)'; statusLabel = 'Sin tacos' }
+          else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Pollos caducan' }
 
           return (
             <div key={suc.id} className={styles.sucCard}>
@@ -258,38 +249,24 @@ export default function SupervisorPollosTaco() {
                 <div className={styles.sucCardLeft}>
                   <p className={styles.sucNombre}>{suc.nombre}</p>
                   <span className={styles.sucStatusBadge} style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}>
-                    {hayDeficit && <AlertTriangle size={10} strokeWidth={2.5} />}
-                    {!hayDeficit && expirando.length > 0 && <AlertTriangle size={10} strokeWidth={2.5} />}
-                    {!hayDeficit && expirando.length === 0 && <CheckCircle size={10} strokeWidth={2.5} />}
+                    {existenciaTacos === 0 && <AlertTriangle size={10} strokeWidth={2.5} />}
+                    {existenciaTacos > 0 && expirando.length > 0 && <AlertTriangle size={10} strokeWidth={2.5} />}
+                    {existenciaTacos > 0 && expirando.length === 0 && <CheckCircle size={10} strokeWidth={2.5} />}
                     {statusLabel}
                   </span>
                 </div>
                 <div className={styles.sucCardRight}>
                   <div className={styles.sucCardRightInner}>
                     <div className={styles.stockBig}>
-                      <span className={styles.stockNum}>{stock}</span>
-                      {minimo > 0 && <span className={styles.stockMin}>/{minimo}</span>}
-                    </div>
-                    {diasCobertura !== null && (
-                      <span className={styles.coberturaBadge} style={{
-                        color: diasCobertura === 0 ? 'var(--red)' : diasCobertura === 1 ? 'var(--yellow)' : 'var(--success)',
-                        borderColor: diasCobertura === 0 ? 'rgba(232,25,44,0.3)' : diasCobertura === 1 ? 'rgba(245,196,0,0.3)' : 'rgba(0,211,149,0.3)',
-                        background:  diasCobertura === 0 ? 'rgba(232,25,44,0.08)' : diasCobertura === 1 ? 'rgba(245,196,0,0.08)' : 'rgba(0,211,149,0.08)',
-                      }}>
-                        {diasCobertura === 0 ? '<1 día' : `${diasCobertura}d`}
+                      <span className={styles.stockNum} style={{ color: existenciaTacos > 0 ? 'var(--info)' : 'var(--red)' }}>
+                        {existenciaTacos}
                       </span>
-                    )}
+                      <span className={styles.stockMin}> tacos</span>
+                    </div>
                   </div>
                   {isExpanded ? <ChevronUp size={16} strokeWidth={2} color="var(--text-muted)" /> : <ChevronDown size={16} strokeWidth={2} color="var(--text-muted)" />}
                 </div>
               </div>
-
-              {/* Progress bar */}
-              {minimo > 0 && (
-                <div className={styles.stockBar}>
-                  <div className={styles.stockFill} style={{ width: `${pct}%`, background: statusColor }} />
-                </div>
-              )}
 
               {/* Expandable content */}
               {isExpanded && (
