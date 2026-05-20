@@ -30,7 +30,8 @@
       "Bash(Get-ChildItem -Recurse -File)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Directory)"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Directory)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\" -Recurse -ErrorAction SilentlyContinue)"
     ]
   }
 }

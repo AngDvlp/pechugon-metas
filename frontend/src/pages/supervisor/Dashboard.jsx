@@ -8,6 +8,8 @@ import {
   CheckCircle, Clock, Utensils, Search, X, AlertTriangle
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
@@ -47,7 +49,26 @@ export default function SupervisorDashboard() {
   const hoy    = format(new Date(), 'yyyy-MM-dd')
   const manana = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  useEffect(() => { if (usuario?.id) load() }, [usuario])
+  useEffect(() => {
+    if (!usuario?.id) return
+    const KEY = `sup-dash-${usuario.id}`
+    const cached = getCached(KEY)
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [usuario])
+
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setVentasHoy(d.ventasHoy)
+    setResumenes(d.resumenes)
+    setMinimosMap(d.minimosMap)
+    setTacoMap(d.tacoMap)
+  }
 
   useEffect(() => {
     if (filtroTiempo === 'periodo' || !sucursales.length) return
@@ -61,8 +82,8 @@ export default function SupervisorDashboard() {
     loadRangos(desde, hasta)
   }, [filtroTiempo, customDesde, customHasta, sucursales.length])
 
-  async function load() {
-    setLoading(true)
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     const rutaId = usuario?.ruta_id
     if (!rutaId) { setSucursales([]); setLoading(false); return }
     const { data: rs } = await supabase
@@ -71,8 +92,7 @@ export default function SupervisorDashboard() {
       .eq('ruta_id', rutaId)
     const sids = rs?.map(s => s.sucursal_id) ?? []
     const sucs = rs?.map(s => s.sucursales).filter(Boolean) ?? []
-    setSucursales(sucs)
-    if (sids.length === 0) { setLoading(false); return }
+    if (sids.length === 0) { setSucursales(sucs); setLoading(false); return }
     const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, ...resResults] = await Promise.all([
       supabase.from('ventas_diarias').select('*').in('sucursal_id', sids).eq('fecha', hoy),
       supabase.from('pollos_taco').select('*').in('sucursal_id', sids),
@@ -81,13 +101,10 @@ export default function SupervisorDashboard() {
     ])
     const hoyMap = {}
     hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
-    setVentasHoy(hoyMap)
     const resMap = {}
     sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
-    setResumenes(resMap)
     const mMap = {}
     minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
-    setMinimosMap(mMap)
     const tMap = {}
     sids.forEach(id => {
       const lotes    = tacoLotes?.filter(l => l.sucursal_id === id) ?? []
@@ -96,7 +113,9 @@ export default function SupervisorDashboard() {
       const minimo   = mMap[id] ?? 0
       tMap[id] = { stock, deficit: minimo > 0 && stock < minimo, expirando: vigentes.some(l => l.fecha_caducidad === manana), minimo }
     })
-    setTacoMap(tMap)
+    const d = { sucursales: sucs, ventasHoy: hoyMap, resumenes: resMap, minimosMap: mMap, tacoMap: tMap }
+    applyData(d)
+    setCached(`sup-dash-${usuario.id}`, d)
     setLoading(false)
   }
 
@@ -170,7 +189,7 @@ export default function SupervisorDashboard() {
   const enRiesgo       = sucursales.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje < 70).length
   const enCamino       = sucursales.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70 && resumenes[s.id].avance_porcentaje < 100).length
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={5} />
 
   return (
     <div className={styles.page}>

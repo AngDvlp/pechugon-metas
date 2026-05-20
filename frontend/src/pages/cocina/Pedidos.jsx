@@ -10,6 +10,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts'
 import styles from './Pedidos.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 // ─── Modelo ML: suavizado exponencial ponderado por día de semana ───────────
 const DOW_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -70,10 +72,27 @@ export default function CocinaPedidos() {
   const [saving,          setSaving]          = useState(false)
   const [msgModal,        setMsgModal]        = useState(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const cached = getCached('coc-pedidos')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setPedidos(d.pedidos)
+    setSucMap(d.sucMap)
+    setSupMap(d.supMap)
+    setPredicciones(d.predicciones)
+    setUsandoTacos(d.usandoTacos)
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     const hoy    = format(new Date(), 'yyyy-MM-dd')
     const hace56 = format(subDays(new Date(), 56), 'yyyy-MM-dd')
 
@@ -82,38 +101,24 @@ export default function CocinaPedidos() {
       { data: sucsData },
       { data: ventasData },
     ] = await Promise.all([
-      supabase
-        .from('pedidos_pollo_taco')
-        .select('*')
-        .order('created_at', { ascending: false }),
+      supabase.from('pedidos_pollo_taco').select('*').order('created_at', { ascending: false }),
       supabase.from('sucursales').select('id, nombre'),
-      supabase
-        .from('ventas_diarias')
+      supabase.from('ventas_diarias')
         .select('fecha, pollos_vendidos, tacos_vendidos')
-        .gte('fecha', hace56)
-        .lte('fecha', hoy)
+        .gte('fecha', hace56).lte('fecha', hoy)
         .order('fecha', { ascending: true }),
     ])
 
-    setPedidos(pedsData ?? [])
-
     const sm = {}
     sucsData?.forEach(s => { sm[s.id] = s.nombre })
-    setSucMap(sm)
 
-    // Obtener nombres de supervisores que hicieron pedidos
     const supIds = [...new Set((pedsData ?? []).map(p => p.solicitado_por).filter(Boolean))]
+    let sm2 = {}
     if (supIds.length) {
-      const { data: supData } = await supabase
-        .from('usuarios')
-        .select('id, nombre')
-        .in('id', supIds)
-      const sm2 = {}
+      const { data: supData } = await supabase.from('usuarios').select('id, nombre').in('id', supIds)
       supData?.forEach(u => { sm2[u.id] = u.nombre })
-      setSupMap(sm2)
     }
 
-    // ML: agrupar por fecha
     const porFecha = {}
     ventasData?.forEach(v => {
       if (!porFecha[v.fecha]) porFecha[v.fecha] = { fecha: v.fecha, pollos_vendidos: 0, tacos_vendidos: 0 }
@@ -122,21 +127,21 @@ export default function CocinaPedidos() {
     })
     const historial = Object.values(porFecha).sort((a, b) => a.fecha.localeCompare(b.fecha))
 
+    let preds = []
+    let uTacos = false
     if (historial.length >= 7) {
-      // Preferir predicción de tacos si hay datos de tacos
       const conTacos = historial.filter(d => d.tacos_vendidos > 0)
       if (conTacos.length >= 7) {
-        const histTacos = historial.map(d => ({ ...d, pollos_vendidos: d.tacos_vendidos }))
-        const dowAvg = entrenarModelo(histTacos)
-        setPredicciones(predecir(dowAvg, 7))
-        setUsandoTacos(true)
+        preds  = predecir(entrenarModelo(historial.map(d => ({ ...d, pollos_vendidos: d.tacos_vendidos }))), 7)
+        uTacos = true
       } else {
-        const dowAvg = entrenarModelo(historial)
-        setPredicciones(predecir(dowAvg, 7))
-        setUsandoTacos(false)
+        preds = predecir(entrenarModelo(historial), 7)
       }
     }
 
+    const d = { pedidos: pedsData ?? [], sucMap: sm, supMap: sm2, predicciones: preds, usandoTacos: uTacos }
+    applyData(d)
+    setCached('coc-pedidos', d)
     setLoading(false)
   }
 
@@ -170,12 +175,12 @@ export default function CocinaPedidos() {
       setMsgModal({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {
       setRespondiendo(null)
-      await load()
+      await load(true)
     }
     setSaving(false)
   }
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton hasChart rows={3} />
 
   const pendientes  = pedidos.filter(p => p.estado === 'pendiente')
   const respondidos = pedidos.filter(p => p.estado !== 'pendiente')

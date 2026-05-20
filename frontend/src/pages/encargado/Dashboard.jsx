@@ -7,6 +7,8 @@ import {
   DollarSign, Bird, TrendingUp, CheckCircle, AlertCircle, Lock, UtensilsCrossed
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -27,25 +29,39 @@ export default function EncargadoDashboard() {
   const [msg,        setMsg]        = useState(null)
 
   useEffect(() => {
-    if (sucursalId) load()
-    else if (usuario) setLoading(false)
+    if (!sucursalId) { if (usuario) setLoading(false); return }
+    const KEY = `enc-${sucursalId}`
+    const cached = getCached(KEY)
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
   }, [sucursalId, usuario])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setVentaHoy(d.ventaHoy)
+    setUltimas(d.ultimas)
+    if (d.ventaHoy) setForm({
+      venta_total:      d.ventaHoy.venta_total,
+      pollos_vendidos:  d.ventaHoy.pollos_vendidos,
+      tacos_producidos: d.ventaHoy.tacos_producidos ?? '',
+      tacos_vendidos:   d.ventaHoy.tacos_vendidos   ?? '',
+    })
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     const inicioMes = format(startOfMonth(new Date()), 'yyyy-MM-dd')
     const [{ data: hoyData }, { data: histData }] = await Promise.all([
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoyStr).maybeSingle(),
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).gte('fecha', inicioMes).order('fecha', { ascending: false }),
     ])
-    setVentaHoy(hoyData)
-    setUltimas(histData ?? [])
-    if (hoyData) setForm({
-      venta_total:     hoyData.venta_total,
-      pollos_vendidos: hoyData.pollos_vendidos,
-      tacos_producidos: hoyData.tacos_producidos ?? '',
-      tacos_vendidos:   hoyData.tacos_vendidos   ?? '',
-    })
+    const d = { ventaHoy: hoyData, ultimas: histData ?? [] }
+    applyData(d)
+    setCached(`enc-${sucursalId}`, d)
     setLoading(false)
   }
 
@@ -78,7 +94,7 @@ export default function EncargadoDashboard() {
       setMsg({ tipo: 'error', texto: 'Error al guardar: ' + error.message })
     } else {
       setMsg({ tipo: 'ok', texto: 'Venta registrada correctamente' })
-      await load()
+      await load(true)
       setTimeout(() => setMsg(null), 4000)
     }
     setSaving(false)
@@ -88,7 +104,7 @@ export default function EncargadoDashboard() {
     ? parseFloat(form.venta_total) / parseFloat(form.pollos_vendidos)
     : null
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={3} />
   if (!sucursalId) return (
     <div className={styles.page}>
       <div className={styles.sucursalHeader}>

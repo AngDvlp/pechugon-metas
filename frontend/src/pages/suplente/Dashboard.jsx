@@ -7,6 +7,8 @@ import {
   CheckCircle, Clock, Utensils, Search, X, AlertTriangle
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -57,7 +59,25 @@ export default function SuplenteDashboard() {
     return { onTrack, necesitaPorDia, diasRestantes }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const cached = getCached('sup-suplente')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
+
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setRutas(d.rutas)
+    setRutaSucMap(d.rutaSucMap)
+    setVentasHoy(d.ventasHoy)
+    setTacoMap(d.tacoMap)
+    setResumenes(d.resumenes)
+  }
 
   useEffect(() => {
     if (filtroTiempo === 'periodo' || !sucursales.length) return
@@ -65,8 +85,8 @@ export default function SuplenteDashboard() {
     if (dates) loadRangos(dates.desde, dates.hasta)
   }, [filtroTiempo, customDesde, customHasta, sucursales.length])
 
-  async function load() {
-    setLoading(true)
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     const [
       { data: sucs },
       { data: rutasData },
@@ -83,24 +103,17 @@ export default function SuplenteDashboard() {
       supabase.from('pollos_taco_minimos').select('*'),
     ])
 
-    setSucursales(sucs ?? [])
-    setRutas(rutasData ?? [])
-
     const rMap = {}
     rs?.forEach(r => {
       if (!rMap[r.ruta_id]) rMap[r.ruta_id] = []
       rMap[r.ruta_id].push(r.sucursal_id)
     })
-    setRutaSucMap(rMap)
-
     const hoyMap = {}
     hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
-    setVentasHoy(hoyMap)
-
-    const sids  = (sucs ?? []).map(s => s.id)
-    const mMap  = {}
+    const sids = (sucs ?? []).map(s => s.id)
+    const mMap = {}
     minimos?.forEach(m => { mMap[m.sucursal_id] = m.cantidad_minima })
-    const tMap  = {}
+    const tMap = {}
     sids.forEach(id => {
       const lotes    = tacoLotes?.filter(l => l.sucursal_id === id) ?? []
       const vigentes = lotes.filter(l => l.fecha_caducidad > hoy)
@@ -108,16 +121,16 @@ export default function SuplenteDashboard() {
       const minimo   = mMap[id] ?? 0
       tMap[id] = { stock, deficit: minimo > 0 && stock < minimo, expirando: vigentes.some(l => l.fecha_caducidad === manana), minimo }
     })
-    setTacoMap(tMap)
-
+    const rmap = {}
     if (sids.length) {
       const results = await Promise.all(
         sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())
       )
-      const rmap = {}
       sids.forEach((id, i) => { rmap[id] = results[i].data ?? null })
-      setResumenes(rmap)
     }
+    const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: rMap, ventasHoy: hoyMap, tacoMap: tMap, resumenes: rmap }
+    applyData(d)
+    setCached('sup-suplente', d)
     setLoading(false)
   }
 
@@ -203,7 +216,7 @@ export default function SuplenteDashboard() {
   const sinRegistroHoy = sucursalesFiltradas.filter(s => !ventasHoy[s.id]).length
   const enRiesgo       = sucursalesFiltradas.filter(s => (resumenes[s.id]?.avance_porcentaje ?? 100) < 70).length
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={5} />
 
   return (
     <div className={styles.page}>

@@ -9,6 +9,8 @@ import {
   Utensils, AlertTriangle, CheckCircle, ChevronDown, ChevronUp
 } from 'lucide-react'
 import styles from './PollosTaco.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 function diasParaCaducar(fechaCaducidad, hoyStr) {
   const hoy = new Date(hoyStr + 'T00:00:00')
@@ -45,10 +47,27 @@ export default function GerentePollosTaco() {
   const [filtroSup,    setFiltroSup]    = useState('todos')
   const [expandedSuc,  setExpandedSuc]  = useState({})
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const cached = getCached('ger-pollos')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setSupervisores(d.supervisores)
+    setSupSucMap(d.supSucMap)
+    setLotesMap(d.lotesMap)
+    setTacosMap(d.tacosMap)
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     try {
       const hace3 = format(subDays(new Date(), 2), 'yyyy-MM-dd')
       const [
@@ -67,16 +86,11 @@ export default function GerentePollosTaco() {
           .gte('fecha', hace3),
       ])
 
-      setSucursales(sucs ?? [])
-      setSupervisores(sups ?? [])
-
       const ssMap = {}
       ss?.forEach(r => {
         if (!ssMap[r.supervisor_id]) ssMap[r.supervisor_id] = []
         ssMap[r.supervisor_id].push(r.sucursal_id)
       })
-      setSupSucMap(ssMap)
-
       const lMap = {}
       const tMap = {}
       sucs?.forEach(s => { lMap[s.id] = []; tMap[s.id] = 0 })
@@ -86,8 +100,9 @@ export default function GerentePollosTaco() {
           tMap[v.sucursal_id] += (v.tacos_producidos || 0) - (v.tacos_vendidos || 0)
         }
       })
-      setLotesMap(lMap)
-      setTacosMap(tMap)
+      const d = { sucursales: sucs ?? [], supervisores: sups ?? [], supSucMap: ssMap, lotesMap: lMap, tacosMap: tMap }
+      applyData(d)
+      setCached('ger-pollos', d)
     } finally {
       setLoading(false)
     }
@@ -117,7 +132,7 @@ export default function GerentePollosTaco() {
     sinTacos:   getExistencia(s.id) === 0,
   })).sort((a, b) => b.existencia - a.existencia)
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton hasChart rows={4} />
 
   return (
     <div className={styles.page}>

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -5,6 +6,7 @@ import {
   CalendarPlus, Utensils, Route, Package, BarChart2
 } from 'lucide-react'
 import styles from './Layout.module.css'
+import PageSkeleton from './PageSkeleton'
 
 const NAV_ITEMS = {
   encargado: [
@@ -80,7 +82,9 @@ export default function Layout({ rol }) {
       </header>
 
       <main className={styles.main}>
-        <Outlet />
+        <Suspense fallback={<PageSkeleton />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {items.length > 1 && (

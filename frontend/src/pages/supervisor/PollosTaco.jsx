@@ -8,6 +8,8 @@ import {
   Pencil, Trash2, Flame, Settings, ChevronDown, ChevronUp
 } from 'lucide-react'
 import styles from './PollosTaco.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 function diasParaCaducar(fechaCaducidad, hoyStr) {
   const hoy = new Date(hoyStr + 'T00:00:00')
@@ -36,10 +38,31 @@ export default function SupervisorPollosTaco() {
   const [saving,      setSaving]          = useState(false)
   const [msgs,        setMsgs]            = useState({})  // sucursalId → msg obj
 
-  useEffect(() => { if (usuario?.id) load() }, [usuario])
+  useEffect(() => {
+    if (!usuario?.id) return
+    const KEY = `sup-pollos-${usuario.id}`
+    const cached = getCached(KEY)
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [usuario])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setLotesMap(d.lotesMap)
+    setMinimosMap(d.minimosMap)
+    setTacosMap(d.tacosMap)
+    const fMap = {}
+    d.sucursales.forEach(s => { fMap[s.id] = { cantidad: '', fecha_rostizado: hoyStr } })
+    setFormMap(fMap)
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     let sucs = []
     if (rol === 'suplente') {
       const { data } = await supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
@@ -51,12 +74,11 @@ export default function SupervisorPollosTaco() {
         .eq('supervisor_id', usuario.id)
       sucs = supSuc?.map(s => s.sucursales) ?? []
     }
-    setSucursales(sucs)
 
-    if (!sucs.length) { setLoading(false); return }
+    if (!sucs.length) { setSucursales(sucs); setLoading(false); return }
 
-    const sids    = sucs.map(s => s.id)
-    const hace3   = format(subDays(new Date(), 2), 'yyyy-MM-dd')
+    const sids  = sucs.map(s => s.id)
+    const hace3 = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
     const [{ data: lotes }, { data: minimos }, { data: ventasTacos }] = await Promise.all([
       supabase.from('pollos_taco').select('*').in('sucursal_id', sids).order('fecha_rostizado', { ascending: false }),
@@ -79,15 +101,9 @@ export default function SupervisorPollosTaco() {
       }
     })
 
-    setLotesMap(lMap)
-    setMinimosMap(mMap)
-    setTacosMap(tMap)
-
-    // Init form defaults
-    const fMap = {}
-    sids.forEach(id => { fMap[id] = { cantidad: '', fecha_rostizado: hoyStr } })
-    setFormMap(fMap)
-
+    const d = { sucursales: sucs, lotesMap: lMap, minimosMap: mMap, tacosMap: tMap }
+    applyData(d)
+    setCached(`sup-pollos-${usuario.id}`, d)
     setLoading(false)
   }
 
@@ -122,7 +138,7 @@ export default function SupervisorPollosTaco() {
       setMsg(sucId, { tipo: 'ok', texto: 'Lote agregado' })
       setFormMap(m => ({ ...m, [sucId]: { cantidad: '', fecha_rostizado: hoyStr } }))
       setAddingMap(m => ({ ...m, [sucId]: false }))
-      await load()
+      await load(true)
     }
     setSaving(false)
   }
@@ -135,13 +151,13 @@ export default function SupervisorPollosTaco() {
       fecha_rostizado: editingLote.fecha_rostizado,
       updated_at:      new Date().toISOString(),
     }).eq('id', editingLote.id)
-    if (!error) { setEditingLote(null); await load() }
+    if (!error) { setEditingLote(null); await load(true) }
     setSaving(false)
   }
 
   async function handleDeleteLote(loteId) {
     const { error } = await supabase.from('pollos_taco').delete().eq('id', loteId)
-    if (!error) await load()
+    if (!error) await load(true)
   }
 
   async function handleSaveMinimo(sucId) {
@@ -155,7 +171,7 @@ export default function SupervisorPollosTaco() {
     }, { onConflict: 'sucursal_id' })
     if (!error) {
       setEditMinSuc(null)
-      await load()
+      await load(true)
     }
     setSaving(false)
   }
@@ -167,7 +183,7 @@ export default function SupervisorPollosTaco() {
     lotesMap[s.id]?.some(l => l.fecha_caducidad === mananaStr)
   )
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={4} />
 
   return (
     <div className={styles.page}>

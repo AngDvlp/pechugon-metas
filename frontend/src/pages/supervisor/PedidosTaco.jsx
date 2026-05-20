@@ -8,6 +8,8 @@ import {
   Clock, Send, ChevronDown, ChevronUp
 } from 'lucide-react'
 import styles from './PedidosTaco.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 const ESTADO_CFG = {
   pendiente: { label: 'Pendiente', color: 'var(--yellow)', bg: 'rgba(245,196,0,0.1)',   border: 'rgba(245,196,0,0.3)' },
@@ -29,10 +31,27 @@ export default function SupervisorPedidosTaco() {
   const [saving,     setSaving]     = useState(false)
   const [msg,        setMsg]        = useState(null)
 
-  useEffect(() => { if (usuario?.id) load() }, [usuario])
+  useEffect(() => {
+    if (!usuario?.id) return
+    const KEY = `sup-pedidos-${usuario.id}`
+    const cached = getCached(KEY)
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [usuario])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setPedidos(d.pedidos)
+    if (d.sucursales.length > 0 && !sucursalId) setSucursalId(d.sucursales[0].id)
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     let sucs = []
     if (rol === 'suplente') {
       const { data } = await supabase
@@ -48,7 +67,6 @@ export default function SupervisorPedidosTaco() {
         .eq('supervisor_id', usuario.id)
       sucs = data?.map(s => s.sucursales) ?? []
     }
-    setSucursales(sucs)
     if (sucs.length > 0 && !sucursalId) setSucursalId(sucs[0].id)
 
     const { data: peds } = await supabase
@@ -57,7 +75,9 @@ export default function SupervisorPedidosTaco() {
       .eq('solicitado_por', usuario.id)
       .order('created_at', { ascending: false })
 
-    setPedidos(peds ?? [])
+    const d = { sucursales: sucs, pedidos: peds ?? [] }
+    applyData(d)
+    setCached(`sup-pedidos-${usuario.id}`, d)
     setLoading(false)
   }
 
@@ -80,12 +100,12 @@ export default function SupervisorPedidosTaco() {
       setNotas('')
       setShowForm(false)
       setTimeout(() => setMsg(null), 3500)
-      await load()
+      await load(true)
     }
     setSaving(false)
   }
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={4} />
 
   const pendientes = pedidos.filter(p => p.estado === 'pendiente')
   const sucMap     = Object.fromEntries(sucursales.map(s => [s.id, s.nombre]))

@@ -7,6 +7,8 @@ import {
   Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
@@ -46,7 +48,24 @@ export default function GerenteDashboard() {
 
   const hoy = format(new Date(), 'yyyy-MM-dd')
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const cached = getCached('ger-dash')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
+
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setRutas(d.rutas)
+    setRutaSucMap(d.rutaSucMap)
+    setVentasHoy(d.ventasHoy)
+    setResumenes(d.resumenes)
+  }
 
   useEffect(() => {
     if (filtroTiempo === 'periodo' || !sucursales.length) return
@@ -60,8 +79,8 @@ export default function GerenteDashboard() {
     loadRangos(desde, hasta)
   }, [filtroTiempo, customDesde, customHasta, sucursales.length])
 
-  async function load() {
-    setLoading(true)
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     try {
       const [{ data: sucs }, { data: rutasData }, { data: rs }, { data: hoyData }] = await Promise.all([
         supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
@@ -69,25 +88,23 @@ export default function GerenteDashboard() {
         supabase.from('ruta_sucursales').select('ruta_id, sucursal_id'),
         supabase.from('ventas_diarias').select('sucursal_id, venta_total').eq('fecha', hoy),
       ])
-      setSucursales(sucs ?? [])
-      setRutas(rutasData ?? [])
       const map = {}
       rs?.forEach(r => {
         if (!map[r.ruta_id]) map[r.ruta_id] = []
         map[r.ruta_id].push(r.sucursal_id)
       })
-      setRutaSucMap(map)
       const hoyMap = {}
       hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
-      setVentasHoy(hoyMap)
+      const rmap = {}
       if (sucs?.length) {
         const results = await Promise.all(
           sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
         )
-        const rmap = {}
         sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
-        setResumenes(rmap)
       }
+      const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: map, ventasHoy: hoyMap, resumenes: rmap }
+      applyData(d)
+      setCached('ger-dash', d)
     } catch (e) {
       console.error('Error loading gerente dashboard:', e)
     } finally {
@@ -178,7 +195,7 @@ export default function GerenteDashboard() {
   const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
   const avancePctRango    = totalMetaEsperada > 0 ? (rangoVentaTotal / totalMetaEsperada) * 100 : null
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={5} />
 
   return (
     <div className={styles.page}>

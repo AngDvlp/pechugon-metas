@@ -4,6 +4,8 @@ import { format, addDays, subDays, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Utensils, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 
 function diasParaCaducar(fechaCaducidad, hoyStr) {
   const hoy = new Date(hoyStr + 'T00:00:00')
@@ -22,28 +24,38 @@ export default function CocinaDashboard() {
   const [loading,    setLoading]    = useState(true)
   const [expanded,   setExpanded]   = useState({})
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const cached = getCached('coc-dash')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
 
-  async function load() {
-    setLoading(true)
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setLotesMap(d.lotesMap)
+    setMinimosMap(d.minimosMap)
+    setTacosMap(d.tacosMap)
+  }
+
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     const { data: sucs } = await supabase
       .from('sucursales')
       .select('id, nombre')
       .eq('activa', true)
       .order('nombre')
 
-    setSucursales(sucs ?? [])
-
-    if (!sucs?.length) { setLoading(false); return }
+    if (!sucs?.length) { setSucursales([]); setLoading(false); return }
     const sids  = sucs.map(s => s.id)
     const hace3 = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
     const [{ data: lotes }, { data: minimos }, { data: ventasTacos }] = await Promise.all([
-      supabase
-        .from('pollos_taco')
-        .select('*')
-        .in('sucursal_id', sids)
-        .order('fecha_rostizado', { ascending: false }),
+      supabase.from('pollos_taco').select('*').in('sucursal_id', sids).order('fecha_rostizado', { ascending: false }),
       supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
       supabase.from('ventas_diarias')
         .select('sucursal_id, tacos_producidos, tacos_vendidos')
@@ -61,13 +73,13 @@ export default function CocinaDashboard() {
       }
     })
 
-    setLotesMap(lMap)
-    setMinimosMap(mMap)
-    setTacosMap(tMap)
+    const d = { sucursales: sucs, lotesMap: lMap, minimosMap: mMap, tacosMap: tMap }
+    applyData(d)
+    setCached('coc-dash', d)
     setLoading(false)
   }
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={4} />
 
   const totalExistenciaTacos = sucursales.reduce((a, s) => a + Math.max(0, tacosMap[s.id] ?? 0), 0)
   const sucSinTacos = sucursales.filter(s => (tacosMap[s.id] ?? 0) <= 0)
