@@ -608,6 +608,147 @@
   padding: 24px 0;
 }
 
+/* ── OBJETIVOS CARD ─────────────────────────────────────── */
+.objetivosCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.objetivosHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.objetivosTitle {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+
+.objetivosPills {
+  display: flex;
+  gap: 5px;
+}
+
+.objPill {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 11px;
+  transition: all 0.15s;
+}
+.objPill:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.objPillActive {
+  background: rgba(245,196,0,0.12);
+  border-color: rgba(245,196,0,0.5);
+  color: var(--yellow);
+}
+
+.objetivosGrid {
+  display: flex;
+  align-items: stretch;
+  padding: 16px 0 14px;
+}
+
+.objKpi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  min-width: 0;
+}
+
+.objDivider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: 4px 0;
+}
+
+.objKpiLabel {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.objKpiTarget {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.objBar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.objBarFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.7s ease;
+  animation: bar-fill 0.7s ease both;
+}
+
+.objKpiActual {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.objFaltan {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+.objFaltan strong { color: var(--text-primary); font-weight: 700; }
+
+.objFaltanOk {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--success);
+  text-align: center;
+  padding: 10px 16px 14px;
+  border-top: 1px solid rgba(0,211,149,0.15);
+  background: rgba(0,211,149,0.04);
+}
+
 /* ── META CARD ──────────────────────────────────────────── */
 .metaCard {
   background: linear-gradient(155deg,

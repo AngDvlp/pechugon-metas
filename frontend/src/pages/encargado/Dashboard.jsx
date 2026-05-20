@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, addDays } from 'date-fns'
+import { format, parseISO, addDays, startOfWeek, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
   DollarSign, Bird, TrendingUp, CheckCircle, AlertCircle, Lock,
@@ -32,7 +32,9 @@ export default function EncargadoDashboard() {
   const [form,     setForm]     = useState({ venta_total: '', pollos_vendidos: '' })
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
-  const [msg,      setMsg]      = useState(null)
+  const [msg,        setMsg]        = useState(null)
+  const [resumen,    setResumen]    = useState(null)
+  const [filtroObj,  setFiltroObj]  = useState('hoy')
 
   // — Pollos Taco —
   const [lotesTaco,      setLotesTaco]      = useState([])
@@ -51,17 +53,20 @@ export default function EncargadoDashboard() {
 
   async function load() {
     setLoading(true)
-    const [{ data: hoyData }, { data: histData }, { data: tacoData }, { data: minData }] = await Promise.all([
+    const inicioMes = format(startOfMonth(new Date()), 'yyyy-MM-dd')
+    const [{ data: hoyData }, { data: histData }, { data: tacoData }, { data: minData }, { data: resData }] = await Promise.all([
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoyStr).maybeSingle(),
-      supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).order('fecha', { ascending: false }).limit(14),
+      supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).gte('fecha', inicioMes).order('fecha', { ascending: false }),
       supabase.from('pollos_taco').select('*').eq('sucursal_id', sucursalId).order('fecha_rostizado', { ascending: false }).limit(30),
       supabase.from('pollos_taco_minimos').select('cantidad_minima').eq('sucursal_id', sucursalId).maybeSingle(),
+      supabase.rpc('resumen_sucursal', { p_sucursal_id: sucursalId }).maybeSingle(),
     ])
     setVentaHoy(hoyData)
     setUltimas(histData ?? [])
     if (hoyData) setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
     setLotesTaco(tacoData ?? [])
     setMinimoTaco(minData?.cantidad_minima ?? 0)
+    setResumen(resData ?? null)
     setLoading(false)
   }
 
@@ -154,6 +159,55 @@ export default function EncargadoDashboard() {
     ? parseFloat(form.venta_total) / parseFloat(form.pollos_vendidos)
     : null
 
+  // — Cálculos objetivos —
+  const _hoy          = new Date()
+  const diasEnMes     = new Date(_hoy.getFullYear(), _hoy.getMonth() + 1, 0).getDate()
+  const diasTransc    = resumen?.dias_transcurridos ?? _hoy.getDate()
+  const metaMensual   = resumen?.meta_mensual ?? 0
+  const metaDiaria    = diasEnMes > 0 ? metaMensual / diasEnMes : 0
+  const metaSemanal   = resumen?.meta_venta ?? metaDiaria * 7
+  const pollosTotMes  = resumen?.pollos_totales ?? 0
+  const avgPollosDia  = diasTransc > 0 ? pollosTotMes / diasTransc : 0
+  const ticketPromMes = pollosTotMes > 0 ? (resumen?.venta_acumulada ?? 0) / pollosTotMes : 0
+
+  // Ventas de esta semana (desde lunes)
+  const inicioSemStr  = format(startOfWeek(_hoy, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const ventasSem     = ultimas.filter(v => v.fecha >= inicioSemStr)
+  const ventaSemTotal = ventasSem.reduce((a, v) => a + v.venta_total, 0)
+  const pollosSemTotal = ventasSem.reduce((a, v) => a + parseFloat(v.pollos_vendidos ?? 0), 0)
+  const ticketSem     = pollosSemTotal > 0 ? ventaSemTotal / pollosSemTotal : 0
+
+  // Ventas del mes
+  const ventaMesTotal  = resumen?.venta_acumulada ?? 0
+  const ticketMes      = ticketPromMes
+
+  // Actual para hoy
+  const ventaHoyVal   = ventaHoy?.venta_total ?? 0
+  const pollosHoyVal  = parseFloat(ventaHoy?.pollos_vendidos ?? 0)
+  const ticketHoyVal  = pollosHoyVal > 0 ? ventaHoyVal / pollosHoyVal : 0
+
+  const FILTROS_OBJ = [
+    {
+      key: 'hoy', label: 'Hoy',
+      target:  { venta: metaDiaria,    pollos: avgPollosDia,           ticket: ticketPromMes },
+      actual:  { venta: ventaHoyVal,   pollos: pollosHoyVal,           ticket: ticketHoyVal },
+    },
+    {
+      key: 'semana', label: 'Semana',
+      target:  { venta: metaSemanal,   pollos: avgPollosDia * 7,       ticket: ticketPromMes },
+      actual:  { venta: ventaSemTotal, pollos: pollosSemTotal,         ticket: ticketSem },
+    },
+    {
+      key: 'mes', label: 'Mes',
+      target:  { venta: metaMensual,   pollos: avgPollosDia * diasEnMes, ticket: ticketPromMes },
+      actual:  { venta: ventaMesTotal, pollos: pollosTotMes,           ticket: ticketMes },
+    },
+  ]
+  const objActivo = FILTROS_OBJ.find(f => f.key === filtroObj) ?? FILTROS_OBJ[0]
+  const pctVenta  = objActivo.target.venta  > 0 ? Math.min(100, (objActivo.actual.venta  / objActivo.target.venta)  * 100) : 0
+  const pctPollos = objActivo.target.pollos > 0 ? Math.min(100, (objActivo.actual.pollos / objActivo.target.pollos) * 100) : 0
+  const objColor  = pctVenta >= 100 ? 'var(--success)' : pctVenta >= 70 ? 'var(--yellow)' : 'var(--red)'
+  const faltaVenta = Math.max(0, objActivo.target.venta - objActivo.actual.venta)
 
   if (loading) return <div className={styles.empty}>Cargando…</div>
   if (!sucursalId) return (
@@ -174,6 +228,81 @@ export default function EncargadoDashboard() {
           {format(new Date(), "EEEE d 'de' MMMM yyyy", { locale: es })}
         </p>
       </div>
+
+      {/* ── Objetivos ── */}
+      {resumen && metaMensual > 0 && (
+        <div className={styles.objetivosCard}>
+          <div className={styles.objetivosHeader}>
+            <p className={styles.objetivosTitle}>Objetivos</p>
+            <div className={styles.objetivosPills}>
+              {FILTROS_OBJ.map(f => (
+                <button
+                  key={f.key}
+                  className={`${styles.objPill} ${filtroObj === f.key ? styles.objPillActive : ''}`}
+                  onClick={() => setFiltroObj(f.key)}
+                >{f.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.objetivosGrid}>
+            {/* Venta $ */}
+            <div className={styles.objKpi}>
+              <span className={styles.objKpiLabel}>Venta $</span>
+              <span className={styles.objKpiTarget}>{fmt(objActivo.target.venta)}</span>
+              <div className={styles.objBar}>
+                <div className={styles.objBarFill} style={{ width: `${pctVenta}%`, background: objColor }} />
+              </div>
+              <span className={styles.objKpiActual} style={{ color: objActivo.actual.venta > 0 ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                {objActivo.actual.venta > 0 ? fmt(objActivo.actual.venta) : '—'}
+              </span>
+            </div>
+
+            <div className={styles.objDivider} />
+
+            {/* Pollos */}
+            <div className={styles.objKpi}>
+              <span className={styles.objKpiLabel}>Pollos</span>
+              <span className={styles.objKpiTarget}>{Math.round(objActivo.target.pollos)}</span>
+              <div className={styles.objBar}>
+                <div className={styles.objBarFill} style={{ width: `${pctPollos}%`, background: objColor }} />
+              </div>
+              <span className={styles.objKpiActual} style={{ color: objActivo.actual.pollos > 0 ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                {objActivo.actual.pollos > 0 ? fmtNum(objActivo.actual.pollos) : '—'}
+              </span>
+            </div>
+
+            <div className={styles.objDivider} />
+
+            {/* Ticket */}
+            <div className={styles.objKpi}>
+              <span className={styles.objKpiLabel}>Ticket</span>
+              <span className={styles.objKpiTarget}>{fmtDec(objActivo.target.ticket)}</span>
+              <div className={styles.objBar}>
+                <div className={styles.objBarFill} style={{
+                  width: `${objActivo.target.ticket > 0 ? Math.min(100, (objActivo.actual.ticket / objActivo.target.ticket) * 100) : 0}%`,
+                  background: objActivo.actual.ticket >= objActivo.target.ticket * 0.95 ? 'var(--success)' : 'var(--yellow)',
+                }} />
+              </div>
+              <span className={styles.objKpiActual} style={{ color: objActivo.actual.ticket > 0 ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                {objActivo.actual.ticket > 0 ? fmtDec(objActivo.actual.ticket) : '—'}
+              </span>
+            </div>
+          </div>
+
+          {faltaVenta > 0 && (
+            <div className={styles.objFaltan}>
+              Faltan <strong>{fmt(faltaVenta)}</strong>
+              {filtroObj === 'hoy' ? ' para cerrar el día' : filtroObj === 'semana' ? ' para la semana' : ' para completar el mes'}
+            </div>
+          )}
+          {faltaVenta === 0 && objActivo.actual.venta > 0 && (
+            <div className={styles.objFaltanOk}>
+              {filtroObj === 'hoy' ? '¡Objetivo del día cumplido!' : filtroObj === 'semana' ? '¡Objetivo semanal cumplido!' : '¡Meta del mes cumplida!'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Formulario ventas ── */}
       <div className={styles.formCard}>
