@@ -7,6 +7,7 @@ import {
   Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import PrediccionesPanel from '../../components/PrediccionesPanel'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
@@ -20,6 +21,7 @@ export default function GerenteDashboard() {
   const [rangos,        setRangos]        = useState({})
   const [loadingRangos, setLoadingRangos] = useState(false)
   const [loading,       setLoading]       = useState(true)
+  const [historialPred, setHistorialPred] = useState([])
   const [busqueda,      setBusqueda]      = useState('')
   const [filtroRuta,    setFiltroRuta]    = useState('todas')
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
@@ -57,12 +59,26 @@ export default function GerenteDashboard() {
       })
       setRutaSucMap(map)
       if (sucs?.length) {
-        const results = await Promise.all(
-          sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())
-        )
+        const sids   = sucs.map(s => s.id)
+        const desde90 = (() => {
+          const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
+        })()
+        const [results, { data: ventasHist }] = await Promise.all([
+          Promise.all(sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())),
+          supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', desde90).order('fecha', { ascending: true }),
+        ])
         const rmap = {}
         sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
         setResumenes(rmap)
+
+        // Agregar histórico por fecha
+        const aggHist = {}
+        ventasHist?.forEach(v => {
+          if (!aggHist[v.fecha]) aggHist[v.fecha] = { fecha: v.fecha, venta_total: 0, pollos_vendidos: 0 }
+          aggHist[v.fecha].venta_total     += v.venta_total
+          aggHist[v.fecha].pollos_vendidos += v.pollos_vendidos
+        })
+        setHistorialPred(Object.values(aggHist).sort((a, b) => a.fecha.localeCompare(b.fecha)))
       }
     } catch (e) {
       console.error('Error loading gerente dashboard:', e)
@@ -103,6 +119,21 @@ export default function GerenteDashboard() {
     const matchSup = filtroRuta === 'todas' || (rutaSucMap[filtroRuta] ?? []).includes(s.id)
     return matchBusqueda && matchSup
   })
+
+  // Resumen agregado para motor de predicciones (todas las sucursales filtradas)
+  const resumenAgregadoPred = (() => {
+    const vals = sucursalesFiltradas.map(s => resumenes[s.id]).filter(Boolean)
+    if (!vals.length) return null
+    const meta = vals.reduce((a, r) => a + (r?.meta_venta ?? r?.meta_mensual ?? 0), 0)
+    if (!meta) return null
+    const r0 = vals.find(r => r?.dias_totales)
+    return {
+      meta_venta:          meta,
+      venta_acumulada:     vals.reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0),
+      dias_totales:        r0?.dias_totales ?? 30,
+      dias_transcurridos:  r0?.dias_transcurridos ?? 0,
+    }
+  })()
 
   const totalMeta = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_mensual ?? 0), 0)
   const totalAcumulado = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_acumulada ?? 0), 0)
@@ -301,6 +332,15 @@ export default function GerenteDashboard() {
           </button>
         )}
       </div>
+
+      {/* ── Predicciones ML ── */}
+      <PrediccionesPanel
+        historico={historialPred}
+        resumen={resumenAgregadoPred}
+        lotesTaco={[]}
+        hoyStr={format(new Date(), 'yyyy-MM-dd')}
+        titulo="Predicciones ML — Global"
+      />
 
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}

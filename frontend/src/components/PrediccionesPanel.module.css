@@ -1,0 +1,396 @@
+/* ════════════════════════════════════════
+   Panel de Predicciones ML — El Pechugón
+   ════════════════════════════════════════ */
+
+.panelCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+/* Acento superior azul/info */
+.panelCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--info), rgba(94,158,255,0.15), transparent);
+  pointer-events: none;
+}
+
+/* ── Header (siempre visible) ─────────── */
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  gap: 8px;
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.panelTitle {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--info);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.probBadge {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.insufficientBadge {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+}
+
+.panelHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tendChip {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  text-transform: capitalize;
+}
+
+/* ── Body ─────────────────────────────── */
+.panelBody {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.noDataMsg {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 10px 0 6px;
+}
+
+/* ── Divider ─────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 -20px;
+}
+
+/* ── Section label ───────────────────── */
+.sectionLabel {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Meta Probabilidad ───────────────── */
+.metaSection {}
+
+.metaContent {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.metaLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.metaProb {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  display: block;
+}
+
+.metaProbBar {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.metaProbFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+
+.metaSubtitle {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  display: block;
+}
+
+.metaStats {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.metaStat {}
+
+.metaStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+}
+
+.metaStatVal {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Forecast 7 días ─────────────────── */
+.forecastSection {}
+
+.forecastScroll {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.forecastScroll::-webkit-scrollbar { display: none; }
+
+.diaCard {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 10px 8px;
+  min-width: 68px;
+  transition: border-color 0.15s;
+}
+
+.diaCardBest {
+  border-color: rgba(34,197,94,0.3);
+  background: rgba(34,197,94,0.04);
+}
+
+.diaNombre {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diaVal {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.diaBarWrap {
+  width: 32px;
+  height: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 2px 0;
+}
+
+.diaBar {
+  width: 8px;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  opacity: 0.7;
+  transition: height 0.3s ease;
+}
+
+.diaRange {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  color: var(--text-muted);
+}
+
+/* ── Días históricos ─────────────────── */
+.daysSection {}
+
+.daysGrid {
+  display: flex;
+  gap: 8px;
+}
+
+.dayCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 10px 10px;
+}
+
+.dayCardLabel {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dayCardName {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dayCardVal {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dayCardCount {
+  font-family: var(--font-body);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+}
+
+/* ── Merma ───────────────────────────── */
+.mermaSection {}
+
+.mermaHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mermaHeaderRow .sectionLabel {
+  margin-bottom: 0;
+}
+
+.mermaBadge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.mermaStats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.mermaStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mermaStatDiv {
+  width: 1px;
+  background: var(--border);
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
+.mermaStatLabel {
+  font-family: var(--font-body);
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+}
+
+.mermaStatVal {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Recomendaciones ─────────────────── */
+.recoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border-left: 3px solid;
+  background: rgba(255,255,255,0.025);
+}
+
+.recoTexto {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}

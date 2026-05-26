@@ -8,6 +8,7 @@ import {
   CheckCircle, Clock, Utensils
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import PrediccionesPanel from '../../components/PrediccionesPanel'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
@@ -23,6 +24,7 @@ export default function SupervisorDashboard() {
   const [rangos,        setRangos]        = useState({})
   const [loadingRangos, setLoadingRangos] = useState(false)
   const [loading,       setLoading]       = useState(true)
+  const [historialPred, setHistorialPred] = useState([])
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
@@ -55,10 +57,14 @@ export default function SupervisorDashboard() {
     const sucs = rs?.map(s => s.sucursales).filter(Boolean) ?? []
     setSucursales(sucs)
     if (sids.length === 0) { setLoading(false); return }
-    const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, ...resResults] = await Promise.all([
+    const desde90 = (() => {
+      const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
+    })()
+    const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, { data: ventasHist }, ...resResults] = await Promise.all([
       supabase.from('ventas_diarias').select('*').in('sucursal_id', sids).eq('fecha', hoy),
       supabase.from('pollos_taco').select('*').in('sucursal_id', sids),
       supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
+      supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', desde90).order('fecha', { ascending: true }),
       ...sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())
     ])
     const hoyMap = {}
@@ -67,6 +73,15 @@ export default function SupervisorDashboard() {
     const resMap = {}
     sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
     setResumenes(resMap)
+
+    // Agregar histórico por fecha para el motor ML
+    const aggHist = {}
+    ventasHist?.forEach(v => {
+      if (!aggHist[v.fecha]) aggHist[v.fecha] = { fecha: v.fecha, venta_total: 0, pollos_vendidos: 0 }
+      aggHist[v.fecha].venta_total    += v.venta_total
+      aggHist[v.fecha].pollos_vendidos += v.pollos_vendidos
+    })
+    setHistorialPred(Object.values(aggHist).sort((a, b) => a.fecha.localeCompare(b.fecha)))
 
     // Taco map
     const mMap = {}
@@ -136,6 +151,21 @@ export default function SupervisorDashboard() {
   const totalMetaEsperada = sucursales.reduce((a, s) => a + (calcMetaEsperada(resumenes[s.id]) ?? 0), 0)
   const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
   const avancePctRango    = totalMetaEsperada > 0 ? (rangoVentaTotal / totalMetaEsperada) * 100 : null
+
+  // Resumen agregado para el motor de predicciones
+  const resumenAgregado = (() => {
+    const vals = Object.values(resumenes).filter(Boolean)
+    if (!vals.length) return null
+    const meta = vals.reduce((a, r) => a + (r?.meta_venta ?? r?.meta_mensual ?? 0), 0)
+    if (!meta) return null
+    const r0 = vals.find(r => r?.dias_totales)
+    return {
+      meta_venta:          meta,
+      venta_acumulada:     vals.reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0),
+      dias_totales:        r0?.dias_totales ?? 30,
+      dias_transcurridos:  r0?.dias_transcurridos ?? 0,
+    }
+  })()
 
   const metaMensualTotal = Object.values(resumenes).reduce((a, r) => a + (r?.meta_mensual ?? 0), 0)
   const acumuladoTotal = Object.values(resumenes).reduce((a, r) => a + (r?.venta_acumulada ?? 0), 0)
@@ -264,6 +294,15 @@ export default function SupervisorDashboard() {
           </div>
         </div>
       </div>}
+
+      {/* ── Predicciones ML ── */}
+      <PrediccionesPanel
+        historico={historialPred}
+        resumen={resumenAgregado}
+        lotesTaco={[]}
+        hoyStr={hoy}
+        titulo="Predicciones ML — Ruta"
+      />
 
       <p className={styles.secTitle}>Mis Sucursales</p>
       {sucursales.length === 0 && <div className={styles.empty}>No tienes sucursales asignadas</div>}

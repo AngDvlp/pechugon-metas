@@ -8,6 +8,7 @@ import {
   Plus, Pencil, X, AlertTriangle, Utensils, Trash2, Flame
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import PrediccionesPanel from '../../components/PrediccionesPanel'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -34,6 +35,10 @@ export default function EncargadoDashboard() {
   const [saving,   setSaving]   = useState(false)
   const [msg,      setMsg]      = useState(null)
 
+  // — Predicciones ML —
+  const [historialPred, setHistorialPred] = useState([])
+  const [resumenPred,   setResumenPred]   = useState(null)
+
   // — Pollos Taco —
   const [lotesTaco,      setLotesTaco]      = useState([])
   const [minimoTaco,     setMinimoTaco]     = useState(0)
@@ -51,15 +56,29 @@ export default function EncargadoDashboard() {
 
   async function load() {
     setLoading(true)
-    const [{ data: hoyData }, { data: histData }, { data: tacoData }, { data: minData }] = await Promise.all([
+    const desde90 = (() => {
+      const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
+    })()
+    const [
+      { data: hoyData },
+      { data: histData },
+      { data: histPredData },
+      { data: tacoData },
+      { data: minData },
+      resumenResult,
+    ] = await Promise.all([
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoyStr).maybeSingle(),
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).order('fecha', { ascending: false }).limit(14),
+      supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').eq('sucursal_id', sucursalId).gte('fecha', desde90).order('fecha', { ascending: true }),
       supabase.from('pollos_taco').select('*').eq('sucursal_id', sucursalId).order('fecha_rostizado', { ascending: false }).limit(30),
       supabase.from('pollos_taco_minimos').select('cantidad_minima').eq('sucursal_id', sucursalId).maybeSingle(),
+      supabase.rpc('resumen_sucursal', { p_sucursal_id: sucursalId }).maybeSingle(),
     ])
     setVentaHoy(hoyData)
     setUltimas(histData ?? [])
     if (hoyData) setForm({ venta_total: hoyData.venta_total, pollos_vendidos: hoyData.pollos_vendidos })
+    setHistorialPred(histPredData ?? [])
+    setResumenPred(resumenResult?.data ?? null)
     setLotesTaco(tacoData ?? [])
     setMinimoTaco(minData?.cantidad_minima ?? 0)
     setLoading(false)
@@ -242,6 +261,16 @@ export default function EncargadoDashboard() {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════
+          SECCIÓN: PREDICCIONES ML
+      ══════════════════════════════════════ */}
+      <PrediccionesPanel
+        historico={historialPred}
+        resumen={resumenPred}
+        lotesTaco={lotesTaco}
+        hoyStr={hoyStr}
+      />
 
       {/* ══════════════════════════════════════
           SECCIÓN: POLLO PARA TACO
