@@ -950,6 +950,282 @@
   border-top: 1px solid rgba(255,255,255,0.04);
 }
 
+/* ══════════════════════════════════════════════════
+   PREDICCIONES ML
+══════════════════════════════════════════════════ */
+.predCard {
+  background: linear-gradient(155deg,
+    rgba(79,142,247,0.12) 0%,
+    rgba(6,10,20,0.97) 55%,
+    rgba(79,142,247,0.06) 100%
+  );
+  border: 1px solid rgba(79,142,247,0.22);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.45);
+}
+.predCard::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 150px; height: 150px;
+  background: radial-gradient(ellipse, rgba(79,142,247,0.1) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.predHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.predTitle {
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--info);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.predBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(79,142,247,0.7);
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 20px;
+  padding: 3px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Proyeccion row */
+.predProyRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.predProyLeft { display: flex; flex-direction: column; gap: 2px; }
+
+.predProyLabel {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.predProyVal {
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.predProyRange {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Probability gauge */
+.predProbWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.predProbLabel {
+  font-family: var(--font-body);
+  font-size: 0.56rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.predProbVal {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.predProbHigh { color: var(--success); text-shadow: 0 0 14px rgba(0,211,149,0.35); }
+.predProbMid  { color: var(--yellow);  text-shadow: 0 0 14px rgba(245,196,0,0.35); }
+.predProbLow  { color: var(--red);     text-shadow: 0 0 14px rgba(232,25,44,0.3); }
+
+/* Prob bar */
+.predProbBar {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+  width: 100%;
+}
+.predProbFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.8s ease;
+}
+
+/* Stats strip */
+.predStrip {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.predStripItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  text-align: center;
+  min-width: 0;
+}
+
+.predStripDiv {
+  width: 1px;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.predStripLabel {
+  font-family: var(--font-body);
+  font-size: 0.56rem;
+  font-weight: 700;
+  color: rgba(240,244,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.predStripVal {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* DoW bar chart */
+.predDowChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 40px;
+}
+
+.predDowCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.predDowBarWrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.predDowBar {
+  width: 70%;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height 0.5s ease;
+}
+
+.predDowBarBest { background: var(--success); }
+.predDowBarWorse { background: rgba(255,255,255,0.1); }
+.predDowBarToday { background: var(--yellow); }
+
+.predDowLabel {
+  font-family: var(--font-body);
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+/* Recommendations */
+.predRecs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.predRec {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.predRecUrgente { background: rgba(232,25,44,0.06);  border-color: rgba(232,25,44,0.15);  color: rgba(232,80,90,0.9); }
+.predRecMerma   { background: rgba(245,196,0,0.06);  border-color: rgba(245,196,0,0.15);  color: rgba(245,196,0,0.85); }
+.predRecTicket  { background: rgba(0,211,149,0.05);  border-color: rgba(0,211,149,0.15);  color: rgba(0,211,149,0.85); }
+.predRecTendencia { background: rgba(232,25,44,0.05); border-color: rgba(232,25,44,0.12); color: rgba(220,80,90,0.8); }
+.predRecDia     { background: rgba(79,142,247,0.06); border-color: rgba(79,142,247,0.15); color: rgba(79,142,247,0.9); }
+
+.predLoading {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 20px 0;
+}
+
+.predInsuficiente {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 16px;
+  border: 1px dashed rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:380px) {
   .sucursalNombre { font-size: 1.5rem; }

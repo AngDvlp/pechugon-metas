@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { format, parseISO, startOfMonth } from 'date-fns'
+import { format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
-  DollarSign, Bird, TrendingUp, CheckCircle, AlertCircle, Lock, UtensilsCrossed
+  DollarSign, Bird, TrendingUp, TrendingDown, Minus,
+  CheckCircle, AlertCircle, Lock, UtensilsCrossed, BrainCircuit, AlertTriangle
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 import { getCached, setCached } from '../../lib/pageCache'
 import PageSkeleton from '../../components/PageSkeleton'
+import { calcularPrediccion } from '../../lib/predictions'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -21,12 +23,15 @@ export default function EncargadoDashboard() {
   const hoyStr     = format(new Date(), 'yyyy-MM-dd')
 
   // — Ventas —
-  const [ventaHoy, setVentaHoy] = useState(null)
-  const [ultimas,  setUltimas]  = useState([])
-  const [form,     setForm]     = useState({ venta_total: '', pollos_vendidos: '', tacos_producidos: '', tacos_vendidos: '' })
-  const [loading,  setLoading]  = useState(true)
-  const [saving,   setSaving]   = useState(false)
+  const [ventaHoy,   setVentaHoy]   = useState(null)
+  const [ultimas,    setUltimas]    = useState([])
+  const [form,       setForm]       = useState({ venta_total: '', pollos_vendidos: '', tacos_producidos: '', tacos_vendidos: '' })
+  const [loading,    setLoading]    = useState(true)
+  const [saving,     setSaving]     = useState(false)
   const [msg,        setMsg]        = useState(null)
+  const [prediccion, setPrediccion] = useState(null)
+  const [predLoading, setPredLoading] = useState(false)
+  const [resumenML, setResumenML]  = useState(null)
 
   useEffect(() => {
     if (!sucursalId) { if (usuario) setLoading(false); return }
@@ -55,14 +60,31 @@ export default function EncargadoDashboard() {
   async function load(bg = false) {
     if (!bg) setLoading(true)
     const inicioMes = format(startOfMonth(new Date()), 'yyyy-MM-dd')
-    const [{ data: hoyData }, { data: histData }] = await Promise.all([
+    const desde60 = format(subDays(new Date(), 60), 'yyyy-MM-dd')
+    const [{ data: hoyData }, { data: histData }, { data: resData }, { data: histML }] = await Promise.all([
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).eq('fecha', hoyStr).maybeSingle(),
       supabase.from('ventas_diarias').select('*').eq('sucursal_id', sucursalId).gte('fecha', inicioMes).order('fecha', { ascending: false }),
+      supabase.rpc('resumen_sucursal', { p_sucursal_id: sucursalId }).maybeSingle(),
+      supabase.from('ventas_diarias').select('fecha,venta_total,pollos_vendidos,tacos_producidos,tacos_vendidos')
+        .eq('sucursal_id', sucursalId).gte('fecha', desde60).order('fecha', { ascending: true }),
     ])
     const d = { ventaHoy: hoyData, ultimas: histData ?? [] }
     applyData(d)
     setCached(`enc-${sucursalId}`, d)
     setLoading(false)
+    // Compute ML predictions in background
+    if (histML && histML.length >= 5 && resData) {
+      const hoyD = new Date()
+      const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+      const diasRestantes = diasEnMes - hoyD.getDate()
+      setResumenML(resData)
+      const pred = calcularPrediccion(histML, {
+        meta: resData.meta_mensual ?? 0,
+        acumulado: resData.venta_acumulada ?? 0,
+        diasRestantes,
+      })
+      setPrediccion(pred)
+    }
   }
 
   // — Guardar venta —
@@ -234,6 +256,142 @@ export default function EncargadoDashboard() {
         </div>
       )}
 
+      {/* ── Predicciones ML ── */}
+      <SeccionPrediccionEncargado prediccion={prediccion} resumen={resumenML} styles={styles} fmt={fmt} fmtDec={fmtDec} />
+
+    </div>
+  )
+}
+
+function SeccionPrediccionEncargado({ prediccion, resumen, styles, fmt, fmtDec }) {
+  const DOW_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+
+  return (
+    <div className={styles.section}>
+      <p className={styles.sectionTitle}>Predicciones</p>
+      {!prediccion ? (
+        <div className={styles.predInsuficiente}>
+          <BrainCircuit size={20} strokeWidth={1.5} color="var(--text-muted)" style={{ marginBottom: 6 }} />
+          <p>Se necesitan al menos 5 días de ventas para generar predicciones</p>
+        </div>
+      ) : (
+        <div className={styles.predCard}>
+          {/* Header */}
+          <div className={styles.predHeader}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <BrainCircuit size={14} strokeWidth={2} color="var(--info)" />
+              <p className={styles.predTitle}>Predicciones ML</p>
+            </div>
+            <span className={styles.predBadge}>{prediccion.dataPoints} días analizados</span>
+          </div>
+
+          {/* Proyección principal */}
+          <div className={styles.predProyRow}>
+            <div className={styles.predProyLeft}>
+              <span className={styles.predProyLabel}>Proyección cierre del mes</span>
+              <span className={styles.predProyVal}>{fmt(prediccion.proyeccion)}</span>
+              <span className={styles.predProyRange}>Rango: {fmt(prediccion.proyBaja)} — {fmt(prediccion.proyAlta)}</span>
+            </div>
+            <div className={styles.predProbWrap}>
+              <span className={styles.predProbLabel}>Prob. meta</span>
+              <span className={`${styles.predProbVal} ${
+                prediccion.probMeta >= 0.65 ? styles.predProbHigh :
+                prediccion.probMeta >= 0.35 ? styles.predProbMid : styles.predProbLow
+              }`}>
+                {(prediccion.probMeta * 100).toFixed(0)}%
+              </span>
+              <div className={styles.predProbBar}>
+                <div className={styles.predProbFill} style={{
+                  width: `${prediccion.probMeta * 100}%`,
+                  background: prediccion.probMeta >= 0.65 ? 'var(--success)' : prediccion.probMeta >= 0.35 ? 'var(--yellow)' : 'var(--red)'
+                }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div className={styles.predStrip}>
+            <div className={styles.predStripItem}>
+              <span className={styles.predStripLabel}>Mañana est.</span>
+              <span className={styles.predStripVal}>{fmt(prediccion.tomorrowPred)}</span>
+            </div>
+            <div className={styles.predStripDiv} />
+            <div className={styles.predStripItem}>
+              <span className={styles.predStripLabel}>Tendencia</span>
+              <span className={styles.predStripVal} style={{ display: 'flex', alignItems: 'center', gap: 3, color: prediccion.tendencia === 'subiendo' ? 'var(--success)' : prediccion.tendencia === 'bajando' ? 'var(--red)' : 'var(--text-muted)' }}>
+                {prediccion.tendencia === 'subiendo' ? <TrendingUp size={12} strokeWidth={2.5} /> : prediccion.tendencia === 'bajando' ? <TrendingDown size={12} strokeWidth={2.5} /> : <Minus size={12} strokeWidth={2.5} />}
+                {prediccion.tendencia}
+              </span>
+            </div>
+            <div className={styles.predStripDiv} />
+            <div className={styles.predStripItem}>
+              <span className={styles.predStripLabel}>Mejor día</span>
+              <span className={styles.predStripVal} style={{ color: 'var(--success)' }}>{prediccion.bestDow?.label ?? '—'}</span>
+            </div>
+            {prediccion.mermaRate !== null && (
+              <>
+                <div className={styles.predStripDiv} />
+                <div className={styles.predStripItem}>
+                  <span className={styles.predStripLabel}>Merma</span>
+                  <span className={styles.predStripVal} style={{ color: prediccion.mermaRate > 0.15 ? 'var(--red)' : 'var(--text-muted)' }}>
+                    {(prediccion.mermaRate * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* DoW mini chart */}
+          {prediccion.dowAvgs && prediccion.dowAvgs.some(v => v !== null) && (() => {
+            const maxV = Math.max(...prediccion.dowAvgs.filter(v => v !== null))
+            const todayDow = new Date().getDay()
+            return (
+              <div>
+                <p className={styles.predStripLabel} style={{ marginBottom: 6 }}>Patrón semanal histórico</p>
+                <div className={styles.predDowChart}>
+                  {prediccion.dowAvgs.map((v, i) => {
+                    const h = v !== null ? Math.max(4, (v / maxV) * 34) : 2
+                    const isBest = prediccion.bestDow?.dow === i
+                    const isToday = todayDow === i
+                    return (
+                      <div key={i} className={styles.predDowCol}>
+                        <div className={styles.predDowBarWrap}>
+                          <div className={styles.predDowBar} style={{ height: h,
+                            background: isToday ? 'var(--yellow)' : isBest ? 'var(--success)' : 'rgba(255,255,255,0.12)'
+                          }} />
+                        </div>
+                        <span className={styles.predDowLabel}>{DOW_ES[i]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Recomendaciones */}
+          {prediccion.recs.length > 0 && (
+            <div className={styles.predRecs}>
+              <p className={styles.predStripLabel} style={{ marginBottom: 2 }}>Recomendaciones</p>
+              {prediccion.recs.map((r, i) => (
+                <div key={i} className={`${styles.predRec} ${
+                  r.tipo === 'urgente' ? styles.predRecUrgente :
+                  r.tipo === 'merma' ? styles.predRecMerma :
+                  r.tipo === 'ticket' ? styles.predRecTicket :
+                  r.tipo === 'tendencia' ? styles.predRecTendencia : styles.predRecDia
+                }`}>
+                  {r.tipo === 'urgente' && <AlertTriangle size={13} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  {r.tipo === 'merma' && <AlertCircle size={13} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  {r.tipo === 'ticket' && <TrendingUp size={13} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  {r.tipo === 'tendencia' && <TrendingDown size={13} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  {r.tipo === 'dia' && <CheckCircle size={13} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  <span>{r.texto}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { format, startOfWeek, startOfMonth } from 'date-fns'
+import { format, startOfWeek, startOfMonth, subDays } from 'date-fns'
 import {
   Target, Store, Users, TrendingUp, TrendingDown,
-  Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock
+  Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock, BrainCircuit
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 import { getCached, setCached } from '../../lib/pageCache'
 import PageSkeleton from '../../components/PageSkeleton'
+import { calcularPrediccion } from '../../lib/predictions'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
@@ -39,6 +40,7 @@ export default function GerenteDashboard() {
   const [rangos,        setRangos]        = useState({})
   const [loadingRangos, setLoadingRangos] = useState(false)
   const [loading,       setLoading]       = useState(true)
+  const [predMap,       setPredMap]       = useState({})
   const [busqueda,      setBusqueda]      = useState('')
   const [filtroRuta,    setFiltroRuta]    = useState('todas')
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
@@ -105,11 +107,41 @@ export default function GerenteDashboard() {
       const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: map, ventasHoy: hoyMap, resumenes: rmap }
       applyData(d)
       setCached('ger-dash', d)
+      // Load ML predictions in background
+      if (sucs?.length) loadPredML(sucs.map(s => s.id), rmap)
     } catch (e) {
       console.error('Error loading gerente dashboard:', e)
     } finally {
       setLoading(false)
     }
+  }
+
+  async function loadPredML(sids, resMap) {
+    const desde = format(subDays(new Date(), 60), 'yyyy-MM-dd')
+    const { data: histData } = await supabase
+      .from('ventas_diarias')
+      .select('sucursal_id,fecha,venta_total,pollos_vendidos,tacos_producidos,tacos_vendidos')
+      .in('sucursal_id', sids).gte('fecha', desde).order('fecha', { ascending: true })
+    if (!histData) return
+    const byId = {}
+    histData.forEach(v => {
+      if (!byId[v.sucursal_id]) byId[v.sucursal_id] = []
+      byId[v.sucursal_id].push(v)
+    })
+    const hoyD = new Date()
+    const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+    const diasRestantes = diasEnMes - hoyD.getDate()
+    const pMap = {}
+    sids.forEach(id => {
+      const res = resMap[id]
+      if (!res || !byId[id]) return
+      pMap[id] = calcularPrediccion(byId[id], {
+        meta: res.meta_mensual ?? 0,
+        acumulado: res.venta_acumulada ?? 0,
+        diasRestantes,
+      })
+    })
+    setPredMap(pMap)
   }
 
   async function loadRangos(desde, hasta) {
@@ -325,6 +357,17 @@ export default function GerenteDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Predicciones ML ── */}
+      {!esRango && Object.keys(predMap).length > 0 && (
+        <SeccionPrediccionGerente
+          sucursales={sucursalesFiltradas}
+          predMap={predMap}
+          resumenes={resumenes}
+          styles={styles}
+          fmt={fmt}
+        />
       )}
 
       {/* Acciones */}
@@ -556,6 +599,123 @@ export default function GerenteDashboard() {
             )
           })}
         </div>
+      )}
+    </div>
+  )
+}
+
+function SeccionPrediccionGerente({ sucursales, predMap, resumenes, styles, fmt }) {
+  const preds = sucursales.map(s => ({ s, pred: predMap[s.id] })).filter(x => x.pred)
+  if (!preds.length) return null
+
+  const proyTotal = preds.reduce((acc, { pred }) => acc + pred.proyeccion, 0)
+  const probProm = preds.reduce((acc, { pred }) => acc + pred.probMeta, 0) / preds.length
+  const cumpliran = preds.filter(({ pred }) => pred.probMeta >= 0.6).length
+  const enRiesgo = preds.filter(({ pred }) => pred.probMeta < 0.35).length
+  const inciertas = preds.length - cumpliran - enRiesgo
+  const mejorTendencia = [...preds].filter(({ pred }) => pred.tendencia === 'subiendo').length
+  const bajaTendencia = [...preds].filter(({ pred }) => pred.tendencia === 'bajando').length
+
+  const porRiesgo = [...preds].sort((a, b) => a.pred.probMeta - b.pred.probMeta).slice(0, 5)
+
+  return (
+    <div className={styles.predSection}>
+      <p className={styles.predSectionTitle}>Predicciones ML — Cierre del mes</p>
+      <div className={styles.predGlobalCard}>
+        <div className={styles.predGlobalTop}>
+          <div className={styles.predGlobalLeft}>
+            <div className={styles.predGlobalBadge}>
+              <BrainCircuit size={12} strokeWidth={2} />
+              Proyección global
+            </div>
+            <span className={styles.predGlobalVal}>{fmt(proyTotal)}</span>
+            <span className={styles.predGlobalSub}>{preds.length} sucursales analizadas</span>
+          </div>
+          <div className={styles.predGlobalRight}>
+            <span className={styles.predGlobalProbLabel}>Prob. prom.</span>
+            <span className={`${styles.predGlobalProbVal} ${
+              probProm >= 0.6 ? styles.predGlobalProbHigh :
+              probProm >= 0.35 ? styles.predGlobalProbMid : styles.predGlobalProbLow
+            }`}>{(probProm * 100).toFixed(0)}%</span>
+            <div className={styles.predGlobalProbBar}>
+              <div className={styles.predGlobalProbFill} style={{
+                width: `${probProm * 100}%`,
+                background: probProm >= 0.6 ? 'var(--success)' : probProm >= 0.35 ? 'var(--yellow)' : 'var(--red)'
+              }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Distribution bar */}
+        {preds.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className={styles.predDistBar}>
+              {cumpliran > 0 && (
+                <div className={styles.predDistSeg} style={{ flex: cumpliran, background: 'var(--success)' }} />
+              )}
+              {inciertas > 0 && (
+                <div className={styles.predDistSeg} style={{ flex: inciertas, background: 'var(--yellow)' }} />
+              )}
+              {enRiesgo > 0 && (
+                <div className={styles.predDistSeg} style={{ flex: enRiesgo, background: 'var(--red)' }} />
+              )}
+            </div>
+            <div className={styles.predDistLegend}>
+              <div className={styles.predDistLegendItem}>
+                <div className={styles.predDistDot} style={{ background: 'var(--success)' }} />
+                {cumpliran} cumplirán
+              </div>
+              <div className={styles.predDistLegendItem}>
+                <div className={styles.predDistDot} style={{ background: 'var(--yellow)' }} />
+                {inciertas} inciertas
+              </div>
+              <div className={styles.predDistLegendItem}>
+                <div className={styles.predDistDot} style={{ background: 'var(--red)' }} />
+                {enRiesgo} en riesgo
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.predKpiRow}>
+          <div className={styles.predKpi}>
+            <span className={styles.predKpiLabel}>Tendencia ↑</span>
+            <span className={styles.predKpiVal} style={{ color: mejorTendencia > 0 ? 'var(--success)' : 'var(--text-muted)' }}>{mejorTendencia}</span>
+          </div>
+          <div className={styles.predKpiDiv} />
+          <div className={styles.predKpi}>
+            <span className={styles.predKpiLabel}>Tendencia ↓</span>
+            <span className={styles.predKpiVal} style={{ color: bajaTendencia > 0 ? 'var(--red)' : 'var(--text-muted)' }}>{bajaTendencia}</span>
+          </div>
+          <div className={styles.predKpiDiv} />
+          <div className={styles.predKpi}>
+            <span className={styles.predKpiLabel}>Análisis</span>
+            <span className={styles.predKpiVal}>{preds.length} sucs.</span>
+          </div>
+        </div>
+      </div>
+
+      {porRiesgo.length > 0 && (
+        <>
+          <p className={styles.predSectionTitle} style={{ marginTop: 2 }}>Mayor riesgo de no cumplir</p>
+          <div className={styles.predRiskList}>
+            {porRiesgo.map(({ s, pred }) => (
+              <div key={s.id} className={styles.predRiskItem}>
+                <span className={styles.predRiskName}>{s.nombre}</span>
+                <span className={styles.predRiskProj}>{fmt(pred.proyeccion)}</span>
+                <span className={styles.predRiskTrend} style={{
+                  color: pred.tendencia === 'subiendo' ? 'var(--success)' : pred.tendencia === 'bajando' ? 'var(--red)' : 'var(--text-muted)'
+                }}>
+                  {pred.tendencia === 'subiendo' ? <TrendingUp size={10} strokeWidth={2.5} /> : pred.tendencia === 'bajando' ? <TrendingDown size={10} strokeWidth={2.5} /> : null}
+                  {pred.tendencia}
+                </span>
+                <span className={styles.predRiskProb} style={{
+                  color: pred.probMeta >= 0.6 ? 'var(--success)' : pred.probMeta >= 0.35 ? 'var(--yellow)' : 'var(--red)'
+                }}>{(pred.probMeta * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
