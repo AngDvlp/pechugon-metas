@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { UserPlus, Pencil, CheckCircle, AlertCircle, Store, Mail, Lock, User, Route, KeyRound, X } from 'lucide-react'
 import styles from './Usuarios.module.css'
 
 export default function GerenteUsuarios() {
+  const { usuario } = useAuth()
   const [usuarios,   setUsuarios]   = useState([])
   const [sucursales, setSucursales] = useState([])
   const [roles,      setRoles]      = useState([])
@@ -82,8 +84,9 @@ export default function GerenteUsuarios() {
       nombre:      form.nombre.trim(),
       email:       form.email.trim(),
       rol_id:      parseInt(form.rol_id),
-      sucursal_id: rolSeleccionado?.nombre === 'encargado' ? (form.sucursal_id || null) : null,
-      ruta_id:     rolSeleccionado?.nombre === 'supervisor' ? (form.ruta_id || null)    : null,
+      sucursal_id: rolSeleccionado?.nombre === 'encargado'  ? (form.sucursal_id || null) : null,
+      ruta_id:     rolSeleccionado?.nombre === 'supervisor' ? (form.ruta_id || null)     : null,
+      zona_id:     usuario?.zonas?.id ?? null,
     })
     if (dbErr) { setMsg({ tipo: 'error', texto: 'Error en DB: ' + dbErr.message }); setSaving(false); return }
 
@@ -178,7 +181,7 @@ export default function GerenteUsuarios() {
               <select className={styles.select} value={form.rol_id}
                 onChange={e => setForm(f => ({ ...f, rol_id: e.target.value }))} required>
                 <option value="">Seleccionar…</option>
-                {roles.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                {roles.filter(r => r.nombre !== 'superadmin').map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
             </div>
             {rolSeleccionado?.nombre === 'encargado' && (
@@ -278,7 +281,7 @@ export default function GerenteUsuarios() {
                           <label className={styles.label}>Rol</label>
                           <select className={styles.select} value={editForm.rol_id}
                             onChange={e => setEditForm(f => ({ ...f, rol_id: e.target.value }))}>
-                            {roles.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                            {roles.filter(r => r.nombre !== 'superadmin').map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                           </select>
                         </div>
                         {editRolNombre === 'encargado' && (

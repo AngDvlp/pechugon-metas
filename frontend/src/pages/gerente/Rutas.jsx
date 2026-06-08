@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { Plus, X, Route, Store, CheckCircle, AlertCircle } from 'lucide-react'
 import styles from './Rutas.module.css'
 
 export default function GerenteRutas() {
+  const { usuario } = useAuth()
   const [rutas,      setRutas]      = useState([])
   const [sucursales, setSucursales] = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -32,7 +34,10 @@ export default function GerenteRutas() {
     if (!nombre.trim()) return
     setSaving(true)
     setMsg(null)
-    const { error } = await supabase.from('rutas').insert({ nombre: nombre.trim() })
+    const { error } = await supabase.from('rutas').insert({
+      nombre: nombre.trim(),
+      zona_id: usuario?.zonas?.id ?? null,
+    })
     if (error) {
       setMsg({ tipo: 'error', texto: error.message.includes('unique') ? 'Ya existe una ruta con ese nombre' : 'Error: ' + error.message })
     } else {

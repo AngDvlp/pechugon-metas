@@ -87,6 +87,13 @@
   text-transform: uppercase;
   letter-spacing: 1.5px;
   padding-left: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rolBadgeSA {
+  color: var(--info);
 }
 
 .headerRight {

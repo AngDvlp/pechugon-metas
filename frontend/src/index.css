@@ -176,6 +176,16 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Zoom prevention (iOS auto-zoom on focus) ───────────── */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* ── Double-tap zoom prevention ─────────────────────────── */
+a, button, input, select, textarea, label, [role="button"] {
+  touch-action: manipulation;
+}
+
 /* ── Responsive helpers ─────────────────────────────────── */
 @media (min-width: 600px) {
   :root { --radius-lg: 24px; --radius-md: 18px; }

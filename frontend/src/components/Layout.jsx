@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Target, Store, Users, Download, LogOut, Home,
-  CalendarPlus, Utensils, Route, Package, BarChart2
+  CalendarPlus, Utensils, Route, Package, BarChart2, Globe, ShieldCheck
 } from 'lucide-react'
 import styles from './Layout.module.css'
 import PageSkeleton from './PageSkeleton'
@@ -42,14 +42,20 @@ const NAV_ITEMS = {
     { to: '/cocina', label: 'Existencia', icon: Utensils, end: true },
     { to: '/cocina/pedidos', label: 'Pedidos', icon: Package },
   ],
+  superadmin: [
+    { to: '/superadmin', label: 'Global', icon: LayoutDashboard, end: true },
+    { to: '/superadmin/zonas', label: 'Zonas', icon: Globe },
+    { to: '/superadmin/usuarios', label: 'Usuarios', icon: Users },
+  ],
 }
 
 const ROL_LABELS = {
-  encargado: 'Encargado',
+  encargado:  'Encargado',
   supervisor: 'Supervisor',
-  suplente: 'Supervisor Suplente',
-  gerente: 'Gerente General',
-  cocina: 'Cocina',
+  suplente:   'Supervisor Suplente',
+  gerente:    'Gerente General',
+  cocina:     'Cocina',
+  superadmin: 'Super Administrador',
 }
 
 export default function Layout({ rol }) {
@@ -71,7 +77,10 @@ export default function Layout({ rol }) {
             <img src="/logo.png" alt="El Pechugón" className={styles.logoImg} />
             <span className={styles.brand}>El Pechugón</span>
           </div>
-          <span className={styles.rolBadge}>{ROL_LABELS[rol]}</span>
+          <span className={`${styles.rolBadge} ${rol === 'superadmin' ? styles.rolBadgeSA : ''}`}>
+            {rol === 'superadmin' && <ShieldCheck size={11} strokeWidth={2.5} />}
+            {ROL_LABELS[rol]}
+          </span>
         </div>
         <div className={styles.headerRight}>
           <span className={styles.userName}>{nombreCorto}</span>
