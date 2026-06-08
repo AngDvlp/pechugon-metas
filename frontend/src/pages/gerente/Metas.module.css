@@ -605,6 +605,61 @@
 }
 .metaPeriodCancelBtn:hover:not(:disabled) { border-color:var(--border-active); color:var(--text-secondary); }
 
+/* ── Periodo: botón principal Agregar ───────────────────── */
+.periodoConfirmBtn {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; padding:11px 14px;
+  background:rgba(0,211,149,0.08); border:1px solid rgba(0,211,149,0.25);
+  border-radius:var(--radius-sm); color:var(--success);
+  font-family:var(--font-body); font-size:0.85rem; font-weight:700;
+  cursor:pointer; transition:background 0.15s;
+}
+.periodoConfirmBtn:hover:not(:disabled) { background:rgba(0,211,149,0.15); }
+.periodoConfirmBtn:disabled { opacity:0.38; cursor:default; }
+
+/* ── Periodo: estado confirmado ──────────────────────────── */
+.periodoConfirmado {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px;
+  background:rgba(0,211,149,0.05); border:1px solid rgba(0,211,149,0.18);
+  border-radius:var(--radius-sm); color:var(--success);
+}
+.periodoConfirmadoText {
+  flex:1; font-size:0.82rem; font-weight:600; color:var(--text-primary);
+}
+.periodoConfirmadoSem { color:var(--text-muted); font-weight:400; }
+
+.periodoConfirmadoBtns { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+
+.editarPeriodoBtn {
+  display:flex; align-items:center; gap:4px;
+  padding:5px 9px; background:transparent;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--text-muted); font-family:var(--font-body);
+  font-size:0.7rem; font-weight:600; cursor:pointer; transition:all 0.15s;
+}
+.editarPeriodoBtn:hover { color:var(--text-secondary); border-color:var(--border-active); }
+
+.periodoApplySmBtn {
+  display:flex; align-items:center; gap:4px;
+  padding:5px 9px;
+  background:rgba(245,196,0,0.07); border:1px solid rgba(245,196,0,0.2);
+  border-radius:var(--radius-sm); color:var(--yellow);
+  font-family:var(--font-body); font-size:0.7rem; font-weight:600;
+  cursor:pointer; transition:background 0.15s;
+}
+.periodoApplySmBtn:hover:not(:disabled) { background:rgba(245,196,0,0.13); }
+.periodoApplySmBtn:disabled { opacity:0.4; cursor:default; }
+
+/* ── Periodo: badge "Agregado" en la cabecera ────────────── */
+.confirmadoBadge {
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:0.6rem; font-weight:700;
+  color:var(--success); background:rgba(0,211,149,0.1);
+  padding:2px 7px; border-radius:99px;
+  margin-left:7px; vertical-align:middle;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width:600px) {
   .twoCol   { grid-template-columns:1fr; }
