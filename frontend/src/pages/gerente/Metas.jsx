@@ -100,11 +100,20 @@ export default function GerenteMetas() {
   async function load() {
     setLoading(true)
     try {
-      const [{ data: sucs }, { data: metasData }] = await Promise.all([
-        supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
-        supabase.from('metas').select('*, sucursales(nombre)').order('fecha_inicio', { ascending: false }),
-      ])
+      // Primero sucursales — RLS ya las filtra por zona
+      const { data: sucs } = await supabase
+        .from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
       setSucursales(sucs ?? [])
+
+      // Metas solo para las sucursales visibles de esta zona
+      const sucIds = (sucs ?? []).map(s => s.id)
+      if (sucIds.length === 0) { setMetas([]); return }
+
+      const { data: metasData } = await supabase
+        .from('metas')
+        .select('*, sucursales(nombre)')
+        .in('sucursal_id', sucIds)
+        .order('fecha_inicio', { ascending: false })
       setMetas(metasData ?? [])
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
