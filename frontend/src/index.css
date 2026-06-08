@@ -177,8 +177,9 @@ body {
 }
 
 /* ── Zoom prevention (iOS auto-zoom on focus) ───────────── */
+/* !important necesario para que los CSS modules no sobreescriban */
 input, select, textarea {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 /* ── Double-tap zoom prevention ─────────────────────────── */
