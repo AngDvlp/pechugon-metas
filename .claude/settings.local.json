@@ -35,7 +35,8 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Force)",
       "Bash(Format-List)",
       "Bash(xargs grep -l \"pace\\\\|forecast\\\\|trend\")",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(Select-Object Name, FullName)"
     ]
   }
 }
