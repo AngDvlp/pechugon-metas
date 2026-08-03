@@ -273,7 +273,7 @@
 .error {
   background: var(--danger-dim);
   color: var(--danger);
-  border: 1px solid rgba(232, 25, 44, 0.25);
+  border: 1px solid var(--border-danger);
 }
 
 /* Save button */
@@ -289,13 +289,13 @@
   font-family: var(--font-display);
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
-  box-shadow: 0 4px 16px rgba(245, 196, 0, 0.3);
+  box-shadow: 0 4px 16px var(--border-yellow);
 }
 
 .saveBtn:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 196, 0, 0.4);
+  box-shadow: 0 6px 20px var(--border-yellow);
 }
 
 .saveBtn:active:not(:disabled) { transform: translateY(0); }

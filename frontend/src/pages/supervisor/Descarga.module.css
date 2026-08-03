@@ -25,7 +25,7 @@
 .sucursalesList { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; max-height: 320px; overflow-y: auto; }
 .sucItem { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 11px 14px; cursor: pointer; transition: background 0.15s; }
 .sucItem:hover { background: var(--bg-card-2); }
-.sucItemActive { background: rgba(245,196,0,0.06) !important; }
+.sucItemActive { background: var(--yellow-dim) !important; }
 .sucCheck { width: 18px; height: 18px; border: 1.5px solid var(--border-active); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--yellow); font-weight: 700; flex-shrink: 0; }
 .sucItemActive .sucCheck { background: var(--yellow); border-color: var(--yellow); color: var(--text-inverse); }
 .sucNombre { font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
@@ -37,7 +37,7 @@
 .opcionesList { display: flex; flex-direction: column; gap: 8px; }
 .opcionItem { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; cursor: pointer; transition: all 0.18s; }
 .opcionItem:hover { border-color: var(--border-active); }
-.opcionActive { background: rgba(0,211,149,0.06); border-color: rgba(0,211,149,0.3); }
+.opcionActive { background: var(--success-dim); border-color: var(--border-success); }
 .opcionCheck { width: 18px; height: 18px; border: 1.5px solid var(--border-active); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--success); font-weight: 700; flex-shrink: 0; }
 .opcionActive .opcionCheck { background: var(--success); border-color: var(--success); color: #000; }
 .opcionLabel { font-family: var(--font-body); font-size: 0.88rem; font-weight: 500; color: var(--text-primary); }

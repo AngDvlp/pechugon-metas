@@ -74,12 +74,17 @@ export default function EncargadoDashboard() {
     applyData(d)
     setCached(`enc-${sucursalId}`, d)
     setLoading(false)
-    // Compute ML predictions in background
+
+    // La meta se muestra siempre que exista. Antes solo se guardaba cuando
+    // había 5+ días de historial (requisito del motor de predicciones), así
+    // que una sucursal nueva no veía su meta por ningún lado.
+    if (resData) setResumenML(resData)
+
+    // Las predicciones sí necesitan historial suficiente
     if (histML && histML.length >= 5 && resData) {
       const hoyD = new Date()
       const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
       const diasRestantes = diasEnMes - hoyD.getDate()
-      setResumenML(resData)
       const pred = calcularPrediccion(histML, {
         meta: resData.meta_mensual ?? 0,
         acumulado: resData.venta_acumulada ?? 0,
@@ -131,9 +136,13 @@ export default function EncargadoDashboard() {
   if (loading) return <PageSkeleton rows={3} />
   if (!sucursalId) return (
     <div className={styles.page}>
-      <div className={styles.sucursalHeader}>
-        <h2 className={styles.sucursalNombre}>Sin sucursal asignada</h2>
-        <p className={styles.sucursalFecha}>Contacta al gerente para que te asigne una sucursal.</p>
+      <div className={styles.estadoVacio}>
+        <AlertCircle size={28} strokeWidth={1.75} color="var(--text-muted)" />
+        <h2 className={styles.estadoVacioTitulo}>Sin sucursal asignada</h2>
+        <p className={styles.estadoVacioTexto}>
+          Tu usuario todavía no está ligado a una sucursal, así que no hay ventas
+          que registrar. Pídele al gerente que te asigne una desde Usuarios.
+        </p>
       </div>
     </div>
   )
@@ -148,9 +157,17 @@ export default function EncargadoDashboard() {
         </p>
       </div>
 
+      {/* ── Cómo va la sucursal contra su meta ── */}
+      <MetaEncargado resumen={resumenML} registradoHoy={!!ventaHoy} />
+
       {/* ── Formulario ventas ── */}
       <div className={styles.formCard}>
         <p className={styles.formTitle}>{ventaHoy ? 'Actualizar cierre de hoy' : 'Registrar cierre de hoy'}</p>
+        <p className={styles.formSub}>
+          {ventaHoy
+            ? 'Ya registraste hoy. Puedes corregir las cifras las veces que necesites.'
+            : 'Captura la venta al cerrar el día. Solo puedes registrar el día de hoy.'}
+        </p>
         <form className={styles.form} onSubmit={handleSave} noValidate>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Venta Total</label>
@@ -226,9 +243,17 @@ export default function EncargadoDashboard() {
               {msg.texto}
             </div>
           )}
-          <button className={styles.saveBtn} type="submit" disabled={saving}>
-            {saving ? 'Guardando…' : ventaHoy ? 'Actualizar' : 'Registrar Venta'}
+          <button
+            className={styles.saveBtn}
+            type="submit"
+            disabled={saving || !form.venta_total || !form.pollos_vendidos}>
+            {saving ? 'Guardando…' : ventaHoy ? 'Actualizar cierre' : 'Registrar cierre'}
           </button>
+          {!form.venta_total || !form.pollos_vendidos ? (
+            <p className={styles.saveHint}>
+              Captura la venta total y los pollos vendidos para poder guardar.
+            </p>
+          ) : null}
         </form>
       </div>
 
@@ -261,6 +286,104 @@ export default function EncargadoDashboard() {
       {/* ── Predicciones ML ── */}
       <SeccionPrediccionEncargado prediccion={prediccion} resumen={resumenML} styles={styles} fmt={fmt} fmtDec={fmtDec} />
 
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════
+//   CÓMO VA LA SUCURSAL
+//   El encargado registraba sus ventas sin ver nunca contra
+//   qué meta se estaba midiendo. Esto lo responde de un vistazo.
+// ══════════════════════════════════════════════════════
+function MetaEncargado({ resumen, registradoHoy }) {
+  if (!resumen || !(resumen.meta_mensual > 0)) {
+    return (
+      <div className={styles.metaVacia}>
+        <AlertCircle size={14} strokeWidth={2} />
+        <span>
+          Todavía no tienes una meta asignada para este periodo.
+          Pídele al gerente que la registre.
+        </span>
+      </div>
+    )
+  }
+
+  const metaSem   = resumen.meta_venta ?? 0
+  const ventaSem  = resumen.venta_semana_actual ?? 0
+  const pctSem    = metaSem > 0 ? (ventaSem / metaSem) * 100 : null
+
+  const metaMes   = resumen.meta_mensual ?? 0
+  const ventaMes  = resumen.venta_acumulada ?? 0
+  const pctMes    = metaMes > 0 ? (ventaMes / metaMes) * 100 : null
+
+  // Días que quedan de la semana contando hoy (lunes = inicio)
+  const dow = (new Date().getDay() + 6) % 7
+  const diasQuedanSem = 7 - dow
+  const faltaSem = Math.max(0, metaSem - ventaSem)
+  const porDia   = diasQuedanSem > 0 ? faltaSem / diasQuedanSem : 0
+
+  const color = p => p === null ? 'var(--text-muted)'
+    : p >= 100 ? 'var(--success)'
+    : p >= 70  ? 'var(--yellow)'
+    : 'var(--danger)'
+
+  return (
+    <div className={styles.metaCard}>
+      <div className={styles.metaHead}>
+        <span className={styles.metaEyebrow}>Tu meta</span>
+        <span className={`${styles.metaChip} ${registradoHoy ? styles.metaChipOk : styles.metaChipPend}`}>
+          {registradoHoy
+            ? <><CheckCircle size={11} strokeWidth={2.5} /> Hoy registrado</>
+            : <><AlertCircle size={11} strokeWidth={2.5} /> Falta hoy</>}
+        </span>
+      </div>
+
+      {/* Semana — es el marco de tiempo que el encargado puede mover */}
+      <div className={styles.metaBloque}>
+        <div className={styles.metaFila}>
+          <span className={styles.metaPeriodo}>Esta semana</span>
+          <span className={styles.metaPct} style={{ color: color(pctSem) }}>
+            {pctSem === null ? '—' : `${pctSem.toFixed(0)}%`}
+          </span>
+        </div>
+        <div className={styles.metaTrack}>
+          <div className={styles.metaFill}
+            style={{ width: `${Math.min(pctSem ?? 0, 100)}%`, background: color(pctSem) }} />
+        </div>
+        <div className={styles.metaNums}>
+          <strong>{fmt(ventaSem)}</strong>
+          <span className={styles.metaDe}>de</span>
+          <span>{fmt(metaSem)}</span>
+        </div>
+        {faltaSem > 0 && diasQuedanSem > 0 && (
+          <p className={styles.metaHint}>
+            Faltan <strong>{fmt(faltaSem)}</strong> · quedan {diasQuedanSem} día{diasQuedanSem !== 1 ? 's' : ''}
+            {' → '}<strong>{fmt(porDia)}</strong> por día
+          </p>
+        )}
+        {faltaSem === 0 && metaSem > 0 && (
+          <p className={`${styles.metaHint} ${styles.metaHintOk}`}>
+            Meta de la semana cumplida.
+          </p>
+        )}
+      </div>
+
+      <div className={styles.metaDivider} />
+
+      {/* Mes — contexto, no acción */}
+      <div className={styles.metaFilaMes}>
+        <span className={styles.metaPeriodoMes}>Mes</span>
+        <div className={styles.metaTrackMes}>
+          <div className={styles.metaFill}
+            style={{ width: `${Math.min(pctMes ?? 0, 100)}%`, background: color(pctMes) }} />
+        </div>
+        <span className={styles.metaPctMes} style={{ color: color(pctMes) }}>
+          {pctMes === null ? '—' : `${pctMes.toFixed(0)}%`}
+        </span>
+      </div>
+      <div className={styles.metaNumsMes}>
+        {fmt(ventaMes)} <span className={styles.metaDe}>de</span> {fmt(metaMes)}
+      </div>
     </div>
   )
 }
@@ -359,7 +482,7 @@ function SeccionPrediccionEncargado({ prediccion, resumen, styles, fmt, fmtDec }
                       <div key={i} className={styles.predDowCol}>
                         <div className={styles.predDowBarWrap}>
                           <div className={styles.predDowBar} style={{ height: h,
-                            background: isToday ? 'var(--yellow)' : isBest ? 'var(--success)' : 'rgba(255,255,255,0.12)'
+                            background: isToday ? 'var(--yellow)' : isBest ? 'var(--success)' : 'var(--surface-4)'
                           }} />
                         </div>
                         <span className={styles.predDowLabel}>{DOW_ES[i]}</span>

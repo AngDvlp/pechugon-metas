@@ -120,17 +120,17 @@ export default function CocinaDashboard() {
       </div>
 
       {sucSinTacos.length > 0 && (
-        <div className={styles.alertBanner} style={{ borderColor: 'rgba(232,25,44,0.3)', background: 'rgba(232,25,44,0.07)' }}>
-          <AlertTriangle size={15} strokeWidth={2.5} color="var(--red)" />
-          <span style={{ color: 'var(--red)' }}>
+        <div className={`${styles.alertBanner} ${styles.alertDanger}`}>
+          <AlertTriangle size={15} strokeWidth={2.5} />
+          <span>
             <strong>Sin tacos:</strong> {sucSinTacos.map(s => s.nombre).join(', ')}
           </span>
         </div>
       )}
       {sucCaducando.length > 0 && (
-        <div className={styles.alertBanner} style={{ borderColor: 'rgba(245,196,0,0.3)', background: 'rgba(245,196,0,0.07)' }}>
-          <AlertTriangle size={15} strokeWidth={2.5} color="var(--yellow)" />
-          <span style={{ color: 'var(--yellow)' }}>
+        <div className={`${styles.alertBanner} ${styles.alertWarn}`}>
+          <AlertTriangle size={15} strokeWidth={2.5} />
+          <span>
             <strong>Último día válido:</strong> {sucCaducando.map(s => s.nombre).join(', ')}
           </span>
         </div>
@@ -143,33 +143,34 @@ export default function CocinaDashboard() {
           const expirando       = vigentes.filter(l => l.fecha_caducidad === mananaStr)
           const existenciaTacos = Math.max(0, tacosMap[suc.id] ?? 0)
           const isExpanded = expanded[suc.id] ?? false
-          let statusColor = 'var(--success)'
-          let statusLabel = 'Con tacos'
-          if (existenciaTacos === 0) { statusColor = 'var(--red)'; statusLabel = 'Sin tacos' }
-          else if (expirando.length > 0) { statusColor = 'var(--yellow)'; statusLabel = 'Pollos caducan' }
+          // El color se resuelve con clases, no concatenando alfa a un var():
+          // "var(--success)40" no es CSS válido y el borde no se pintaba.
+          let estado = 'ok', statusLabel = 'Con tacos'
+          if (existenciaTacos === 0) { estado = 'sin'; statusLabel = 'Sin tacos' }
+          else if (expirando.length > 0) { estado = 'caduca'; statusLabel = 'Pollos caducan' }
+          const badgeClase = { ok: styles.badgeOk, sin: styles.badgeSin, caduca: styles.badgeCaduca }[estado]
 
           return (
             <div key={suc.id} className={styles.card}>
-              <div
+              <button
                 className={styles.cardHeader}
                 onClick={() => setExpanded(m => ({ ...m, [suc.id]: !m[suc.id] }))}
+                aria-expanded={isExpanded}
+                aria-label={`${suc.nombre}: ${existenciaTacos} tacos, ${statusLabel}. Toca para ver los lotes.`}
               >
                 <div className={styles.cardLeft}>
                   <p className={styles.sucNombre}>{suc.nombre}</p>
-                  <span
-                    className={styles.statusBadge}
-                    style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}
-                  >
-                    {(existenciaTacos === 0 || expirando.length > 0)
-                      ? <AlertTriangle size={10} strokeWidth={2.5} />
-                      : <CheckCircle size={10} strokeWidth={2.5} />
+                  <span className={`${styles.statusBadge} ${badgeClase}`}>
+                    {estado === 'ok'
+                      ? <CheckCircle size={10} strokeWidth={2.5} />
+                      : <AlertTriangle size={10} strokeWidth={2.5} />
                     }
                     {statusLabel}
                   </span>
                 </div>
                 <div className={styles.cardRight}>
                   <div className={styles.stockBig}>
-                    <span className={styles.stockNum} style={{ color: existenciaTacos > 0 ? 'var(--info)' : 'var(--red)' }}>
+                    <span className={`${styles.stockNum} ${existenciaTacos > 0 ? styles.stockNumOk : styles.stockNumCero}`}>
                       {existenciaTacos}
                     </span>
                     <span className={styles.stockMin}> tacos</span>
@@ -179,14 +180,14 @@ export default function CocinaDashboard() {
                     : <ChevronDown size={16} strokeWidth={2} color="var(--text-muted)" />
                   }
                 </div>
-              </div>
+              </button>
 
               {isExpanded && (
                 <div className={styles.cardBody}>
                   {expirando.length > 0 && (
                     <div className={styles.inlineAlert}>
-                      <AlertTriangle size={12} strokeWidth={2.5} color="var(--yellow)" />
-                      <span style={{ color: 'var(--yellow)' }}>
+                      <AlertTriangle size={12} strokeWidth={2.5} />
+                      <span>
                         {expirando.reduce((a, l) => a + l.cantidad, 0)} pollo(s) — último día válido HOY
                       </span>
                     </div>
@@ -195,16 +196,16 @@ export default function CocinaDashboard() {
                     ? <p className={styles.noLotes}>Sin lotes vigentes</p>
                     : vigentes.map(lote => {
                       const dias = diasParaCaducar(lote.fecha_caducidad, hoyStr)
-                      let diasColor = 'var(--success)'
-                      if (dias === 1) diasColor = 'var(--red)'
-                      else if (dias === 2) diasColor = 'var(--yellow)'
+                      const diasClase = dias === 1 ? styles.diasUrgente
+                        : dias === 2 ? styles.diasAviso
+                        : styles.diasOk
                       return (
                         <div key={lote.id} className={styles.loteItem}>
                           <span className={styles.loteDate}>
                             {format(parseISO(lote.fecha_rostizado), "d MMM", { locale: es })}
                           </span>
                           <span className={styles.loteCant}>{lote.cantidad} pollos</span>
-                          <span className={styles.loteDias} style={{ color: diasColor }}>
+                          <span className={`${styles.loteDias} ${diasClase}`}>
                             {dias === 1 ? 'Último día' : `${dias} días`}
                           </span>
                         </div>

@@ -50,8 +50,8 @@
 }
 
 .filtroPillActive {
-  background: rgba(245,196,0,0.12);
-  border-color: rgba(245,196,0,0.45);
+  background: var(--yellow-dim);
+  border-color: var(--border-yellow);
   color: var(--yellow);
 }
 
@@ -109,8 +109,8 @@
 }
 
 .rutaBtnActive {
-  border-color: rgba(79,142,247,0.4);
-  background: rgba(79,142,247,0.1);
+  border-color: var(--border-info);
+  background: var(--info-dim);
   color: var(--info);
 }
 
@@ -227,17 +227,17 @@
 
 .groupVenta {
   color: var(--success);
-  background: rgba(0,211,149,0.04);
+  background: var(--success-dim);
 }
 
 .groupPollos {
   color: var(--yellow);
-  background: rgba(245,196,0,0.04);
+  background: var(--yellow-dim);
 }
 
 .groupTicket {
   color: var(--info);
-  background: rgba(79,142,247,0.04);
+  background: var(--info-dim);
 }
 
 /* Sub-header row */

@@ -51,6 +51,9 @@
   --border: rgba(255,255,255,0.055);
   --border-active: rgba(255,255,255,0.13);
   --border-yellow: rgba(245, 196, 0, 0.25);
+  --border-info: rgba(107, 161, 255, 0.3);
+  --border-success: rgba(0, 211, 149, 0.28);
+  --border-danger: rgba(255, 90, 106, 0.3);
 
   /* ── Semánticos — verificados sobre --bg-card ──────────── */
   --yellow: #F5C400;
@@ -169,6 +172,9 @@
     --border: rgba(12,20,36,0.1);
     --border-active: rgba(12,20,36,0.22);
     --border-yellow: rgba(125, 98, 0, 0.35);
+    --border-info: rgba(29, 79, 216, 0.32);
+    --border-success: rgba(0, 122, 85, 0.32);
+    --border-danger: rgba(196, 17, 31, 0.32);
 
     /* Los semánticos se oscurecen: los tonos neón del modo
        oscuro no alcanzan 4.5:1 sobre blanco. */
@@ -228,6 +234,9 @@
   --border: rgba(12,20,36,0.1);
   --border-active: rgba(12,20,36,0.22);
   --border-yellow: rgba(125, 98, 0, 0.35);
+  --border-info: rgba(29, 79, 216, 0.32);
+  --border-success: rgba(0, 122, 85, 0.32);
+  --border-danger: rgba(196, 17, 31, 0.32);
 
   --yellow: #7D6200;
   --yellow-dim: rgba(125, 98, 0, 0.1);

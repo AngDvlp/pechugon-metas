@@ -24,8 +24,8 @@
   align-items: center;
   gap: 6px;
   padding: 9px 14px;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.25);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-sm);
   color: var(--info);
   font-size: 0.8rem;
@@ -33,7 +33,7 @@
   cursor: pointer;
   transition: background 0.18s;
 }
-.addBtn:hover { background: rgba(79,142,247,0.18); }
+.addBtn:hover { background: var(--border-info); }
 
 /* ── Messages ───────────────────────────────────────────── */
 .msg {
@@ -45,8 +45,8 @@
   font-size: 0.82rem;
   font-weight: 500;
 }
-.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,211,149,0.2); }
-.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid rgba(232,25,44,0.2); }
+.ok    { background: var(--success-dim); color: var(--success); border: 1px solid var(--border-success); }
+.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid var(--border-danger); }
 
 /* ── Form Card ──────────────────────────────────────────── */
 .formCard {
@@ -55,7 +55,7 @@
   gap: 12px;
   padding: 16px;
   background: var(--bg-card);
-  border: 1px solid rgba(79,142,247,0.2);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-md);
 }
 
@@ -91,7 +91,7 @@
   width: 100%;
   transition: border-color 0.18s;
 }
-.input:focus { outline: none; border-color: rgba(79,142,247,0.5); }
+.input:focus { outline: none; border-color: var(--border-info); }
 .input::placeholder { color: var(--text-muted); }
 
 .saveBtn {
@@ -100,8 +100,8 @@
   justify-content: center;
   gap: 6px;
   padding: 12px;
-  background: rgba(79,142,247,0.15);
-  border: 1px solid rgba(79,142,247,0.3);
+  background: var(--border-info);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-sm);
   color: var(--info);
   font-size: 0.85rem;
@@ -109,7 +109,7 @@
   cursor: pointer;
   transition: background 0.18s;
 }
-.saveBtn:hover:not(:disabled) { background: rgba(79,142,247,0.25); }
+.saveBtn:hover:not(:disabled) { background: var(--border-info); }
 .saveBtn:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Zone list ──────────────────────────────────────────── */
@@ -144,8 +144,8 @@
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.15);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +191,7 @@
   cursor: pointer;
   transition: color 0.18s, background 0.18s;
 }
-.editBtn:hover { color: var(--info); background: var(--info-dim); border-color: rgba(79,142,247,0.3); }
+.editBtn:hover { color: var(--info); background: var(--info-dim); border-color: var(--border-info); }
 .editBtnActive { color: var(--text-secondary); border-color: var(--border-active); }
 
 .toggleBtn {
@@ -208,17 +208,17 @@
 
 .toggleOff {
   background: var(--danger-dim);
-  border: 1px solid rgba(232,25,44,0.2);
+  border: 1px solid var(--border-danger);
   color: var(--red);
 }
-.toggleOff:hover { background: rgba(232,25,44,0.15); }
+.toggleOff:hover { background: var(--border-danger); }
 
 .toggleOn {
   background: var(--success-dim);
-  border: 1px solid rgba(0,211,149,0.2);
+  border: 1px solid var(--border-success);
   color: var(--success);
 }
-.toggleOn:hover { background: rgba(0,211,149,0.15); }
+.toggleOn:hover { background: var(--border-success); }
 
 /* ── Zone mini-stats ─────────────────────────────────────── */
 .zonaMetas {

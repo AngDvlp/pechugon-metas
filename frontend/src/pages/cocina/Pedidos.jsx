@@ -50,10 +50,10 @@ function predecir(dowAvg, daysAhead = 7) {
 // ────────────────────────────────────────────────────────────────────────────
 
 const ESTADO_CFG = {
-  pendiente: { label: 'Pendiente', color: 'var(--yellow)', bg: 'rgba(245,196,0,0.1)',   border: 'rgba(245,196,0,0.3)' },
-  aceptado:  { label: 'Aceptado',  color: 'var(--success)', bg: 'rgba(0,211,149,0.1)',  border: 'rgba(0,211,149,0.3)' },
-  parcial:   { label: 'Parcial',   color: 'var(--info)',    bg: 'rgba(79,142,247,0.1)', border: 'rgba(79,142,247,0.3)' },
-  rechazado: { label: 'Rechazado', color: 'var(--red)',     bg: 'rgba(232,25,44,0.1)',  border: 'rgba(232,25,44,0.3)' },
+  pendiente: { label: 'Pendiente', color: 'var(--warning)', bg: 'var(--warning-dim)', border: 'var(--border-yellow)' },
+  aceptado:  { label: 'Aceptado',  color: 'var(--success)', bg: 'var(--success-dim)', border: 'var(--border-success)' },
+  parcial:   { label: 'Parcial',   color: 'var(--info)',    bg: 'var(--info-dim)',    border: 'var(--border-info)' },
+  rechazado: { label: 'Rechazado', color: 'var(--danger)',  bg: 'var(--danger-dim)',  border: 'var(--border-danger)' },
 }
 
 export default function CocinaPedidos() {

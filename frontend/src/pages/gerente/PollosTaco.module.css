@@ -50,8 +50,8 @@
 }
 .filtroBtn:hover { color: var(--text-secondary); background: var(--bg-hover); }
 .filtroBtnActive {
-  background: rgba(79,142,247,0.12);
-  border-color: rgba(79,142,247,0.35);
+  background: var(--info-dim);
+  border-color: var(--border-info);
   color: var(--info);
 }
 
@@ -75,8 +75,8 @@
   gap: 4px;
   box-shadow: var(--shadow-card);
 }
-.kpiDanger { border-color: rgba(232,25,44,0.3); background: rgba(232,25,44,0.05); }
-.kpiWarn   { border-color: rgba(245,196,0,0.3); background: rgba(245,196,0,0.05); }
+.kpiDanger { border-color: var(--border-danger); background: var(--danger-dim); }
+.kpiWarn   { border-color: var(--border-yellow); background: var(--yellow-dim); }
 .kpiVal {
   font-family: var(--font-mono);
   font-size: 1.7rem;
@@ -106,8 +106,8 @@
   font-size: 0.82rem;
 }
 .alertBanner strong { font-weight: 700; }
-.alertDanger { background: rgba(232,25,44,0.07); border-color: rgba(232,25,44,0.3); color: var(--red); }
-.alertWarn   { background: rgba(245,196,0,0.07); border-color: rgba(245,196,0,0.3); color: var(--yellow); }
+.alertDanger { background: var(--danger-dim); border-color: var(--border-danger); color: var(--red); }
+.alertWarn   { background: var(--yellow-dim); border-color: var(--border-yellow); color: var(--yellow); }
 
 /* ── Chart ── */
 .chartCard {
@@ -201,9 +201,9 @@
   padding: 2px 7px;
   border-radius: 5px;
 }
-.warnTag   { background: rgba(245,196,0,0.12); color: var(--yellow); }
-.dangerTag { background: rgba(232,25,44,0.12);  color: var(--red); }
-.okTag     { background: rgba(0,211,149,0.1);   color: var(--success); }
+.warnTag   { background: var(--yellow-dim); color: var(--yellow); }
+.dangerTag { background: var(--danger-dim);  color: var(--red); }
+.okTag     { background: var(--success-dim);   color: var(--success); }
 
 .sucRowRight { display: flex; align-items: center; gap: 10px; }
 .stockDisp { display: flex; align-items: baseline; gap: 2px; }

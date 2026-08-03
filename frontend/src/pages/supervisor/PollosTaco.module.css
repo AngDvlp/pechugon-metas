@@ -47,8 +47,8 @@
   gap: 4px;
   box-shadow: var(--shadow-card);
 }
-.kpiCardDanger { border-color: rgba(232,25,44,0.3); background: rgba(232,25,44,0.05); }
-.kpiCardWarn   { border-color: rgba(245,196,0,0.3); background: rgba(245,196,0,0.05); }
+.kpiCardDanger { border-color: var(--border-danger); background: var(--danger-dim); }
+.kpiCardWarn   { border-color: var(--border-yellow); background: var(--yellow-dim); }
 .kpiVal {
   font-family: var(--font-mono);
   font-size: 1.8rem;
@@ -226,12 +226,12 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.minimoEditBtn:hover { color: var(--info); border-color: rgba(79,142,247,0.3); }
+.minimoEditBtn:hover { color: var(--info); border-color: var(--border-info); }
 
 .minimoEdit { display: flex; align-items: center; gap: 6px; }
 .minimoInput {
   background: var(--bg-elevated);
-  border: 1px solid rgba(79,142,247,0.4);
+  border: 1px solid var(--border-info);
   border-radius: 7px;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -243,8 +243,8 @@
 
 .minimoSaveBtn {
   display: flex; align-items: center; gap: 5px;
-  background: rgba(0,211,149,0.12);
-  border: 1px solid rgba(0,211,149,0.3);
+  background: var(--success-dim);
+  border: 1px solid var(--border-success);
   border-radius: 7px;
   color: var(--success);
   font-family: var(--font-body);
@@ -269,8 +269,8 @@
 .actionRow { display: flex; gap: 8px; }
 .addLoteBtn {
   display: flex; align-items: center; gap: 5px;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.25);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   border-radius: 8px;
   color: var(--info);
   font-family: var(--font-body);
@@ -280,7 +280,7 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-.addLoteBtn:hover { background: rgba(79,142,247,0.18); }
+.addLoteBtn:hover { background: var(--border-info); }
 
 /* Add form */
 .addForm {
@@ -321,7 +321,7 @@
   padding: 9px 11px;
   width: 100%;
 }
-.addInput:focus { outline: none; border-color: rgba(79,142,247,0.5); }
+.addInput:focus { outline: none; border-color: var(--border-info); }
 .addInput::-webkit-calendar-picker-indicator { filter: invert(0.6); }
 
 .cadInfo {
@@ -337,8 +337,8 @@
   padding: 9px 12px;
   border-radius: var(--radius-sm);
 }
-.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,211,149,0.15); }
-.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid rgba(232,25,44,0.15); }
+.ok    { background: var(--success-dim); color: var(--success); border: 1px solid var(--border-success); }
+.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid var(--border-danger); }
 
 .addSaveBtn {
   background: var(--info);
@@ -427,16 +427,16 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .loteActionEdit   { color: var(--text-muted); }
-.loteActionEdit:hover { background: rgba(79,142,247,0.15); border-color: rgba(79,142,247,0.3); color: var(--info); }
+.loteActionEdit:hover { background: var(--border-info); border-color: var(--border-info); color: var(--info); }
 .loteActionDel    { color: var(--text-muted); }
-.loteActionDel:hover { background: rgba(232,25,44,0.15); border-color: rgba(232,25,44,0.3); color: var(--red); }
+.loteActionDel:hover { background: var(--border-danger); border-color: var(--border-danger); color: var(--red); }
 .loteActionOk     { color: var(--success); }
-.loteActionOk:hover { background: rgba(0,211,149,0.15); }
+.loteActionOk:hover { background: var(--border-success); }
 .loteActionCancel { color: var(--text-muted); }
 
 .loteInputInline {
   background: var(--bg-elevated);
-  border: 1px solid rgba(79,142,247,0.4);
+  border: 1px solid var(--border-info);
   border-radius: 5px;
   color: var(--text-primary);
   font-family: var(--font-mono);

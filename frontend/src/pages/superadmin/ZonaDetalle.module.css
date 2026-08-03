@@ -27,8 +27,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(135deg, rgba(79,142,247,0.08) 0%, rgba(79,142,247,0.02) 100%);
-  border: 1px solid rgba(79,142,247,0.15);
+  background: linear-gradient(135deg, var(--info-dim) 0%, var(--info-dim) 100%);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-md);
 }
 
@@ -36,8 +36,8 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background: rgba(79,142,247,0.12);
-  border: 1px solid rgba(79,142,247,0.2);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,9 +98,9 @@
   border-radius: var(--radius-sm);
 }
 
-.kpiChipDanger { background: var(--danger-dim);  border-color: rgba(232,25,44,0.2);  color: var(--red); }
-.kpiChipWarn   { background: var(--warning-dim); border-color: rgba(245,196,0,0.2);  color: var(--yellow); }
-.kpiChipOk     { background: var(--success-dim); border-color: rgba(0,211,149,0.2);  color: var(--success); }
+.kpiChipDanger { background: var(--danger-dim);  border-color: var(--border-danger);  color: var(--red); }
+.kpiChipWarn   { background: var(--warning-dim); border-color: var(--border-yellow);  color: var(--yellow); }
+.kpiChipOk     { background: var(--success-dim); border-color: var(--border-success);  color: var(--success); }
 .kpiChipNeutral{ color: var(--text-muted); }
 
 .kpiVal {

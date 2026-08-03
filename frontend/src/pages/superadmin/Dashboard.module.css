@@ -11,8 +11,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(135deg, rgba(79,142,247,0.08) 0%, rgba(79,142,247,0.03) 100%);
-  border: 1px solid rgba(79,142,247,0.15);
+  background: linear-gradient(135deg, var(--info-dim) 0%, var(--info-dim) 100%);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-md);
 }
 
@@ -20,8 +20,8 @@
   width: 42px;
   height: 42px;
   border-radius: var(--radius-sm);
-  background: rgba(79,142,247,0.12);
-  border: 1px solid rgba(79,142,247,0.2);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,7 +102,7 @@
 
 .actionBtn:hover {
   background: var(--bg-elevated);
-  border-color: rgba(79,142,247,0.3);
+  border-color: var(--border-info);
   color: var(--info);
 }
 
@@ -128,8 +128,8 @@
   align-items: center;
   gap: 5px;
   padding: 7px 12px;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.2);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-sm);
   color: var(--info);
   font-size: 0.75rem;
@@ -138,7 +138,7 @@
   transition: background 0.18s;
 }
 
-.newBtn:hover { background: rgba(79,142,247,0.18); }
+.newBtn:hover { background: var(--border-info); }
 
 /* ── Zone list ──────────────────────────────────────────── */
 .zonaList {
@@ -161,7 +161,7 @@
 
 .zonaCard:hover {
   background: var(--bg-card-2);
-  border-color: rgba(79,142,247,0.25);
+  border-color: var(--border-info);
 }
 
 .zonaTop {
@@ -174,8 +174,8 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.15);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   display: flex;
   align-items: center;
   justify-content: center;

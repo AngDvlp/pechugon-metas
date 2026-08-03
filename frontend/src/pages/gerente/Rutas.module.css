@@ -21,7 +21,7 @@
   font-weight: 700;
   padding: 9px 18px;
   transition: all 0.2s;
-  box-shadow: 0 3px 14px rgba(245,196,0,0.25);
+  box-shadow: 0 3px 14px var(--border-yellow);
 }
 .addBtn:hover { opacity: 0.9; transform: translateY(-1px); }
 .addBtn:active { transform: scale(0.97); }
@@ -37,8 +37,8 @@
   gap: 8px;
   animation: fadeIn 0.2s ease;
 }
-.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,211,149,0.15); }
-.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid rgba(232,25,44,0.15); }
+.ok    { background: var(--success-dim); color: var(--success); border: 1px solid var(--border-success); }
+.error { background: var(--danger-dim);  color: var(--red);     border: 1px solid var(--border-danger); }
 
 .formCard {
   background: var(--bg-card);
@@ -57,7 +57,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--yellow), rgba(245,196,0,0.1), transparent);
+  background: linear-gradient(90deg, var(--yellow), var(--yellow-dim), transparent);
 }
 
 .formTitle {
@@ -81,7 +81,7 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
-.input:focus { outline: none; border-color: rgba(245,196,0,0.4); box-shadow: 0 0 0 3px rgba(245,196,0,0.07); }
+.input:focus { outline: none; border-color: var(--border-yellow); box-shadow: 0 0 0 3px var(--yellow-dim); }
 
 .saveBtn {
   background: linear-gradient(135deg, #F5C400 0%, #FFD740 100%);
@@ -94,7 +94,7 @@
   font-weight: 700;
   padding: 14px;
   transition: all 0.2s;
-  box-shadow: 0 3px 14px rgba(245,196,0,0.25);
+  box-shadow: 0 3px 14px var(--border-yellow);
 }
 .saveBtn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
 .saveBtn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
@@ -132,7 +132,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: rgba(245,196,0,0.1);
+  background: var(--yellow-dim);
   color: var(--yellow);
   display: flex;
   align-items: center;
@@ -204,7 +204,7 @@
   transition: border-color 0.2s;
   align-self: flex-start;
 }
-.selectSmall:focus { outline: none; border-color: rgba(245,196,0,0.4); }
+.selectSmall:focus { outline: none; border-color: var(--border-yellow); }
 .selectSmall option { background: var(--bg-elevated); }
 
 .sinSuc {

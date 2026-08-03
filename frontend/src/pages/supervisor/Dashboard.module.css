@@ -16,8 +16,8 @@
 /* ── Hero Summary Card ──────────────────────────────────── */
 .supervisorCard {
   background:
-    linear-gradient(145deg, rgba(27, 58, 140, 0.45) 0%, rgba(6, 10, 20, 0.96) 100%);
-  border: 1px solid rgba(27, 58, 140, 0.35);
+    linear-gradient(145deg, var(--border-info) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-lg);
   padding: 22px 20px;
   position: relative;
@@ -33,7 +33,7 @@
   right: -20px;
   width: 180px;
   height: 180px;
-  background: radial-gradient(ellipse, rgba(245,196,0,0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse, var(--yellow-dim) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -48,7 +48,7 @@
   font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 700;
-  color: rgba(240,244,255,0.45);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   margin-bottom: 5px;
@@ -74,7 +74,7 @@
   font-weight: 700;
   color: var(--yellow);
   line-height: 1;
-  text-shadow: 0 0 20px rgba(245,196,0,0.4);
+  text-shadow: 0 0 20px var(--border-yellow);
 }
 
 .pctSym {
@@ -97,7 +97,7 @@
   font-family: var(--font-body);
   font-size: 0.58rem;
   font-weight: 800;
-  color: rgba(240,244,255,0.35);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   min-width: 48px;
@@ -117,7 +117,7 @@
   background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
   border-radius: 99px;
   transition: width 0.9s cubic-bezier(0.34, 1.4, 0.64, 1);
-  box-shadow: 0 0 10px rgba(245,196,0,0.5);
+  box-shadow: 0 0 10px var(--yellow-glow);
   animation: bar-fill 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
@@ -153,7 +153,7 @@
   font-family: var(--font-body);
   font-size: 0.62rem;
   font-weight: 700;
-  color: rgba(240,244,255,0.35);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -456,7 +456,7 @@
   transition: all 0.15s;
 }
 .timePill:hover { border-color: var(--border-active); color: var(--text-secondary); }
-.timePillActive { background: rgba(245,196,0,0.1); border-color: var(--yellow); color: var(--yellow); }
+.timePillActive { background: var(--yellow-dim); border-color: var(--yellow); color: var(--yellow); }
 
 /* ── Selector de periodo de metas ─────────────────────────── */
 .periodoSelector {
@@ -505,8 +505,8 @@
   align-items: flex-start;
   gap: 8px;
   padding: 10px 13px;
-  background: rgba(79,142,247,0.07);
-  border: 1px solid rgba(79,142,247,0.22);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
   font-size: 0.72rem;
@@ -540,8 +540,8 @@
 /* ── Range hero card ──────────────────────────────────────── */
 .rangoHeroCard {
   background:
-    linear-gradient(145deg, rgba(0,90,60,0.35) 0%, rgba(6,10,20,0.96) 100%);
-  border: 1px solid rgba(0,211,149,0.2);
+    linear-gradient(145deg, var(--success-dim) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-success);
   border-radius: var(--radius-lg);
   padding: 20px 20px 16px;
   position: relative;
@@ -551,14 +551,14 @@
 .rangoHeroCard::before {
   content:''; position:absolute; top:-30px; right:-20px;
   width:160px; height:160px;
-  background: radial-gradient(ellipse, rgba(0,211,149,0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse, var(--success-dim) 0%, transparent 70%);
   pointer-events:none;
 }
 .rangoHeroLabel {
   font-family: var(--font-body);
   font-size: 0.68rem;
   font-weight: 700;
-  color: rgba(0,211,149,0.7);
+  color: var(--border-success);
   text-transform: uppercase;
   letter-spacing: 1.4px;
   margin-bottom: 6px;
@@ -577,7 +577,7 @@
   border-radius:var(--radius-md); overflow:hidden;
 }
 .rangoHeroStat { flex:1; display:flex; flex-direction:column; gap:4px; padding:11px 10px; text-align:center; }
-.rangoHeroStatLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.7px; }
+.rangoHeroStatLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.7px; }
 .rangoHeroStatVal { font-family:var(--font-mono); font-size:0.88rem; font-weight:500; color:var(--text-primary); }
 .rangoHeroDivider { width:1px; background:var(--surface-2); flex-shrink:0; }
 
@@ -586,7 +586,7 @@
 .sucRangoVenta { font-family:var(--font-mono); font-size:1.05rem; font-weight:600; flex-shrink:0; }
 .rangoStats { display:flex; align-items:stretch; background:var(--surface-1); border:1px solid var(--surface-2); border-radius:var(--radius-sm); overflow:hidden; }
 .rangoStat { flex:1; display:flex; flex-direction:column; gap:3px; padding:8px 8px; text-align:center; }
-.rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.5px; }
+.rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
 .rangoStatVal { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; color:var(--text-primary); }
 .rangoStatDiv { width:1px; background:var(--surface-2); flex-shrink:0; }
 
@@ -614,8 +614,8 @@
 }
 
 .predGlobalCard {
-  background: linear-gradient(145deg, rgba(79,142,247,0.1) 0%, rgba(6,10,20,0.97) 100%);
-  border: 1px solid rgba(79,142,247,0.2);
+  background: linear-gradient(145deg, var(--info-dim) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-lg);
   padding: 18px 18px 14px;
   display: flex;
@@ -627,7 +627,7 @@
 .predGlobalCard::before {
   content:''; position:absolute; top:-20px; right:-20px;
   width:120px; height:120px;
-  background:radial-gradient(ellipse, rgba(79,142,247,0.1) 0%, transparent 68%);
+  background:radial-gradient(ellipse, var(--info-dim) 0%, transparent 68%);
   pointer-events:none;
 }
 
@@ -679,7 +679,7 @@
   font-family: var(--font-body);
   font-size: 0.55rem;
   font-weight: 700;
-  color: rgba(240,244,255,0.35);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -723,7 +723,7 @@
   min-width: 0;
 }
 .predSummaryDiv { width: 1px; background: var(--surface-2); flex-shrink: 0; }
-.predSummaryLabel { font-family: var(--font-body); font-size: 0.55rem; font-weight: 700; color: rgba(240,244,255,0.3); text-transform: uppercase; letter-spacing: 0.4px; }
+.predSummaryLabel { font-family: var(--font-body); font-size: 0.55rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 .predSummaryVal { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; }
 
 /* Risk list */
@@ -803,9 +803,9 @@
   border-radius: 8px;
   border: 1px solid;
 }
-.statusChipDanger { background: rgba(232,25,44,0.1);  color: var(--red);     border-color: rgba(232,25,44,0.3); }
-.statusChipWarn   { background: rgba(245,196,0,0.08); color: var(--yellow);  border-color: rgba(245,196,0,0.28); }
-.statusChipInfo   { background: rgba(79,142,247,0.08); color: var(--info);   border-color: rgba(79,142,247,0.25); }
+.statusChipDanger { background: var(--danger-dim);  color: var(--red);     border-color: var(--border-danger); }
+.statusChipWarn   { background: var(--yellow-dim); color: var(--yellow);  border-color: var(--border-yellow); }
+.statusChipInfo   { background: var(--info-dim); color: var(--info);   border-color: var(--border-info); }
 
 /* ── Search + Sort controls ───────────────────────────────── */
 .controlsWrap {
@@ -824,8 +824,8 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .searchBox:focus-within {
-  border-color: rgba(245,196,0,0.35);
-  box-shadow: 0 0 0 3px rgba(245,196,0,0.06);
+  border-color: var(--border-yellow);
+  box-shadow: 0 0 0 3px var(--yellow-dim);
 }
 .searchInputField {
   flex: 1;
@@ -873,8 +873,8 @@
 }
 .ordenBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
 .ordenBtnActive {
-  background: rgba(245,196,0,0.1);
-  border-color: rgba(245,196,0,0.4);
+  background: var(--yellow-dim);
+  border-color: var(--border-yellow);
   color: var(--yellow);
 }
 
@@ -910,8 +910,8 @@
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 5px;
-  background: rgba(232,25,44,0.1);
-  border: 1px solid rgba(232,25,44,0.25);
+  background: var(--danger-dim);
+  border: 1px solid var(--border-danger);
   color: var(--red);
   white-space: nowrap;
 }

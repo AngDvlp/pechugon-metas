@@ -5,13 +5,6 @@
   animation: fadeUp 0.22s ease both;
 }
 
-.empty {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 60px 0;
-  font-family: var(--font-body);
-}
-
 /* ── Header ── */
 .pageHeader { margin-bottom: -2px; }
 .titleRow { display: flex; align-items: center; gap: 9px; }
@@ -43,7 +36,7 @@
 /* ── ML Card ── */
 .mlCard {
   background: var(--bg-card);
-  border: 1px solid rgba(79,142,247,0.2);
+  border: 1px solid var(--border-info);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -68,9 +61,9 @@
   color: var(--text-primary);
 }
 .mlAiBadge {
-  background: rgba(79,142,247,0.18);
+  background: var(--border-info);
   color: var(--info);
-  border: 1px solid rgba(79,142,247,0.3);
+  border: 1px solid var(--border-info);
   font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 800;
@@ -79,9 +72,9 @@
   letter-spacing: 1px;
 }
 .mlTacosBadge {
-  background: rgba(0,211,149,0.12);
+  background: var(--success-dim);
   color: var(--success);
-  border: 1px solid rgba(0,211,149,0.25);
+  border: 1px solid var(--border-success);
   font-family: var(--font-body);
   font-size: 0.6rem;
   font-weight: 800;
@@ -260,8 +253,8 @@
   align-items: center;
   gap: 6px;
   align-self: flex-start;
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.28);
+  background: var(--info-dim);
+  border: 1px solid var(--border-info);
   border-radius: 8px;
   color: var(--info);
   font-family: var(--font-body);
@@ -271,7 +264,7 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-.responderBtn:hover { background: rgba(79,142,247,0.18); }
+.responderBtn:hover { background: var(--border-info); }
 
 /* ── Modal ── */
 .overlay {
@@ -376,7 +369,7 @@
   width: 100%;
   text-align: center;
 }
-.modalInput:focus { outline: none; border-color: rgba(79,142,247,0.5); }
+.modalInput:focus { outline: none; border-color: var(--border-info); }
 .modalHint {
   font-family: var(--font-body);
   font-size: 0.78rem;
@@ -394,7 +387,7 @@
   width: 100%;
   resize: none;
 }
-.modalTextarea:focus { outline: none; border-color: rgba(79,142,247,0.4); }
+.modalTextarea:focus { outline: none; border-color: var(--border-info); }
 
 .msgBox {
   display: flex;
@@ -405,7 +398,6 @@
   padding: 10px 13px;
   border-radius: var(--radius-sm);
 }
-.error { background: rgba(232,25,44,0.08); color: var(--red); border: 1px solid rgba(232,25,44,0.2); }
 
 .modalSubmit {
   display: flex;
