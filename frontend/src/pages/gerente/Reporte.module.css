@@ -396,3 +396,125 @@
   font-size: 0.85rem;
   color: var(--text-muted);
 }
+
+/* ── Selector de periodo de metas ──────────────────────────── */
+.periodoBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 11px 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.periodoField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.periodoFieldLabel {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+.periodoSelect {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  padding: 0 20px 0 0;
+  cursor: pointer;
+  text-transform: capitalize;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+                    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 10px) center, calc(100% - 5px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.periodoSelect:focus { outline: none; }
+.periodoSelect option { background: var(--bg-elevated); color: var(--text-primary); }
+
+.periodoNota {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding: 0 2px;
+  margin: 0;
+}
+
+/* ── Comparativa de periodos ───────────────────────────────── */
+.compBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.compHeader { display: flex; flex-direction: column; gap: 2px; }
+.compTitle {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.compSub {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.compTableWrap { overflow-x: auto; }
+.compTable { width: 100%; border-collapse: collapse; min-width: 320px; }
+.compTh {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.compThNum { text-align: right; }
+.compTr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.compTd {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  padding: 7px 8px;
+}
+.compTdNum {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+.compTrTotal {
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+.compTrTotal .compTd { color: var(--text-primary); font-weight: 700; }
+
+.compNota {
+  font-family: var(--font-body);
+  font-size: 0.67rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}

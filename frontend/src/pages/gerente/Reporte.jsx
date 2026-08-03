@@ -6,6 +6,10 @@ import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import styles from './Reporte.module.css'
+import {
+  cargarPeriodos, cargarResumenes, periodoPorDefecto,
+  periodoLabel as labelPeriodo, estadoPeriodo,
+} from '../../lib/periodos'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -36,6 +40,14 @@ export default function ReporteAvance() {
   const [customHasta, setCustomHasta] = useState('')
   const [sortCol,     setSortCol]     = useState('nombre')
   const [sortDir,     setSortDir]     = useState('asc')
+
+  // Periodos de metas: el reporte se puede hacer sobre cualquier periodo,
+  // y opcionalmente comparar dos entre sí.
+  const [periodos,       setPeriodos]       = useState([])
+  const [periodoSel,     setPeriodoSel]     = useState(null)
+  const [periodoComp,    setPeriodoComp]    = useState(null)
+  const [resumenesComp,  setResumenesComp]  = useState({})
+  const [loadingComp,    setLoadingComp]    = useState(false)
 
   useEffect(() => { load() }, [usuario])
 
@@ -73,14 +85,17 @@ export default function ReporteAvance() {
       if (!sucs.length) { setLoading(false); return }
       const sids = sucs.map(s => s.id)
 
-      const [results, { data: hoyData }, { data: semData }] = await Promise.all([
-        Promise.all(sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())),
+      const pers = await cargarPeriodos(sids)
+      setPeriodos(pers)
+      const periodo = periodoSel ?? periodoPorDefecto(pers)
+      setPeriodoSel(prev => prev ?? periodo)
+
+      const [rmap, { data: hoyData }, { data: semData }] = await Promise.all([
+        cargarResumenes(sids, periodo),
         supabase.from('ventas_diarias').select('sucursal_id, venta_total, pollos_vendidos').in('sucursal_id', sids).eq('fecha', hoyStr),
         supabase.from('ventas_diarias').select('sucursal_id, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', inicioSem).lte('fecha', hoyStr),
       ])
 
-      const rmap = {}
-      sids.forEach((id, i) => { rmap[id] = results[i].data ?? null })
       setResumenes(rmap)
 
       const hMap = {}
@@ -113,6 +128,21 @@ export default function ReporteAvance() {
     })
     setVentasRango(map)
     setLoadingRng(false)
+  }
+
+  async function cambiarPeriodo(p) {
+    setPeriodoSel(p)
+    if (!sucursales.length) return
+    setResumenes(await cargarResumenes(sucursales.map(s => s.id), p))
+  }
+
+  async function cambiarComparacion(p) {
+    setPeriodoComp(p)
+    setResumenesComp({})
+    if (!p || !sucursales.length) return
+    setLoadingComp(true)
+    setResumenesComp(await cargarResumenes(sucursales.map(s => s.id), p))
+    setLoadingComp(false)
   }
 
   function computeRow(suc) {
@@ -223,8 +253,30 @@ export default function ReporteAvance() {
 
   const periodoLabel = filtro === 'hoy' ? format(new Date(), "d 'de' MMMM", { locale: es })
     : filtro === 'semana' ? `Semana del ${format(new Date(inicioSem + 'T12:00:00'), "d MMM", { locale: es })}`
-    : filtro === 'mes' ? format(new Date(), "MMMM yyyy", { locale: es })
+    : filtro === 'mes' ? (periodoSel ? labelPeriodo(periodoSel) : format(new Date(), "MMMM yyyy", { locale: es }))
     : customDesde && customHasta ? `${customDesde} — ${customHasta}` : 'Rango personalizado'
+
+  // Comparativa entre dos periodos de metas
+  const comparativa = useMemo(() => {
+    if (!periodoComp) return null
+    const filas = sucFiltradas.map(s => {
+      const a = resumenes[s.id]
+      const b = resumenesComp[s.id]
+      const pctA = a?.avance_porcentaje ?? null
+      const pctB = b?.avance_porcentaje ?? null
+      return {
+        id: s.id, nombre: s.nombre, pctA, pctB,
+        dif: pctA !== null && pctB !== null ? pctA - pctB : null,
+      }
+    })
+    const prom = arr => {
+      const v = arr.filter(x => x !== null)
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
+    }
+    const promA = prom(filas.map(f => f.pctA))
+    const promB = prom(filas.map(f => f.pctB))
+    return { filas, promA, promB, dif: promA !== null && promB !== null ? promA - promB : null }
+  }, [periodoComp, resumenes, resumenesComp, sucFiltradas])
 
   if (loading) return <div className={styles.empty}>Cargando reporte…</div>
 
@@ -242,7 +294,7 @@ export default function ReporteAvance() {
         {[
           { key: 'hoy',     label: 'Hoy' },
           { key: 'semana',  label: 'Semana' },
-          { key: 'mes',     label: 'Mes' },
+          { key: 'mes',     label: 'Periodo' },
           { key: 'custom',  label: 'Personalizado' },
         ].map(f => (
           <button key={f.key}
@@ -252,6 +304,46 @@ export default function ReporteAvance() {
           </button>
         ))}
       </div>
+
+      {/* ── Periodo de metas + comparación ── */}
+      {filtro === 'mes' && periodos.length > 0 && (
+        <div className={styles.periodoBox}>
+          <div className={styles.periodoField}>
+            <label className={styles.periodoFieldLabel} htmlFor="rep-periodo">Periodo</label>
+            <select
+              id="rep-periodo"
+              className={styles.periodoSelect}
+              value={periodoSel?.key ?? ''}
+              onChange={e => cambiarPeriodo(periodos.find(p => p.key === e.target.value))}>
+              {periodos.map(p => (
+                <option key={p.key} value={p.key}>
+                  {labelPeriodo(p)}{p.es_activo ? '  ·  en curso' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.periodoField}>
+            <label className={styles.periodoFieldLabel} htmlFor="rep-comp">Comparar con</label>
+            <select
+              id="rep-comp"
+              className={styles.periodoSelect}
+              value={periodoComp?.key ?? ''}
+              onChange={e => cambiarComparacion(periodos.find(p => p.key === e.target.value) ?? null)}>
+              <option value="">Sin comparación</option>
+              {periodos.filter(p => p.key !== periodoSel?.key).map(p => (
+                <option key={p.key} value={p.key}>{labelPeriodo(p)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {filtro === 'mes' && periodoSel && estadoPeriodo(periodoSel) === 'terminado' && (
+        <p className={styles.periodoNota}>
+          Periodo terminado — las cifras son las del cierre y ya no cambian.
+        </p>
+      )}
 
       {filtro === 'custom' && (
         <div className={styles.rangoRow}>
@@ -414,6 +506,73 @@ export default function ReporteAvance() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* ── Comparativa entre periodos ── */}
+      {filtro === 'mes' && periodoComp && (
+        <div className={styles.compBox}>
+          <div className={styles.compHeader}>
+            <p className={styles.compTitle}>Comparativa de periodos</p>
+            <p className={styles.compSub} style={{ textTransform: 'capitalize' }}>
+              {labelPeriodo(periodoSel)}  vs  {labelPeriodo(periodoComp)}
+            </p>
+          </div>
+
+          {loadingComp ? (
+            <div className={styles.empty}>Calculando comparativa…</div>
+          ) : (
+            <>
+              <div className={styles.compTableWrap}>
+                <table className={styles.compTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.compTh}>Sucursal</th>
+                      <th className={`${styles.compTh} ${styles.compThNum}`}>Actual</th>
+                      <th className={`${styles.compTh} ${styles.compThNum}`}>Anterior</th>
+                      <th className={`${styles.compTh} ${styles.compThNum}`}>Dif.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparativa.filas.map(f => (
+                      <tr key={f.id} className={styles.compTr}>
+                        <td className={styles.compTd}>{f.nombre}</td>
+                        <td className={`${styles.compTd} ${styles.compTdNum}`} style={{ color: pctColor(f.pctA) }}>
+                          {f.pctA === null ? '—' : `${f.pctA.toFixed(0)}%`}
+                        </td>
+                        <td className={`${styles.compTd} ${styles.compTdNum}`} style={{ color: pctColor(f.pctB) }}>
+                          {f.pctB === null ? '—' : `${f.pctB.toFixed(0)}%`}
+                        </td>
+                        <td className={`${styles.compTd} ${styles.compTdNum}`}
+                          style={{ color: f.dif === null ? 'var(--text-muted)' : f.dif >= 0 ? 'var(--success)' : 'var(--red)' }}>
+                          {f.dif === null ? '—' : `${f.dif >= 0 ? '+' : '−'}${Math.abs(f.dif).toFixed(0)}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className={styles.compTrTotal}>
+                      <td className={styles.compTd}>Promedio</td>
+                      <td className={`${styles.compTd} ${styles.compTdNum}`}>
+                        {comparativa.promA === null ? '—' : `${comparativa.promA.toFixed(0)}%`}
+                      </td>
+                      <td className={`${styles.compTd} ${styles.compTdNum}`}>
+                        {comparativa.promB === null ? '—' : `${comparativa.promB.toFixed(0)}%`}
+                      </td>
+                      <td className={`${styles.compTd} ${styles.compTdNum}`}
+                        style={{ color: comparativa.dif === null ? 'var(--text-muted)' : comparativa.dif >= 0 ? 'var(--success)' : 'var(--red)' }}>
+                        {comparativa.dif === null ? '—' : `${comparativa.dif >= 0 ? '+' : '−'}${Math.abs(comparativa.dif).toFixed(0)}`}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <p className={styles.compNota}>
+                Porcentaje de cumplimiento de la meta en cada periodo. La diferencia está en
+                puntos porcentuales: positiva significa que mejoró respecto al periodo anterior.
+              </p>
+            </>
+          )}
         </div>
       )}
 

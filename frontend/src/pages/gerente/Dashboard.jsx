@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 import { getCached, setCached } from '../../lib/pageCache'
+import { cargarPeriodos, cargarResumenes, periodoPorDefecto, periodoLabel, estadoPeriodo } from '../../lib/periodos'
 import PageSkeleton from '../../components/PageSkeleton'
 import PrediccionesPanel from '../../components/PrediccionesPanel'
 
@@ -47,6 +48,10 @@ export default function GerenteDashboard() {
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
   const [ordenarPor,    setOrdenarPor]    = useState('default')
+  // Periodos de metas: permite consultar periodos ya terminados, no solo el activo
+  const [periodos,        setPeriodos]        = useState([])
+  const [periodoSel,      setPeriodoSel]      = useState(null)
+  const [loadingResumen,  setLoadingResumen]  = useState(false)
 
   const hoy = format(new Date(), 'yyyy-MM-dd')
 
@@ -67,6 +72,21 @@ export default function GerenteDashboard() {
     setRutaSucMap(d.rutaSucMap)
     setVentasHoy(d.ventasHoy)
     setResumenes(d.resumenes)
+    if (d.periodos?.length) {
+      setPeriodos(d.periodos)
+      setPeriodoSel(prev => prev ?? periodoPorDefecto(d.periodos))
+    }
+  }
+
+  // Al cambiar de periodo se recalcula todo el tablero con esa fecha de referencia.
+  // El periodo por defecto ya viene cargado, así que solo se consulta al cambiarlo.
+  async function cambiarPeriodo(p) {
+    setPeriodoSel(p)
+    if (!sucursales.length) return
+    setLoadingResumen(true)
+    const data = await cargarResumenes(sucursales.map(s => s.id), p)
+    setResumenes(data)
+    setLoadingResumen(false)
   }
 
   useEffect(() => {
@@ -84,11 +104,12 @@ export default function GerenteDashboard() {
   async function load(bg = false) {
     if (!bg) setLoading(true)
     try {
-      const [{ data: sucs }, { data: rutasData }, { data: rs }, { data: hoyData }] = await Promise.all([
+      const [{ data: sucs }, { data: rutasData }, { data: rs }, { data: hoyData }, pers] = await Promise.all([
         supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
         supabase.from('rutas').select('id, nombre').eq('activa', true).order('nombre'),
         supabase.from('ruta_sucursales').select('ruta_id, sucursal_id'),
         supabase.from('ventas_diarias').select('sucursal_id, venta_total').eq('fecha', hoy),
+        cargarPeriodos(null),
       ])
       const map = {}
       rs?.forEach(r => {
@@ -97,17 +118,21 @@ export default function GerenteDashboard() {
       })
       const hoyMap = {}
       hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
-      const rmap = {}
+      // Periodo a consultar: el que el usuario tenga elegido, o el activo por defecto
+      const porDefecto = periodoPorDefecto(pers)
+      const periodo    = periodoSel ?? porDefecto
+
+      let rmap = {}
       if (sucs?.length) {
         const sids    = sucs.map(s => s.id)
         const desde90 = (() => {
           const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
         })()
-        const [results, { data: ventasHist }] = await Promise.all([
-          Promise.all(sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())),
+        const [resMap, { data: ventasHist }] = await Promise.all([
+          cargarResumenes(sids, periodo),
           supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', desde90).order('fecha', { ascending: true }),
         ])
-        sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
+        rmap = resMap
 
         // Agregar histórico por fecha
         const aggHist = {}
@@ -118,9 +143,11 @@ export default function GerenteDashboard() {
         })
         setHistorialPred(Object.values(aggHist).sort((a, b) => a.fecha.localeCompare(b.fecha)))
       }
-      const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: map, ventasHoy: hoyMap, resumenes: rmap }
+      const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: map, ventasHoy: hoyMap, resumenes: rmap, periodos: pers }
       applyData(d)
-      setCached('ger-dash', d)
+      // Solo se cachea el periodo por defecto: si el usuario está viendo uno
+      // pasado, esos datos no deben quedar como estado inicial de la pantalla.
+      if (!periodoSel || periodoSel.key === porDefecto?.key) setCached('ger-dash', d)
     } catch (e) {
       console.error('Error loading gerente dashboard:', e)
     } finally {
@@ -270,8 +297,13 @@ export default function GerenteDashboard() {
         <div className={styles.globalTop}>
           <div>
             <p className={styles.globalLabel}>
-              {filtroRuta === 'todas' ? 'Meta mensual global' : rutaSeleccionada?.nombre ?? 'Meta'}
+              {filtroRuta === 'todas' ? 'Meta del periodo' : rutaSeleccionada?.nombre ?? 'Meta'}
             </p>
+            {periodoSel && (
+              <p className={styles.globalPeriodo} style={{ textTransform: 'capitalize' }}>
+                {periodoLabel(periodoSel)}
+              </p>
+            )}
             <p className={styles.globalMeta}>{fmt(totalMeta)}</p>
           </div>
           <div className={styles.globalPct}>
@@ -391,6 +423,34 @@ export default function GerenteDashboard() {
         ))}
       </div>
 
+      {/* ── Selector de periodo de metas ── */}
+      {filtroTiempo === 'periodo' && periodos.length > 0 && (
+        <div className={styles.periodoSelector}>
+          <label className={styles.periodoSelectorLabel} htmlFor="periodo-sel">Periodo de metas</label>
+          <select
+            id="periodo-sel"
+            className={styles.periodoSelect}
+            value={periodoSel?.key ?? ''}
+            onChange={e => cambiarPeriodo(periodos.find(p => p.key === e.target.value))}>
+            {periodos.map(p => (
+              <option key={p.key} value={p.key}>
+                {periodoLabel(p)}{p.es_activo ? '  ·  en curso' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {filtroTiempo === 'periodo' && periodoSel && estadoPeriodo(periodoSel) === 'terminado' && (
+        <div className={styles.periodoAviso}>
+          <Clock size={13} strokeWidth={2.5} />
+          <span>
+            Estás viendo un periodo <strong>ya terminado</strong>. Las cifras son las del
+            cierre y ya no cambian.
+          </span>
+        </div>
+      )}
+
       {filtroTiempo === 'custom' && (
         <div className={styles.customRango}>
           <input className={styles.rangoDateInput} type="date"
@@ -458,7 +518,7 @@ export default function GerenteDashboard() {
       </p>
 
       {/* Lista sucursales */}
-      {esRango && loadingRangos ? (
+      {(esRango && loadingRangos) || loadingResumen ? (
         <div className={styles.empty}>Cargando datos…</div>
       ) : (
         <div className={styles.sucList}>

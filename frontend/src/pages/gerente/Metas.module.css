@@ -373,6 +373,109 @@
   margin-left:auto; font-size:0.6rem; opacity:0.6;
 }
 
+/* ── Historial de periodos terminados ────────────────────── */
+.historialIntro {
+  font-family:var(--font-body); font-size:0.73rem;
+  color:var(--text-muted); line-height:1.5; margin-top:-2px;
+}
+
+.historialList {
+  display:flex; flex-direction:column; gap:8px;
+}
+
+.histPeriodo {
+  border:1px solid var(--border); border-radius:var(--radius-md);
+  background:var(--bg-card); overflow:hidden;
+}
+
+.histPeriodoHead {
+  display:flex; align-items:center; gap:10px; width:100%;
+  background:none; border:none; cursor:pointer;
+  padding:12px 14px; text-align:left; transition:background 0.18s;
+}
+.histPeriodoHead:hover { background:rgba(255,255,255,0.02); }
+
+.histPeriodoInfo {
+  display:flex; flex-direction:column; gap:2px; min-width:0;
+}
+.histPeriodoFechas {
+  font-family:var(--font-mono); font-size:0.8rem; font-weight:600;
+  color:var(--text-primary);
+}
+.histPeriodoSub {
+  font-family:var(--font-body); font-size:0.68rem; color:var(--text-muted);
+}
+
+.histLoading {
+  padding:16px 14px; text-align:center;
+  font-family:var(--font-body); font-size:0.75rem; color:var(--text-muted);
+}
+
+.histBody {
+  display:flex; flex-direction:column; gap:12px;
+  padding:4px 14px 14px; border-top:1px solid var(--border);
+}
+
+.histAviso {
+  display:flex; align-items:flex-start; gap:7px;
+  background:rgba(245,196,0,0.07); border:1px solid rgba(245,196,0,0.22);
+  border-radius:var(--radius-sm); padding:9px 11px; margin-top:12px;
+  font-family:var(--font-body); font-size:0.71rem;
+  color:var(--yellow); line-height:1.45;
+}
+
+.histResumen {
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;
+  background:rgba(255,255,255,0.02); border-radius:var(--radius-sm);
+  padding:11px 13px; margin-top:12px;
+}
+@media (min-width:520px) {
+  .histResumen { grid-template-columns:repeat(4, 1fr); }
+}
+.histResumenItem { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.histResumenLabel {
+  font-family:var(--font-body); font-size:0.62rem; font-weight:700;
+  color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px;
+}
+.histResumenVal {
+  font-family:var(--font-mono); font-size:0.86rem; font-weight:600;
+  color:var(--text-primary);
+}
+
+.histFilas { display:flex; flex-direction:column; gap:11px; }
+
+.histFila { display:flex; flex-direction:column; gap:5px; }
+
+.histFilaTop { display:flex; align-items:center; gap:8px; }
+.histFilaNombre {
+  font-family:var(--font-body); font-size:0.79rem; font-weight:600;
+  color:var(--text-primary); flex:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.histFilaPct {
+  font-family:var(--font-mono); font-size:0.76rem; font-weight:700;
+  flex-shrink:0;
+}
+.histFilaDel {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:none; cursor:pointer; padding:2px;
+  color:var(--text-muted); opacity:0.5; transition:all 0.18s; flex-shrink:0;
+}
+.histFilaDel:hover { opacity:1; color:var(--red); }
+
+.histFilaTrack {
+  height:5px; border-radius:3px; overflow:hidden;
+  background:rgba(255,255,255,0.06);
+}
+.histFilaFill { height:100%; border-radius:3px; transition:width 0.4s ease; }
+
+.histFilaNums {
+  display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;
+  font-family:var(--font-mono); font-size:0.71rem; color:var(--text-secondary);
+}
+.histFilaDe { color:var(--text-muted); font-size:0.66rem; }
+.histFilaPollos { color:var(--text-muted); }
+
 /* ── Periodo btn badge ───────────────────────────────────── */
 .periodoBtnActive {
   border-color:var(--info); color:var(--info);
@@ -484,6 +587,11 @@
   display:flex; align-items:center; gap:6px;
   font-family:var(--font-body); font-size:0.78rem;
   font-weight:600; color:var(--text-secondary); line-height:1.4;
+}
+
+.applySelectHint {
+  font-family:var(--font-body); font-size:0.71rem;
+  color:var(--text-muted); line-height:1.45; margin-top:-4px;
 }
 
 .toggleTodasBtn {

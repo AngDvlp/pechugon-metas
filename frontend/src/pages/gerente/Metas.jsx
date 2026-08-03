@@ -8,6 +8,7 @@ import {
   CheckCircle, Clock, AlertCircle, Settings, AlertTriangle, Pencil, Zap
 } from 'lucide-react'
 import styles from './Metas.module.css'
+import { cargarResumenes } from '../../lib/periodos'
 
 const fmt    = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtDec = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v ?? 0)
@@ -55,6 +56,9 @@ export default function GerenteMetas() {
   const [showForm,       setShowForm]       = useState(false)
   const [showPeriodo,    setShowPeriodo]    = useState(false)
   const [showHistorial,  setShowHistorial]  = useState(false)
+  // Historial: qué periodos están desplegados y sus resultados ya calculados
+  const [historialAbierto, setHistorialAbierto] = useState(new Set())
+  const [resultados,       setResultados]       = useState({})
   const [saving,         setSaving]         = useState(false)
   const [applyingKey,    setApplyingKey]    = useState(null)
   const [msg,            setMsg]            = useState(null)
@@ -153,31 +157,59 @@ export default function GerenteMetas() {
     )
   }
 
-  // ── Aplicar periodo: ACTUALIZA fecha_inicio/fecha_fin de las metas seleccionadas ──
+  // ── Aplicar periodo: COPIA las metas seleccionadas al periodo nuevo ──
+  // Antes esto movía las fechas de las metas existentes, lo que borraba el
+  // historial: la meta del periodo anterior dejaba de existir. Ahora se crean
+  // metas nuevas y las anteriores se conservan para poder consultarlas.
   async function handleApplyToSelected(desde, hasta, periodoId) {
     if (selectedMetaIds.size === 0) return
     const semanas = semanasEntreFechas(desde, hasta)
     const key     = `${desde}|${hasta}`
+
+    const origenes = metas.filter(m => selectedMetaIds.has(m.id))
+    // No duplicar: si la sucursal ya tiene meta en ese periodo, se omite
+    const yaConMeta = new Set(
+      metas.filter(m => m.fecha_inicio === desde && m.fecha_fin === hasta)
+           .map(m => m.sucursal_id)
+    )
+    const aCrear   = origenes.filter(m => !yaConMeta.has(m.sucursal_id))
+    const omitidas = origenes.length - aCrear.length
+
+    if (aCrear.length === 0) {
+      setMsg({ tipo: 'error', texto: 'Las sucursales seleccionadas ya tienen meta en ese periodo. No se creó ninguna.' })
+      setTimeout(() => setMsg(null), 6000)
+      return
+    }
+
     setApplyingKey(key)
     setMsg(null)
 
-    const ids = [...selectedMetaIds]
-    const { error } = await supabase
+    const { data: creadas, error } = await supabase
       .from('metas')
-      .update({ fecha_inicio: desde, fecha_fin: hasta, semanas_mes: semanas })
-      .in('id', ids)
+      .insert(aCrear.map(m => ({
+        sucursal_id:          m.sucursal_id,
+        meta_venta:           m.meta_venta,
+        pollos_meta:          m.pollos_meta,
+        ticket_promedio_meta: m.ticket_promedio_meta,
+        semanas_mes:          semanas,
+        fecha_inicio:         desde,
+        fecha_fin:            hasta,
+        creado_por:           usuario.id,
+      })))
+      .select('*, sucursales(nombre)')
 
     if (error) {
-      setMsg({ tipo: 'error', texto: 'Error al actualizar: ' + error.message })
+      setMsg({ tipo: 'error', texto: 'Error al crear las metas: ' + error.message })
     } else {
-      setMetas(prev => prev.map(m =>
-        selectedMetaIds.has(m.id)
-          ? { ...m, fecha_inicio: desde, fecha_fin: hasta, semanas_mes: semanas }
-          : m
-      ))
+      const n = creadas?.length ?? 0
+      setMetas(prev => [...(creadas ?? []), ...prev])
       setPeriodosNuevos(prev => prev.filter(p => p.id !== periodoId))
-      setMsg({ tipo: 'ok', texto: `Periodo actualizado en ${ids.length} meta${ids.length !== 1 ? 's' : ''} — visible en todos los dashboards` })
-      setTimeout(() => setMsg(null), 5000)
+      setMsg({
+        tipo: 'ok',
+        texto: `${n} meta${n !== 1 ? 's' : ''} creada${n !== 1 ? 's' : ''} para el periodo nuevo. Las metas anteriores se conservan en el historial.`
+             + (omitidas > 0 ? ` Se omitieron ${omitidas} que ya tenían meta en ese periodo.` : ''),
+      })
+      setTimeout(() => setMsg(null), 7000)
     }
     setApplySelectingId(null)
     setSelectedMetaIds(new Set())
@@ -281,6 +313,33 @@ export default function GerenteMetas() {
   const metasFuturas   = metas.filter(m => m.fecha_inicio > hoyStr)
   const metasExpiradas = metas.filter(m => m.fecha_fin < hoyStr)
 
+  // ── Historial: metas terminadas agrupadas por periodo ──
+  const periodosExpirados = (() => {
+    const map = new Map()
+    metasExpiradas.forEach(m => {
+      const k = `${m.fecha_inicio}|${m.fecha_fin}`
+      if (!map.has(k)) map.set(k, { key: k, fecha_inicio: m.fecha_inicio, fecha_fin: m.fecha_fin, metas: [] })
+      map.get(k).metas.push(m)
+    })
+    return [...map.values()]
+      .map(p => ({ ...p, metas: p.metas.sort((a, b) => (a.sucursales?.nombre ?? '').localeCompare(b.sucursales?.nombre ?? '')) }))
+      .sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio))
+  })()
+
+  // Los resultados se calculan solo al desplegar un periodo, y una sola vez.
+  async function togglePeriodoHistorial(p) {
+    const abierto = historialAbierto.has(p.key)
+    setHistorialAbierto(prev => {
+      const next = new Set(prev)
+      if (abierto) next.delete(p.key); else next.add(p.key)
+      return next
+    })
+    if (abierto || resultados[p.key]) return
+    setResultados(prev => ({ ...prev, [p.key]: { loading: true, data: {} } }))
+    const data = await cargarResumenes(p.metas.map(m => m.sucursal_id), p)
+    setResultados(prev => ({ ...prev, [p.key]: { loading: false, data } }))
+  }
+
   const periodoActivo        = metasVigentes[0]
   const diasRestantesPeriodo = periodoActivo
     ? Math.round((new Date(periodoActivo.fecha_fin + 'T23:59:59') - hoy) / 86400000)
@@ -342,7 +401,7 @@ export default function GerenteMetas() {
           <div className={styles.periodoCardHeader}>
             <p className={styles.periodoCardTitle}>Gestión de periodos</p>
             <p className={styles.periodoCardSub}>
-              Crea uno o varios periodos. Luego aplícalos en bloque actualizando las metas vigentes que elijas, o asígnalos individualmente al crear una nueva meta.
+              Crea uno o varios periodos. Luego copia en bloque las metas vigentes que elijas al periodo nuevo, o asígnalo individualmente al crear una meta. Las metas del periodo anterior se conservan para poder consultar cómo cerró cada sucursal.
             </p>
           </div>
 
@@ -383,7 +442,7 @@ export default function GerenteMetas() {
 
             {periodosNuevos.length === 0 && (
               <p className={styles.periodoNota}>
-                Agrega uno o varios periodos. Después actualiza las metas vigentes que quieras a cada periodo.
+                Agrega uno o varios periodos. Después copia a cada uno las metas vigentes que quieras.
               </p>
             )}
 
@@ -456,8 +515,8 @@ export default function GerenteMetas() {
                         onClick={() => openApplySelect(p.id, metasVigentes)}>
                         <Zap size={13} strokeWidth={2.5} />
                         {metasVigentes.length === 0
-                          ? 'Sin metas vigentes'
-                          : `Aplicar a metas vigentes (${metasVigentes.length})`}
+                          ? 'Sin metas vigentes que copiar'
+                          : `Copiar metas vigentes al periodo (${metasVigentes.length})`}
                       </button>
 
                       <p className={styles.periodoNota}>
@@ -471,10 +530,13 @@ export default function GerenteMetas() {
                     <div className={styles.applySelectPanel}>
                       <p className={styles.applySelectTitle}>
                         <Zap size={12} strokeWidth={2.5} />
-                        Selecciona qué metas vigentes actualizar al periodo{' '}
+                        Selecciona qué metas copiar al periodo{' '}
                         <strong style={{ textTransform: 'capitalize' }}>
                           {periodoShort(p.desde, p.hasta)}
                         </strong>
+                      </p>
+                      <p className={styles.applySelectHint}>
+                        Se crean metas nuevas con los mismos pollos y ticket. Las actuales no se modifican.
                       </p>
 
                       {/* Toggle todos */}
@@ -498,7 +560,7 @@ export default function GerenteMetas() {
                               <span className={styles.applySelectNombre}>{m.sucursales?.nombre}</span>
                               <span className={styles.applySelectOldPeriod} style={{ textTransform: 'capitalize' }}>
                                 {periodoShort(m.fecha_inicio, m.fecha_fin)}
-                                {' → '}
+                                {' + '}
                                 {periodoShort(p.desde, p.hasta)}
                               </span>
                             </div>
@@ -516,8 +578,8 @@ export default function GerenteMetas() {
                           disabled={selectedMetaIds.size === 0 || isApplying}
                           onClick={() => handleApplyToSelected(p.desde, p.hasta, p.id)}>
                           {isApplying
-                            ? 'Actualizando…'
-                            : `Actualizar ${selectedMetaIds.size} meta${selectedMetaIds.size !== 1 ? 's' : ''}`}
+                            ? 'Creando…'
+                            : `Crear ${selectedMetaIds.size} meta${selectedMetaIds.size !== 1 ? 's' : ''}`}
                         </button>
                       </div>
                     </div>
@@ -703,22 +765,51 @@ export default function GerenteMetas() {
             </>
           )}
 
-          {metasExpiradas.length > 0 && (
+          {periodosExpirados.length > 0 && (
             <>
               <button className={styles.historialToggle} onClick={() => setShowHistorial(v => !v)}>
                 <Clock size={13} strokeWidth={2.5} />
-                Historial ({metasExpiradas.length} expirada{metasExpiradas.length !== 1 ? 's' : ''})
+                Historial de periodos ({periodosExpirados.length})
                 <span className={styles.historialArrow}>{showHistorial ? '▲' : '▼'}</span>
               </button>
+
               {showHistorial && (
-                <div className={styles.metasList}>
-                  {metasExpiradas.map(m => (
-                    <MetaCard key={m.id} m={m} hoyStr={hoyStr}
-                      onDelete={handleDelete}
-                      onUpdatePeriod={handleUpdateMetaPeriod}
-                      periodosDisponibles={periodosDisponibles} />
-                  ))}
-                </div>
+                <>
+                  <p className={styles.historialIntro}>
+                    Cómo cerró cada sucursal en los periodos que ya terminaron.
+                    Despliega un periodo para ver sus resultados.
+                  </p>
+
+                  <div className={styles.historialList}>
+                    {periodosExpirados.map(p => {
+                      const abierto = historialAbierto.has(p.key)
+                      const res     = resultados[p.key]
+                      return (
+                        <div key={p.key} className={styles.histPeriodo}>
+                          <button
+                            className={styles.histPeriodoHead}
+                            onClick={() => togglePeriodoHistorial(p)}>
+                            <div className={styles.histPeriodoInfo}>
+                              <span className={styles.histPeriodoFechas} style={{ textTransform: 'capitalize' }}>
+                                {periodoShort(p.fecha_inicio, p.fecha_fin)}
+                              </span>
+                              <span className={styles.histPeriodoSub}>
+                                {p.metas.length} sucursal{p.metas.length !== 1 ? 'es' : ''}
+                              </span>
+                            </div>
+                            <span className={styles.historialArrow}>{abierto ? '▲' : '▼'}</span>
+                          </button>
+
+                          {abierto && (
+                            res?.loading
+                              ? <div className={styles.histLoading}>Calculando resultados…</div>
+                              : <HistorialResultados metas={p.metas} data={res?.data ?? {}} onDelete={handleDelete} />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
               )}
             </>
           )}
@@ -909,6 +1000,100 @@ function MetaCard({ m, hoyStr, onDelete, onUpdatePeriod, onUpdateValues, periodo
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════
+//   RESULTADOS DE UN PERIODO TERMINADO
+//   Objetivo vs lo que realmente se vendió, por sucursal.
+// ══════════════════════════════════════════════════════
+function HistorialResultados({ metas, data, onDelete }) {
+  const filas = metas.map(m => {
+    const r        = data[m.sucursal_id]
+    const objetivo = r?.meta_mensual ?? (m.meta_venta ?? 0) * (m.semanas_mes ?? 0)
+    const vendido  = r?.venta_acumulada ?? null
+    const pct      = objetivo > 0 && vendido !== null ? (vendido / objetivo) * 100 : null
+    return { meta: m, nombre: m.sucursales?.nombre ?? 'Sucursal', objetivo, vendido, pct, pollos: r?.pollos_totales ?? null }
+  })
+
+  const totObjetivo = filas.reduce((a, f) => a + (f.objetivo ?? 0), 0)
+  const totVendido  = filas.reduce((a, f) => a + (f.vendido  ?? 0), 0)
+  const totPct      = totObjetivo > 0 ? (totVendido / totObjetivo) * 100 : null
+  const cumplidas   = filas.filter(f => f.pct !== null && f.pct >= 100).length
+
+  const colorDe = pct => pct === null ? 'var(--text-muted)'
+    : pct >= 100 ? 'var(--success)'
+    : pct >= 70  ? 'var(--yellow)'
+    : 'var(--red)'
+
+  const sinDatos = filas.every(f => f.vendido === null)
+
+  return (
+    <div className={styles.histBody}>
+      {sinDatos && (
+        <p className={styles.histAviso}>
+          <AlertCircle size={12} strokeWidth={2.5} />
+          No se pudieron calcular los resultados de este periodo. Revisa que la
+          migración <strong>supabase_periodos_historicos.sql</strong> ya esté aplicada.
+        </p>
+      )}
+
+      <div className={styles.histResumen}>
+        <div className={styles.histResumenItem}>
+          <span className={styles.histResumenLabel}>Objetivo del periodo</span>
+          <span className={styles.histResumenVal}>{fmt(totObjetivo)}</span>
+        </div>
+        <div className={styles.histResumenItem}>
+          <span className={styles.histResumenLabel}>Vendido</span>
+          <span className={styles.histResumenVal}>{fmt(totVendido)}</span>
+        </div>
+        <div className={styles.histResumenItem}>
+          <span className={styles.histResumenLabel}>Cumplimiento</span>
+          <span className={styles.histResumenVal} style={{ color: colorDe(totPct) }}>
+            {totPct === null ? '—' : `${totPct.toFixed(0)}%`}
+          </span>
+        </div>
+        <div className={styles.histResumenItem}>
+          <span className={styles.histResumenLabel}>Cumplieron</span>
+          <span className={styles.histResumenVal}>{cumplidas} de {filas.length}</span>
+        </div>
+      </div>
+
+      <div className={styles.histFilas}>
+        {filas.map(f => (
+          <div key={f.meta.id} className={styles.histFila}>
+            <div className={styles.histFilaTop}>
+              <span className={styles.histFilaNombre}>{f.nombre}</span>
+              <span className={styles.histFilaPct} style={{ color: colorDe(f.pct) }}>
+                {f.pct === null ? '—' : `${f.pct.toFixed(0)}%`}
+              </span>
+              <button
+                className={styles.histFilaDel}
+                title="Eliminar esta meta del historial"
+                onClick={() => onDelete(f.meta.id)}>
+                <Trash2 size={11} strokeWidth={2} />
+              </button>
+            </div>
+
+            <div className={styles.histFilaTrack}>
+              <div className={styles.histFilaFill} style={{
+                width: `${Math.min(f.pct ?? 0, 100)}%`,
+                background: colorDe(f.pct),
+              }} />
+            </div>
+
+            <div className={styles.histFilaNums}>
+              <span>{f.vendido === null ? 'Sin datos' : fmt(f.vendido)}</span>
+              <span className={styles.histFilaDe}>de</span>
+              <span>{fmt(f.objetivo)}</span>
+              {f.pollos !== null && (
+                <span className={styles.histFilaPollos}>· {fmtNum(f.pollos)} pollos</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

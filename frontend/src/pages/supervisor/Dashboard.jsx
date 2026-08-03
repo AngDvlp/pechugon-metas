@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
 import { getCached, setCached } from '../../lib/pageCache'
+import { cargarPeriodos, cargarResumenes, periodoPorDefecto, periodoLabel, estadoPeriodo } from '../../lib/periodos'
 import PageSkeleton from '../../components/PageSkeleton'
 import PrediccionesPanel from '../../components/PrediccionesPanel'
 
@@ -48,6 +49,10 @@ export default function SupervisorDashboard() {
   const [customHasta,   setCustomHasta]   = useState('')
   const [busqueda,      setBusqueda]      = useState('')
   const [ordenarPor,    setOrdenarPor]    = useState('default')
+  // Periodos de metas: permite consultar periodos ya terminados, no solo el activo
+  const [periodos,       setPeriodos]       = useState([])
+  const [periodoSel,     setPeriodoSel]     = useState(null)
+  const [loadingResumen, setLoadingResumen] = useState(false)
   const hoy    = format(new Date(), 'yyyy-MM-dd')
   const manana = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
@@ -70,6 +75,20 @@ export default function SupervisorDashboard() {
     setResumenes(d.resumenes)
     setMinimosMap(d.minimosMap)
     setTacoMap(d.tacoMap)
+    if (d.periodos?.length) {
+      setPeriodos(d.periodos)
+      setPeriodoSel(prev => prev ?? periodoPorDefecto(d.periodos))
+    }
+  }
+
+  // Al cambiar de periodo se recalculan los avances con esa fecha de referencia.
+  async function cambiarPeriodo(p) {
+    setPeriodoSel(p)
+    if (!sucursales.length) return
+    setLoadingResumen(true)
+    const data = await cargarResumenes(sucursales.map(s => s.id), p)
+    setResumenes(data)
+    setLoadingResumen(false)
   }
 
   useEffect(() => {
@@ -98,17 +117,19 @@ export default function SupervisorDashboard() {
     const desde90 = (() => {
       const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
     })()
-    const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, { data: ventasHist }, ...resResults] = await Promise.all([
+    const pers       = await cargarPeriodos(sids)
+    const porDefecto = periodoPorDefecto(pers)
+    const periodo    = periodoSel ?? porDefecto
+
+    const [{ data: hoyData }, { data: tacoLotes }, { data: minimos }, { data: ventasHist }, resMap] = await Promise.all([
       supabase.from('ventas_diarias').select('*').in('sucursal_id', sids).eq('fecha', hoy),
       supabase.from('pollos_taco').select('*').in('sucursal_id', sids),
       supabase.from('pollos_taco_minimos').select('*').in('sucursal_id', sids),
       supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', desde90).order('fecha', { ascending: true }),
-      ...sids.map(id => supabase.rpc('resumen_sucursal', { p_sucursal_id: id }).maybeSingle())
+      cargarResumenes(sids, periodo),
     ])
     const hoyMap = {}
     hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
-    const resMap = {}
-    sids.forEach((id, i) => { resMap[id] = resResults[i].data ?? null })
     // Agregar histórico por fecha para el motor ML
     const aggHist = {}
     ventasHist?.forEach(v => {
@@ -129,9 +150,11 @@ export default function SupervisorDashboard() {
       const minimo   = mMap[id] ?? 0
       tMap[id] = { stock, deficit: minimo > 0 && stock < minimo, expirando: vigentes.some(l => l.fecha_caducidad === manana), minimo }
     })
-    const d = { sucursales: sucs, ventasHoy: hoyMap, resumenes: resMap, minimosMap: mMap, tacoMap: tMap }
+    const d = { sucursales: sucs, ventasHoy: hoyMap, resumenes: resMap, minimosMap: mMap, tacoMap: tMap, periodos: pers }
     applyData(d)
-    setCached(`sup-dash-${usuario.id}`, d)
+    // Solo se cachea el periodo por defecto, para no dejar un periodo pasado
+    // como estado inicial de la pantalla.
+    if (!periodoSel || periodoSel.key === porDefecto?.key) setCached(`sup-dash-${usuario.id}`, d)
     setLoading(false)
   }
 
@@ -241,6 +264,34 @@ export default function SupervisorDashboard() {
           </button>
         ))}
       </div>
+
+      {/* ── Selector de periodo de metas ── */}
+      {filtroTiempo === 'periodo' && periodos.length > 0 && (
+        <div className={styles.periodoSelector}>
+          <label className={styles.periodoSelectorLabel} htmlFor="periodo-sel-sup">Periodo de metas</label>
+          <select
+            id="periodo-sel-sup"
+            className={styles.periodoSelect}
+            value={periodoSel?.key ?? ''}
+            onChange={e => cambiarPeriodo(periodos.find(p => p.key === e.target.value))}>
+            {periodos.map(p => (
+              <option key={p.key} value={p.key}>
+                {periodoLabel(p)}{p.es_activo ? '  ·  en curso' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {filtroTiempo === 'periodo' && periodoSel && estadoPeriodo(periodoSel) === 'terminado' && (
+        <div className={styles.periodoAviso}>
+          <Clock size={13} strokeWidth={2.5} />
+          <span>
+            Estás viendo un periodo <strong>ya terminado</strong>. Las cifras son las del
+            cierre y ya no cambian.
+          </span>
+        </div>
+      )}
 
       {filtroTiempo === 'custom' && (
         <div className={styles.customRango}>
@@ -415,7 +466,7 @@ export default function SupervisorDashboard() {
       </p>
       {sucursales.length === 0 && <div className={styles.empty}>No tienes sucursales asignadas</div>}
 
-      {esRango && loadingRangos ? (
+      {(esRango && loadingRangos) || loadingResumen ? (
         <div className={styles.empty}>Cargando datos…</div>
       ) : (
         <div className={styles.cards}>
