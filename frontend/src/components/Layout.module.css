@@ -19,8 +19,8 @@
 .header {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(6, 10, 20, 0.92);
+  z-index: var(--z-nav);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: calc(var(--safe-top) + 11px) 18px 11px;
@@ -41,8 +41,8 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(245, 196, 0, 0.18) 30%,
-    rgba(245, 196, 0, 0.06) 70%,
+    var(--border-yellow) 30%,
+    var(--yellow-dim) 70%,
     transparent 100%
   );
 }
@@ -66,7 +66,7 @@
   object-fit: contain;
   border-radius: 8px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px rgba(245,196,0,0.35));
+  filter: drop-shadow(0 2px 8px var(--yellow-glow));
 }
 
 .brand {
@@ -114,22 +114,31 @@
   white-space: nowrap;
 }
 
-.signOut {
+/* Botones de icono del encabezado (tema, cerrar sesión).
+   Área táctil de 44px aunque el icono sea de 16. */
+.iconBtn {
   background: none;
   border: 1px solid var(--border);
   cursor: pointer;
   color: var(--text-muted);
-  padding: 7px;
   border-radius: var(--radius-sm);
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  transition: color var(--dur-fast), background var(--dur-fast), border-color var(--dur-fast);
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
 }
-.signOut:hover {
-  color: var(--red);
+.iconBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-active);
+}
+.iconBtn:last-child:hover {
+  color: var(--danger);
   background: var(--danger-dim);
-  border-color: rgba(232,25,44,0.3);
+  border-color: var(--danger);
 }
 
 /* ── Main ───────────────────────────────────────────────── */
@@ -150,13 +159,13 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: rgba(9, 14, 26, 0.97);
+  background: var(--glass-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid var(--border);
   display: flex;
   padding-bottom: var(--safe-bottom);
-  z-index: 100;
+  z-index: var(--z-nav);
 }
 
 @media (min-width: 600px) {
@@ -175,7 +184,7 @@
   transform: translateX(-50%);
   width: 120px;
   height: 1px;
-  background: rgba(245,196,0,0.2);
+  background: var(--border-yellow);
 }
 
 .navItem {
@@ -188,9 +197,14 @@
   padding: 10px 4px 9px;
   text-decoration: none;
   color: var(--text-muted);
-  transition: color 0.2s;
+  transition: color var(--dur-fast);
   position: relative;
   min-width: 0;
+  min-height: var(--tap-min);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
 }
 
 .navItem:hover {
@@ -212,7 +226,7 @@
   height: 2px;
   background: var(--yellow);
   border-radius: 0 0 3px 3px;
-  box-shadow: 0 0 8px rgba(245,196,0,0.6);
+  box-shadow: 0 0 8px var(--yellow-glow);
 }
 
 .navLabel {
@@ -231,4 +245,91 @@
 @media (max-width:390px) {
   .navItem { padding: 8px 2px 7px; gap: 2px; }
   .navLabel { font-size: 0.5rem; letter-spacing: 0; }
+}
+
+/* ── Menú "Más" ─────────────────────────────────────────── */
+/* Recoge las secciones que ya no caben en la barra de abajo. */
+
+.masScrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: var(--z-sheet);
+  animation: fadeIn var(--dur-fast) ease both;
+}
+
+.masSheet {
+  position: fixed;
+  bottom: calc(64px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 456px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: var(--space-2);
+  z-index: calc(var(--z-sheet) + 1);
+  animation: slideUp var(--dur-base) var(--ease-out) both;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+
+@media (min-width: 600px) { .masSheet { max-width: 536px; } }
+@media (min-width: 900px) { .masSheet { max-width: 616px; } }
+
+.masHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+}
+
+.masTitle {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+}
+
+.masClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.masClose:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.masItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  min-height: var(--tap-min);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.masItem:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.masItemActive {
+  color: var(--yellow);
+  background: var(--yellow-dim);
 }

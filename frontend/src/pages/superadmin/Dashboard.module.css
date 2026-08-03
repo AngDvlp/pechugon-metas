@@ -223,7 +223,7 @@
 }
 
 .zonaBadgeOff {
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-2);
   color: var(--text-muted);
 }
 

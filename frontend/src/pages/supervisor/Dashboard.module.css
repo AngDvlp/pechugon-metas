@@ -22,7 +22,7 @@
   padding: 22px 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px var(--shadow-2);
 }
 
 /* Ambient top glow */
@@ -106,7 +106,7 @@
 .progressTrack {
   flex: 1;
   height: 5px;
-  background: rgba(255,255,255,0.07);
+  background: var(--surface-3);
   border-radius: 99px;
   overflow: hidden;
   position: relative;
@@ -133,8 +133,8 @@
 .supBottom {
   display: flex;
   align-items: stretch;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-md);
   overflow: hidden;
   margin-top: 14px;
@@ -167,7 +167,7 @@
 
 .supDivider {
   width: 1px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-2);
   flex-shrink: 0;
 }
 
@@ -202,7 +202,7 @@
 .sucCard:hover {
   background: var(--bg-card-2);
   border-color: var(--border-active);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 32px var(--shadow-2);
   transform: translateY(-1px);
 }
 
@@ -283,7 +283,7 @@
 .sucProgressTrack {
   flex: 1;
   height: 4px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-2);
   border-radius: 99px;
   overflow: hidden;
 }
@@ -352,8 +352,8 @@
 .faltaStrip {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-md);
   padding: 10px 14px;
   margin-top: 14px;
@@ -386,7 +386,7 @@
 .faltaStripDivider {
   width: 1px;
   height: 28px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-2);
   flex-shrink: 0;
 }
 
@@ -394,7 +394,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255,255,255,0.025);
+  background: var(--surface-1);
   border-radius: var(--radius-sm);
   padding: 7px 10px;
   margin-top: 10px;
@@ -422,7 +422,7 @@
   align-items: center;
   gap: 5px;
   padding: 7px 12px;
-  background: rgba(255,255,255,0.02);
+  background: var(--surface-1);
   border-top: 1px solid var(--border);
   margin: 0 -1px;
 }
@@ -546,7 +546,7 @@
   padding: 20px 20px 16px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px var(--shadow-2);
 }
 .rangoHeroCard::before {
   content:''; position:absolute; top:-30px; right:-20px;
@@ -573,27 +573,27 @@
 }
 .rangoHeroStats {
   display:flex; align-items:stretch;
-  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);
+  background:var(--surface-1); border:1px solid var(--surface-2);
   border-radius:var(--radius-md); overflow:hidden;
 }
 .rangoHeroStat { flex:1; display:flex; flex-direction:column; gap:4px; padding:11px 10px; text-align:center; }
 .rangoHeroStatLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.7px; }
 .rangoHeroStatVal { font-family:var(--font-mono); font-size:0.88rem; font-weight:500; color:var(--text-primary); }
-.rangoHeroDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+.rangoHeroDivider { width:1px; background:var(--surface-2); flex-shrink:0; }
 
 /* ── Range branch card ────────────────────────────────────── */
 .sucRangoHeader { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; gap:8px; }
 .sucRangoVenta { font-family:var(--font-mono); font-size:1.05rem; font-weight:600; flex-shrink:0; }
-.rangoStats { display:flex; align-items:stretch; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-sm); overflow:hidden; }
+.rangoStats { display:flex; align-items:stretch; background:var(--surface-1); border:1px solid var(--surface-2); border-radius:var(--radius-sm); overflow:hidden; }
 .rangoStat { flex:1; display:flex; flex-direction:column; gap:3px; padding:8px 8px; text-align:center; }
 .rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.5px; }
 .rangoStatVal { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; color:var(--text-primary); }
-.rangoStatDiv { width:1px; background:rgba(255,255,255,0.05); flex-shrink:0; }
+.rangoStatDiv { width:1px; background:var(--surface-2); flex-shrink:0; }
 
 /* ── Meta comparison in range mode ───────────────────────── */
 .rangoHeroTopRow { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px; }
 .rangoHeroPct { font-family:var(--font-mono); font-size:1.05rem; font-weight:600; flex-shrink:0; }
-.rangoBar { height:4px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden; margin:6px 0 14px; }
+.rangoBar { height:4px; background:var(--surface-3); border-radius:99px; overflow:hidden; margin:6px 0 14px; }
 .rangoBarFill { height:100%; border-radius:99px; transition:width 0.7s ease; animation:bar-fill 0.7s ease both; }
 .rangoMetaRow { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .rangoMetaLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
@@ -697,7 +697,7 @@
 .predGlobalProbBar {
   width: 64px;
   height: 3px;
-  background: rgba(255,255,255,0.08);
+  background: var(--surface-3);
   border-radius: 99px;
   overflow: hidden;
 }
@@ -707,8 +707,8 @@
 .predSummaryStrip {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -722,7 +722,7 @@
   text-align: center;
   min-width: 0;
 }
-.predSummaryDiv { width: 1px; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+.predSummaryDiv { width: 1px; background: var(--surface-2); flex-shrink: 0; }
 .predSummaryLabel { font-family: var(--font-body); font-size: 0.55rem; font-weight: 700; color: rgba(240,244,255,0.3); text-transform: uppercase; letter-spacing: 0.4px; }
 .predSummaryVal { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; }
 
@@ -773,7 +773,7 @@
   font-size: 0.78rem;
   color: var(--text-muted);
   padding: 16px;
-  border: 1px dashed rgba(255,255,255,0.08);
+  border: 1px dashed var(--surface-3);
   border-radius: var(--radius-md);
 }
 

@@ -73,11 +73,11 @@
   -webkit-backdrop-filter: blur(24px);
 
   /* Gradient border */
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--surface-3);
   box-shadow:
     0 0 0 1px rgba(245,196,0,0.06),
-    0 24px 80px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.06);
+    0 24px 80px var(--shadow-4),
+    inset 0 1px 0 var(--surface-2);
 }
 
 /* ── Logo area ──────────────────────────────────────────── */
@@ -96,7 +96,7 @@
   border-radius: 24px;
   margin-bottom: 4px;
   filter:
-    drop-shadow(0 4px 16px rgba(0,0,0,0.5))
+    drop-shadow(0 4px 16px var(--shadow-2))
     drop-shadow(0 0 32px rgba(245,196,0,0.25));
 }
 

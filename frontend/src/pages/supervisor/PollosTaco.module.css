@@ -369,7 +369,7 @@
   font-family: var(--font-body);
   font-size: 0.6rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.2);
+  color: var(--surface-4);
   text-transform: uppercase;
   letter-spacing: 1px;
 }

@@ -1,72 +1,260 @@
 /* ============================================================
-   SEGUIMIENTO DE METAS EL PECHUGÓN — Design System v2
-   Premium dark SaaS aesthetic
+   SEGUIMIENTO DE METAS EL PECHUGÓN — Design System v3
+   Adaptable claro/oscuro. Mobile-first.
+
+   Cómo funciona el tema:
+   - :root define el modo OSCURO (el histórico de la app).
+   - @media (prefers-color-scheme: light) aplica el modo claro
+     automáticamente según la configuración del celular.
+   - [data-theme="light"] / [data-theme="dark"] en <html> permiten
+     forzar un modo desde el botón de la barra superior, y siempre
+     ganan sobre la preferencia del sistema.
+
+   Regla: NINGÚN color escrito a mano en los CSS de página.
+   Todo sale de estas variables, para que ambos modos funcionen.
    ============================================================ */
 
 :root {
-  /* Brand */
+  color-scheme: dark;
+
+  /* ── Marca (constante en ambos modos) ──────────────────── */
   --navy: #1B3A8C;
   --navy-light: #2048B8;
-  --red: #E8192C;
-  --red-dark: #C01020;
-  --yellow: #F5C400;
-  --yellow-dim: rgba(245, 196, 0, 0.1);
-  --yellow-glow: rgba(245, 196, 0, 0.35);
+  --brand-yellow: #F5C400;
+  --brand-yellow-light: #FFD740;
 
-  /* Dark UI — ultra deep */
+  /* ── Superficies ───────────────────────────────────────── */
   --bg-base: #060A14;
   --bg-card: #0B1220;
   --bg-card-2: #0F1929;
   --bg-elevated: #132035;
-  --bg-hover: rgba(255,255,255,0.025);
+  --bg-hover: rgba(255,255,255,0.045);
+
+  /* Capas de relleno. Sustituyen a los rgba(255,255,255,x)
+     que antes se escribían a mano y se rompían en modo claro. */
+  --surface-1: rgba(255,255,255,0.03);
+  --surface-2: rgba(255,255,255,0.055);
+  --surface-3: rgba(255,255,255,0.08);
+  --surface-4: rgba(255,255,255,0.13);
 
   /* Glass */
   --glass-bg: rgba(11, 18, 32, 0.88);
   --glass-border: rgba(255,255,255,0.07);
 
-  /* Text */
-  --text-primary: #EEF2FF;
-  --text-secondary: #7B90B8;
-  --text-muted: #5A6E90;
-  --text-inverse: #060A14;
+  /* ── Texto — los tres niveles cumplen 4.5:1 sobre --bg-card ── */
+  --text-primary: #EEF2FF;    /* ~16:1  */
+  --text-secondary: #93A9CE;  /* ~7.8:1 */
+  --text-muted: #7590B8;      /* ~5.0:1 */
+  --text-inverse: #060A14;    /* texto sobre amarillo/blanco */
 
-  /* Borders */
+  /* ── Bordes ────────────────────────────────────────────── */
   --border: rgba(255,255,255,0.055);
   --border-active: rgba(255,255,255,0.13);
   --border-yellow: rgba(245, 196, 0, 0.25);
 
-  /* Status */
+  /* ── Semánticos — verificados sobre --bg-card ──────────── */
+  --yellow: #F5C400;
+  --yellow-dim: rgba(245, 196, 0, 0.1);
+  --yellow-glow: rgba(245, 196, 0, 0.35);
   --success: #00D395;
   --success-dim: rgba(0, 211, 149, 0.1);
   --success-glow: rgba(0, 211, 149, 0.28);
   --warning: #F5C400;
   --warning-dim: rgba(245, 196, 0, 0.1);
-  --danger: #E8192C;
-  --danger-dim: rgba(232, 25, 44, 0.1);
-  --info: #4F8EF7;
-  --info-dim: rgba(79, 142, 247, 0.1);
+  --red: #FF5A6A;
+  --red-dark: #C01020;
+  --danger: #FF5A6A;
+  --danger-dim: rgba(232, 25, 44, 0.14);
+  --info: #6BA1FF;
+  --info-dim: rgba(79, 142, 247, 0.12);
 
-  /* Typography */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  /* Radius — slightly bigger for premium feel */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 32px;
-
-  /* Shadows */
+  /* ── Sombras y velos ───────────────────────────────────── */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
   --shadow-card: 0 4px 32px rgba(0,0,0,0.6);
   --shadow-elevated: 0 16px 56px rgba(0,0,0,0.75);
   --shadow-glow-yellow: 0 0 24px rgba(245, 196, 0, 0.28);
   --shadow-glow-success: 0 0 20px rgba(0, 211, 149, 0.25);
   --shadow-glow-danger: 0 0 20px rgba(232, 25, 44, 0.2);
+  --scrim: rgba(0,0,0,0.65);
 
-  /* Safe areas */
+  /* Tintes de sombra, para usarse DENTRO de box-shadow.
+     En modo claro son mucho más suaves: una sombra negra al 60%
+     sobre fondo blanco se ve como una mancha. */
+  --shadow-1: rgba(0,0,0,0.28);
+  --shadow-2: rgba(0,0,0,0.45);
+  --shadow-3: rgba(0,0,0,0.60);
+  --shadow-4: rgba(0,0,0,0.75);
+
+  /* ── Tipografía ────────────────────────────────────────── */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Escala de tamaños */
+  --text-2xs: 0.65rem;
+  --text-xs:  0.72rem;
+  --text-sm:  0.82rem;
+  --text-md:  0.92rem;
+  --text-base: 1rem;
+  --text-lg:  1.15rem;
+  --text-xl:  1.4rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.1rem;
+
+  /* ── Espaciado — múltiplos de 4 ────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Radios ────────────────────────────────────────────── */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+
+  /* ── Movimiento ────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+
+  /* ── Capas ─────────────────────────────────────────────── */
+  --z-nav: 40;
+  --z-sheet: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+
+  /* ── Áreas seguras ─────────────────────────────────────── */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Alto mínimo de cualquier control táctil */
+  --tap-min: 44px;
+}
+
+/* ============================================================
+   MODO CLARO
+   Mismos nombres de variable, distintos valores: las 24
+   pantallas se adaptan sin tocar su CSS.
+   ============================================================ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --bg-base: #EEF1F8;
+    --bg-card: #FFFFFF;
+    --bg-card-2: #F7F9FD;
+    --bg-elevated: #FFFFFF;
+    --bg-hover: rgba(12,20,36,0.04);
+
+    --surface-1: rgba(12,20,36,0.035);
+    --surface-2: rgba(12,20,36,0.06);
+    --surface-3: rgba(12,20,36,0.09);
+    --surface-4: rgba(12,20,36,0.14);
+
+    --glass-bg: rgba(255,255,255,0.9);
+    --glass-border: rgba(12,20,36,0.09);
+
+    --text-primary: #0C1424;    /* ~17:1 sobre blanco */
+    --text-secondary: #43536F;  /* ~7.8:1 */
+    --text-muted: #5E6E8C;      /* ~5.1:1 */
+    --text-inverse: #060A14;
+
+    --border: rgba(12,20,36,0.1);
+    --border-active: rgba(12,20,36,0.22);
+    --border-yellow: rgba(125, 98, 0, 0.35);
+
+    /* Los semánticos se oscurecen: los tonos neón del modo
+       oscuro no alcanzan 4.5:1 sobre blanco. */
+    --yellow: #7D6200;
+    --yellow-dim: rgba(125, 98, 0, 0.1);
+    --yellow-glow: rgba(125, 98, 0, 0.25);
+    --success: #007A55;
+    --success-dim: rgba(0, 122, 85, 0.1);
+    --success-glow: rgba(0, 122, 85, 0.2);
+    --warning: #7D6200;
+    --warning-dim: rgba(125, 98, 0, 0.1);
+    --red: #C4111F;
+    --red-dark: #9B0D18;
+    --danger: #C4111F;
+    --danger-dim: rgba(196, 17, 31, 0.09);
+    --info: #1D4FD8;
+    --info-dim: rgba(29, 79, 216, 0.09);
+
+    --shadow-sm: 0 1px 3px rgba(12,20,36,0.08);
+    --shadow-card: 0 2px 14px rgba(12,20,36,0.09);
+    --shadow-elevated: 0 12px 40px rgba(12,20,36,0.16);
+    --shadow-glow-yellow: 0 0 0 3px rgba(125,98,0,0.16);
+    --shadow-glow-success: 0 0 0 3px rgba(0,122,85,0.16);
+    --shadow-glow-danger: 0 0 0 3px rgba(196,17,31,0.14);
+    --scrim: rgba(12,20,36,0.55);
+    --shadow-1: rgba(12,20,36,0.06);
+    --shadow-2: rgba(12,20,36,0.10);
+    --shadow-3: rgba(12,20,36,0.14);
+    --shadow-4: rgba(12,20,36,0.18);
+  }
+}
+
+/* Mismo bloque, aplicado cuando el usuario fuerza modo claro
+   desde el botón (gana sobre la preferencia del sistema). */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-base: #EEF1F8;
+  --bg-card: #FFFFFF;
+  --bg-card-2: #F7F9FD;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: rgba(12,20,36,0.04);
+
+  --surface-1: rgba(12,20,36,0.035);
+  --surface-2: rgba(12,20,36,0.06);
+  --surface-3: rgba(12,20,36,0.09);
+  --surface-4: rgba(12,20,36,0.14);
+
+  --glass-bg: rgba(255,255,255,0.9);
+  --glass-border: rgba(12,20,36,0.09);
+
+  --text-primary: #0C1424;
+  --text-secondary: #43536F;
+  --text-muted: #5E6E8C;
+  --text-inverse: #060A14;
+
+  --border: rgba(12,20,36,0.1);
+  --border-active: rgba(12,20,36,0.22);
+  --border-yellow: rgba(125, 98, 0, 0.35);
+
+  --yellow: #7D6200;
+  --yellow-dim: rgba(125, 98, 0, 0.1);
+  --yellow-glow: rgba(125, 98, 0, 0.25);
+  --success: #007A55;
+  --success-dim: rgba(0, 122, 85, 0.1);
+  --success-glow: rgba(0, 122, 85, 0.2);
+  --warning: #7D6200;
+  --warning-dim: rgba(125, 98, 0, 0.1);
+  --red: #C4111F;
+  --red-dark: #9B0D18;
+  --danger: #C4111F;
+  --danger-dim: rgba(196, 17, 31, 0.09);
+  --info: #1D4FD8;
+  --info-dim: rgba(29, 79, 216, 0.09);
+
+  --shadow-sm: 0 1px 3px rgba(12,20,36,0.08);
+  --shadow-card: 0 2px 14px rgba(12,20,36,0.09);
+  --shadow-elevated: 0 12px 40px rgba(12,20,36,0.16);
+  --shadow-glow-yellow: 0 0 0 3px rgba(125,98,0,0.16);
+  --shadow-glow-success: 0 0 0 3px rgba(0,122,85,0.16);
+  --shadow-glow-danger: 0 0 0 3px rgba(196,17,31,0.14);
+  --scrim: rgba(12,20,36,0.55);
+  --shadow-1: rgba(12,20,36,0.06);
+  --shadow-2: rgba(12,20,36,0.10);
+  --shadow-3: rgba(12,20,36,0.14);
+  --shadow-4: rgba(12,20,36,0.18);
 }
 
 /* ── Reset ──────────────────────────────────────────────── */
@@ -90,6 +278,8 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
 }
 
 #root {
@@ -98,14 +288,20 @@ body {
   flex-direction: column;
 }
 
+/* Números alineados en columnas de datos: evita que la fila
+   "salte" cuando cambia una cifra. */
+.mono, [class*="mono"], td, th {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+  background: var(--surface-4);
   border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(245,196,0,0.3); }
+::-webkit-scrollbar-thumb:hover { background: var(--yellow); }
 
 /* ── Focus ──────────────────────────────────────────────── */
 :focus-visible {
@@ -114,12 +310,19 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* ── Utilities ──────────────────────────────────────────── */
+/* ── Utilidades ─────────────────────────────────────────── */
 .mono { font-family: var(--font-mono); }
 .display { font-family: var(--font-display); }
 .currency::before { content: '$'; font-size: 0.7em; vertical-align: super; margin-right: 1px; }
 
-/* ── Global Animations ──────────────────────────────────── */
+/* Visible solo para lectores de pantalla */
+.srOnly {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ── Animaciones ────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -176,18 +379,34 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Zoom prevention (iOS auto-zoom on focus) ───────────── */
-/* !important necesario para que los CSS modules no sobreescriban */
+/* ── Movimiento reducido ────────────────────────────────── */
+/* Quien active "reducir movimiento" en su celular deja de ver
+   animaciones, pero la app sigue completamente utilizable. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Evitar auto-zoom en iOS al enfocar un campo ────────── */
 input, select, textarea {
   font-size: 16px !important;
 }
 
-/* ── Double-tap zoom prevention ─────────────────────────── */
+/* Área táctil mínima en todos los controles */
+button, [role="button"], a.btn {
+  min-height: var(--tap-min);
+}
+
+/* ── Evitar zoom por doble toque ────────────────────────── */
 a, button, input, select, textarea, label, [role="button"] {
   touch-action: manipulation;
 }
 
-/* ── Responsive helpers ─────────────────────────────────── */
+/* ── Ayudas responsivas ─────────────────────────────────── */
 @media (min-width: 600px) {
   :root { --radius-lg: 24px; --radius-md: 18px; }
 }

@@ -9,9 +9,9 @@
 .bone {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.055) 0px,
-    rgba(255,255,255,0.10)  80px,
-    rgba(255,255,255,0.055) 160px
+    var(--surface-2) 0px,
+    var(--surface-4)  80px,
+    var(--surface-2) 160px
   );
   background-size: 500px 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -40,8 +40,8 @@
 }
 
 .kpiCard {
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: 12px;
   padding: 14px 12px;
   display: flex;
@@ -51,8 +51,8 @@
 
 /* ── List rows ────────────────────────────────────────── */
 .listRow {
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: 12px;
   padding: 16px 14px;
   display: flex;

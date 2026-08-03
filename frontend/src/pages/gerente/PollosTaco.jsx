@@ -22,12 +22,12 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: '#0B1220', border: '1px solid #1e2d4a',
-      borderRadius: 10, padding: '10px 14px',
+      background: 'var(--bg-elevated)', border: '1px solid var(--border-active)',
+      borderRadius: 10, padding: '10px 14px', boxShadow: 'var(--shadow-card)',
       fontFamily: 'var(--font-body)', fontSize: '0.78rem'
     }}>
-      <p style={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}>{label}</p>
-      <p style={{ color: '#4F8EF7', margin: 0 }}>
+      <p style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: 4 }}>{label}</p>
+      <p style={{ color: 'var(--info)', margin: 0 }}>
         Existencia: <strong>{payload[0]?.value ?? 0} tacos</strong>
       </p>
     </div>
@@ -227,7 +227,7 @@ export default function GerentePollosTaco() {
                   {chartData.map((entry, i) => (
                     <Cell
                       key={i}
-                      fill={entry.sinTacos ? '#E8192C' : '#4F8EF7'}
+                      fill={entry.sinTacos ? 'var(--danger)' : 'var(--info)'}
                       opacity={entry.existencia === 0 ? 0.4 : 0.9}
                     />
                   ))}
@@ -236,8 +236,8 @@ export default function GerentePollosTaco() {
             </ResponsiveContainer>
           </div>
           <div className={styles.chartLegend}>
-            <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#4F8EF7' }} /> Con existencia</span>
-            <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#E8192C' }} /> Sin tacos</span>
+            <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: 'var(--info)' }} /> Con existencia</span>
+            <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: 'var(--danger)' }} /> Sin tacos</span>
           </div>
         </div>
       )}

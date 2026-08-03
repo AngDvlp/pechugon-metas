@@ -46,7 +46,7 @@
 
 .filtroPill:hover {
   color: var(--text-primary);
-  border-color: rgba(255,255,255,0.2);
+  border-color: var(--surface-4);
 }
 
 .filtroPillActive {
@@ -252,7 +252,7 @@
   font-size: 0.68rem;
   color: var(--text-muted);
   border-bottom: 2px solid var(--border);
-  border-left: 1px solid rgba(255,255,255,0.04);
+  border-left: 1px solid var(--surface-2);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -282,12 +282,12 @@
 
 /* Body rows */
 .tr {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--surface-2);
   transition: background 0.1s;
 }
 
 .tr:hover .td {
-  background: rgba(255,255,255,0.025);
+  background: var(--surface-1);
 }
 
 .tr:hover .colNombre {
@@ -302,7 +302,7 @@
   padding: 9px 10px;
   vertical-align: middle;
   background: var(--bg-card);
-  border-left: 1px solid rgba(255,255,255,0.04);
+  border-left: 1px solid var(--surface-2);
 }
 
 .td:first-child {
@@ -492,7 +492,7 @@
   white-space: nowrap;
 }
 .compThNum { text-align: right; }
-.compTr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.compTr { border-bottom: 1px solid var(--surface-2); }
 .compTd {
   font-family: var(--font-body);
   font-size: 0.76rem;

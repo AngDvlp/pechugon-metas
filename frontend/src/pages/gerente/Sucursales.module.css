@@ -163,7 +163,7 @@
 }
 
 .badgeOk   { background: var(--success-dim); color: var(--success); }
-.badgeGray { background: rgba(255,255,255,0.04); color: var(--text-muted); }
+.badgeGray { background: var(--surface-2); color: var(--text-muted); }
 
 /* Toggle buttons */
 .toggleBtn {

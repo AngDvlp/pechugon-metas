@@ -25,7 +25,7 @@
   border: 1px solid rgba(27,58,140,0.3);
   border-radius: var(--radius-lg); padding: 22px 20px;
   position: relative; overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px var(--shadow-2);
 }
 
 .metaCard::before {
@@ -66,7 +66,7 @@
 }
 
 .track {
-  height: 5px; background: rgba(255,255,255,0.07);
+  height: 5px; background: var(--surface-3);
   border-radius: 99px; overflow: hidden; margin-bottom: 16px;
 }
 
@@ -92,7 +92,7 @@
 
 .proyeccion {
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.055);
+  background: var(--surface-1); border: 1px solid var(--surface-2);
   border-radius: var(--radius-md); padding: 11px 15px;
 }
 

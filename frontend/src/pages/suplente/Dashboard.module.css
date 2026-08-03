@@ -114,7 +114,7 @@
   padding: 22px 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px var(--shadow-2);
 }
 .heroCard::before {
   content: '';
@@ -168,7 +168,7 @@
   letter-spacing: 0.8px;
   min-width: 48px;
 }
-.progressTrack { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; }
+.progressTrack { flex:1; height:5px; background:var(--surface-3); border-radius:99px; overflow:hidden; }
 .progressFill {
   height: 100%;
   background: linear-gradient(90deg, var(--yellow) 0%, #FFD740 100%);
@@ -182,8 +182,8 @@
 .heroBottom {
   display: flex;
   align-items: stretch;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-md);
   overflow: hidden;
   margin-top: 14px;
@@ -198,7 +198,7 @@
   letter-spacing: 0.8px;
 }
 .heroStatVal { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 500; color: var(--text-primary); }
-.heroDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+.heroDivider { width:1px; background:var(--surface-2); flex-shrink:0; }
 
 /* ── Range hero card ──────────────────────────────────────── */
 .rangoHeroCard {
@@ -209,7 +209,7 @@
   padding: 20px 20px 16px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px var(--shadow-2);
 }
 .rangoHeroCard::before {
   content: '';
@@ -239,8 +239,8 @@
 .rangoHeroStats {
   display: flex;
   align-items: stretch;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -254,7 +254,7 @@
   letter-spacing: 0.7px;
 }
 .rangoHeroStatVal { font-family: var(--font-mono); font-size: 0.88rem; font-weight: 500; color: var(--text-primary); }
-.rangoHeroDivider { width:1px; background:rgba(255,255,255,0.06); flex-shrink:0; }
+.rangoHeroDivider { width:1px; background:var(--surface-2); flex-shrink:0; }
 
 /* ── Section title ────────────────────────────────────────── */
 .secTitle {
@@ -279,7 +279,7 @@
   position: relative;
   overflow: hidden;
 }
-.sucCard:hover { background: var(--bg-card-2); border-color: var(--border-active); box-shadow: 0 8px 32px rgba(0,0,0,0.4); transform: translateY(-1px); }
+.sucCard:hover { background: var(--bg-card-2); border-color: var(--border-active); box-shadow: 0 8px 32px var(--shadow-2); transform: translateY(-1px); }
 .sucCard:active { transform: scale(0.99) translateY(0); }
 
 .sucHeader { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
@@ -306,7 +306,7 @@
 
 .sucBarRow { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
 .sucBarLabel { font-family:var(--font-body); font-size:0.56rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; min-width:24px; letter-spacing:0.4px; }
-.sucProgressTrack { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; }
+.sucProgressTrack { flex:1; height:4px; background:var(--surface-2); border-radius:99px; overflow:hidden; }
 .sucProgressFill { height:100%; border-radius:99px; transition:width 0.7s ease; animation:bar-fill 0.7s ease both; }
 .sucBarPct { font-family:var(--font-mono); font-size:0.66rem; min-width:30px; text-align:right; font-weight:500; }
 
@@ -318,7 +318,7 @@
 
 .sucArrow { position:absolute; right:16px; bottom:14px; }
 
-.tacoIndicator { display:flex; align-items:center; gap:5px; padding:7px 12px; background:rgba(255,255,255,0.02); border-top:1px solid var(--border); margin:0 -1px; }
+.tacoIndicator { display:flex; align-items:center; gap:5px; padding:7px 12px; background:var(--surface-1); border-top:1px solid var(--border); margin:0 -1px; }
 .tacoLabel { font-family:var(--font-body); font-size:0.72rem; font-weight:600; }
 
 /* ── Range mode branch cards ──────────────────────────────── */
@@ -339,20 +339,20 @@
 .rangoStats {
   display: flex;
   align-items: stretch;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-2);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .rangoStat { flex:1; display:flex; flex-direction:column; gap:3px; padding:8px 8px; text-align:center; }
 .rangoStatLabel { font-family:var(--font-body); font-size:0.58rem; font-weight:700; color:rgba(240,244,255,0.35); text-transform:uppercase; letter-spacing:0.5px; }
 .rangoStatVal { font-family:var(--font-mono); font-size:0.82rem; font-weight:500; color:var(--text-primary); }
-.rangoStatDiv { width:1px; background:rgba(255,255,255,0.05); flex-shrink:0; }
+.rangoStatDiv { width:1px; background:var(--surface-2); flex-shrink:0; }
 
 /* ── Meta comparison in range mode ───────────────────────── */
 .rangoHeroTopRow { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px; }
 .rangoHeroPct { font-family:var(--font-mono); font-size:1.05rem; font-weight:600; flex-shrink:0; }
-.rangoBar { height:4px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden; margin:6px 0 14px; }
+.rangoBar { height:4px; background:var(--surface-3); border-radius:99px; overflow:hidden; margin:6px 0 14px; }
 .rangoBarFill { height:100%; border-radius:99px; transition:width 0.7s ease; animation:bar-fill 0.7s ease both; }
 .rangoMetaRow { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .rangoMetaLabel { font-family:var(--font-body); font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
