@@ -4,26 +4,32 @@ import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Splash from './components/Splash'
 
-const Login                = lazy(() => import('./pages/Login'))
-const EncargadoDashboard   = lazy(() => import('./pages/encargado/Dashboard'))
-const SupervisorDashboard  = lazy(() => import('./pages/supervisor/Dashboard'))
-const SupervisorSucursal   = lazy(() => import('./pages/supervisor/Sucursal'))
-const SupervisorDescarga   = lazy(() => import('./pages/supervisor/Descarga'))
-const SupervisorRegistro   = lazy(() => import('./pages/supervisor/RegistroAtrasado'))
-const SupervisorPedidosTaco = lazy(() => import('./pages/supervisor/PedidosTaco'))
-const SupervisorPollosTaco = lazy(() => import('./pages/supervisor/PollosTaco'))
-const GerenteDashboard     = lazy(() => import('./pages/gerente/Dashboard'))
-const GerenteSucursales    = lazy(() => import('./pages/gerente/Sucursales'))
-const GerenteUsuarios      = lazy(() => import('./pages/gerente/Usuarios'))
-const GerenteMetas         = lazy(() => import('./pages/gerente/Metas'))
-const GerenteSucursalDetalle = lazy(() => import('./pages/gerente/SucursalDetalle'))
-const GerenteDescarga      = lazy(() => import('./pages/gerente/Descarga'))
-const GerentePollosTaco    = lazy(() => import('./pages/gerente/PollosTaco'))
-const GerenteRutas         = lazy(() => import('./pages/gerente/Rutas'))
-const GerenteReporte       = lazy(() => import('./pages/gerente/Reporte'))
-const SuplenteDashboard    = lazy(() => import('./pages/suplente/Dashboard'))
-const CocinaDashboard      = lazy(() => import('./pages/cocina/Dashboard'))
-const CocinaPedidos        = lazy(() => import('./pages/cocina/Pedidos'))
+const Login                    = lazy(() => import('./pages/Login'))
+const EncargadoDashboard       = lazy(() => import('./pages/encargado/Dashboard'))
+const SupervisorDashboard      = lazy(() => import('./pages/supervisor/Dashboard'))
+const SupervisorSucursal       = lazy(() => import('./pages/supervisor/Sucursal'))
+const SupervisorDescarga       = lazy(() => import('./pages/supervisor/Descarga'))
+const SupervisorRegistro       = lazy(() => import('./pages/supervisor/RegistroAtrasado'))
+const SupervisorPedidosTaco    = lazy(() => import('./pages/supervisor/PedidosTaco'))
+const SupervisorPollosTaco     = lazy(() => import('./pages/supervisor/PollosTaco'))
+const GerenteDashboard         = lazy(() => import('./pages/gerente/Dashboard'))
+const GerenteSucursales        = lazy(() => import('./pages/gerente/Sucursales'))
+const GerenteUsuarios          = lazy(() => import('./pages/gerente/Usuarios'))
+const GerenteMetas             = lazy(() => import('./pages/gerente/Metas'))
+const GerenteSucursalDetalle   = lazy(() => import('./pages/gerente/SucursalDetalle'))
+const GerenteDescarga          = lazy(() => import('./pages/gerente/Descarga'))
+const GerentePollosTaco        = lazy(() => import('./pages/gerente/PollosTaco'))
+const GerenteRutas             = lazy(() => import('./pages/gerente/Rutas'))
+const GerenteReporte           = lazy(() => import('./pages/gerente/Reporte'))
+const SuplenteDashboard        = lazy(() => import('./pages/suplente/Dashboard'))
+const CocinaDashboard          = lazy(() => import('./pages/cocina/Dashboard'))
+const CocinaPedidos            = lazy(() => import('./pages/cocina/Pedidos'))
+
+// SuperAdmin pages
+const SuperAdminDashboard      = lazy(() => import('./pages/superadmin/Dashboard'))
+const SuperAdminZonas          = lazy(() => import('./pages/superadmin/Zonas'))
+const SuperAdminZonaDetalle    = lazy(() => import('./pages/superadmin/ZonaDetalle'))
+const SuperAdminUsuarios       = lazy(() => import('./pages/superadmin/Usuarios'))
 
 function RequireAuth({ children, rolesPermitidos }) {
   const { session, rol, loading } = useAuth()
@@ -36,11 +42,12 @@ function RequireAuth({ children, rolesPermitidos }) {
 function RootRedirect() {
   const { rol, loading } = useAuth()
   if (loading) return <Splash />
-  if (rol === 'encargado') return <Navigate to="/encargado" replace />
-  if (rol === 'supervisor') return <Navigate to="/supervisor" replace />
-  if (rol === 'suplente') return <Navigate to="/suplente" replace />
-  if (rol === 'gerente') return <Navigate to="/gerente" replace />
-  if (rol === 'cocina') return <Navigate to="/cocina" replace />
+  if (rol === 'encargado')   return <Navigate to="/encargado"   replace />
+  if (rol === 'supervisor')  return <Navigate to="/supervisor"  replace />
+  if (rol === 'suplente')    return <Navigate to="/suplente"    replace />
+  if (rol === 'gerente')     return <Navigate to="/gerente"     replace />
+  if (rol === 'cocina')      return <Navigate to="/cocina"      replace />
+  if (rol === 'superadmin')  return <Navigate to="/superadmin"  replace />
   return <Navigate to="/login" replace />
 }
 
@@ -115,6 +122,18 @@ export default function App() {
           <Route path="pollos-taco" element={<GerentePollosTaco />} />
           <Route path="rutas" element={<GerenteRutas />} />
           <Route path="reporte" element={<GerenteReporte />} />
+        </Route>
+
+        {/* SUPERADMIN */}
+        <Route path="/superadmin" element={
+          <RequireAuth rolesPermitidos={['superadmin']}>
+            <Layout rol="superadmin" />
+          </RequireAuth>
+        }>
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="zonas" element={<SuperAdminZonas />} />
+          <Route path="zona/:id" element={<SuperAdminZonaDetalle />} />
+          <Route path="usuarios" element={<SuperAdminUsuarios />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

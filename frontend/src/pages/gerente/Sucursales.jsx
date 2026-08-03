@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { Plus, ToggleLeft, ToggleRight, CheckCircle, AlertCircle } from 'lucide-react'
 import styles from './Sucursales.module.css'
 
 export default function GerenteSucursales() {
+  const { usuario } = useAuth()
   const [sucursales, setSucursales] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -29,7 +31,10 @@ export default function GerenteSucursales() {
     e.preventDefault()
     if (!nombre.trim()) return
     setSaving(true)
-    const { error } = await supabase.from('sucursales').insert({ nombre: nombre.trim() })
+    const { error } = await supabase.from('sucursales').insert({
+      nombre: nombre.trim(),
+      zona_id: usuario?.zonas?.id ?? null,
+    })
     if (error) {
       setMsg({ tipo: 'error', texto: 'Error: ' + error.message })
     } else {

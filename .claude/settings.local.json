@@ -34,7 +34,12 @@
       "Bash(Get-ChildItem -Recurse -File)",
       "Bash(Sort-Object)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Directory)",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\" -Recurse -ErrorAction SilentlyContinue)"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Force)",
+      "Bash(Format-List)",
+      "Bash(xargs grep -l \"pace\\\\|forecast\\\\|trend\")",
+      "Bash(npx vite *)",
+      "Bash(Select-Object Name, FullName)"
     ]
   }
 }

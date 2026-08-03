@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
   async function fetchUsuario(uid) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('*, roles(nombre), sucursales(id, nombre), rutas(id, nombre)')
+      .select('*, roles(nombre), sucursales(id, nombre), rutas(id, nombre), zonas(id, nombre)')
       .eq('id', uid)
       .single()
     if (!error) setUsuario(data)

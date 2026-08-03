@@ -104,11 +104,20 @@ export default function GerenteMetas() {
   async function load() {
     setLoading(true)
     try {
-      const [{ data: sucs }, { data: metasData }] = await Promise.all([
-        supabase.from('sucursales').select('id, nombre').eq('activa', true).order('nombre'),
-        supabase.from('metas').select('*, sucursales(nombre)').order('fecha_inicio', { ascending: false }),
-      ])
+      // Primero sucursales — RLS ya las filtra por zona
+      const { data: sucs } = await supabase
+        .from('sucursales').select('id, nombre').eq('activa', true).order('nombre')
       setSucursales(sucs ?? [])
+
+      // Metas solo para las sucursales visibles de esta zona
+      const sucIds = (sucs ?? []).map(s => s.id)
+      if (sucIds.length === 0) { setMetas([]); return }
+
+      const { data: metasData } = await supabase
+        .from('metas')
+        .select('*, sucursales(nombre)')
+        .in('sucursal_id', sucIds)
+        .order('fecha_inicio', { ascending: false })
       setMetas(metasData ?? [])
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
@@ -124,7 +133,13 @@ export default function GerenteMetas() {
   // ── Helpers: gestión de periodos draft ──────────────────────────
   function addNuevoPeriodo() {
     const defaults = periodosNuevos.length === 0 ? currentMonthPeriod() : nextMonthPeriod()
-    setPeriodosNuevos(prev => [...prev, { id: Date.now(), desde: defaults.desde, hasta: defaults.hasta }])
+    setPeriodosNuevos(prev => [...prev, { id: Date.now(), desde: defaults.desde, hasta: defaults.hasta, confirmado: false }])
+  }
+  function confirmarPeriodo(id) {
+    setPeriodosNuevos(prev => prev.map(p => p.id === id ? { ...p, confirmado: true } : p))
+  }
+  function editarPeriodo(id) {
+    setPeriodosNuevos(prev => prev.map(p => p.id === id ? { ...p, confirmado: false } : p))
   }
   function removePeriodo(id) {
     if (applySelectingId === id) { setApplySelectingId(null); setSelectedMetaIds(new Set()) }
@@ -455,16 +470,49 @@ export default function GerenteMetas() {
               return (
                 <div key={p.id} className={styles.periodoNuevoItem}>
 
-                  {/* Top row: número + delete */}
+                  {/* Top row: número + badge confirmado + delete */}
                   <div className={styles.periodoNuevoTop}>
-                    <span className={styles.periodoNuevoIdx}>Periodo #{idx + 1}</span>
+                    <span className={styles.periodoNuevoIdx}>
+                      Periodo #{idx + 1}
+                      {p.confirmado && (
+                        <span className={styles.confirmadoBadge}>
+                          <CheckCircle size={10} strokeWidth={2.5} /> Agregado
+                        </span>
+                      )}
+                    </span>
                     <button className={styles.delPeriodoBtn} onClick={() => removePeriodo(p.id)}>
                       <X size={13} strokeWidth={2.5} />
                     </button>
                   </div>
 
-                  {/* Date inputs */}
-                  {!isSelecting && (
+                  {/* Estado confirmado — vista compacta */}
+                  {p.confirmado && !isSelecting && (
+                    <div className={styles.periodoConfirmado}>
+                      <CheckCircle size={14} strokeWidth={2} />
+                      <span className={styles.periodoConfirmadoText} style={{ textTransform: 'capitalize' }}>
+                        {format(new Date(p.desde + 'T12:00:00'), 'd MMM', { locale: es })}
+                        {' — '}
+                        {format(new Date(p.hasta + 'T12:00:00'), 'd MMM yyyy', { locale: es })}
+                        <span className={styles.periodoConfirmadoSem}> · {semanasEntreFechas(p.desde, p.hasta)} sem</span>
+                      </span>
+                      <div className={styles.periodoConfirmadoBtns}>
+                        <button className={styles.editarPeriodoBtn} onClick={() => editarPeriodo(p.id)}>
+                          <Pencil size={12} strokeWidth={2} /> Editar
+                        </button>
+                        {metasVigentes.length > 0 && (
+                          <button
+                            className={styles.periodoApplySmBtn}
+                            disabled={!!applyingKey}
+                            onClick={() => openApplySelect(p.id, metasVigentes)}>
+                            <Zap size={12} strokeWidth={2} /> Aplicar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estado edición — formulario de fechas */}
+                  {!p.confirmado && !isSelecting && (
                     <>
                       <div className={styles.twoCol}>
                         <div className={styles.field}>
@@ -509,19 +557,25 @@ export default function GerenteMetas() {
                         </p>
                       )}
 
+                      {/* BOTÓN PRINCIPAL: Agregar periodo */}
                       <button
-                        className={styles.periodoApplyBtn}
-                        disabled={!p.desde || !p.hasta || !!applyingKey || metasVigentes.length === 0}
-                        onClick={() => openApplySelect(p.id, metasVigentes)}>
-                        <Zap size={13} strokeWidth={2.5} />
-                        {metasVigentes.length === 0
-                          ? 'Sin metas vigentes que copiar'
-                          : `Copiar metas vigentes al periodo (${metasVigentes.length})`}
+                        className={styles.periodoConfirmBtn}
+                        disabled={!p.desde || !p.hasta}
+                        onClick={() => confirmarPeriodo(p.id)}>
+                        <Plus size={13} strokeWidth={2.5} />
+                        Agregar periodo
                       </button>
 
-                      <p className={styles.periodoNota}>
-                        También puedes seleccionar este periodo al crear cada meta individualmente.
-                      </p>
+                      {/* BOTÓN SECUNDARIO: copiar las metas vigentes al periodo nuevo */}
+                      {metasVigentes.length > 0 && (
+                        <button
+                          className={styles.periodoApplyBtn}
+                          disabled={!p.desde || !p.hasta || !!applyingKey}
+                          onClick={() => openApplySelect(p.id, metasVigentes)}>
+                          <Zap size={13} strokeWidth={2.5} />
+                          Copiar metas vigentes ({metasVigentes.length})
+                        </button>
+                      )}
                     </>
                   )}
 
