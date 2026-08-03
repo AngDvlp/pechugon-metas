@@ -125,8 +125,8 @@ export default function GerenteUsuarios() {
     setResetSending(false)
   }
 
-  const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', suplente: 'var(--yellow)', encargado: 'var(--success)' }
-  const ROL_DIM   = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', suplente: 'var(--warning-dim)', encargado: 'var(--success-dim)' }
+  const ROL_COLOR = { gerente: 'var(--info)', supervisor: 'var(--yellow)', suplente: 'var(--yellow)', encargado: 'var(--success)', cocina: 'var(--red)' }
+  const ROL_DIM   = { gerente: 'var(--info-dim)', supervisor: 'var(--warning-dim)', suplente: 'var(--warning-dim)', encargado: 'var(--success-dim)', cocina: 'rgba(232,25,44,0.12)' }
 
   return (
     <div className={styles.page}>

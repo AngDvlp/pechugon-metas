@@ -359,6 +359,75 @@
 .rangoMetaVal { font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); }
 .rangoMetaDif { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; margin-left:auto; flex-shrink:0; }
 
+/* ── Status chips ───────────────────────────────────────── */
+.statusChips { display: flex; gap: 6px; flex-wrap: wrap; }
+.statusChip {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--font-body); font-size: 0.7rem; font-weight: 700;
+  padding: 5px 10px; border-radius: 20px; border: 1px solid transparent;
+}
+.statusChipDanger  { background: rgba(232,25,44,0.1);  border-color: rgba(232,25,44,0.25);  color: var(--red); }
+.statusChipWarn    { background: rgba(245,196,0,0.1);  border-color: rgba(245,196,0,0.25);  color: var(--yellow); }
+.statusChipInfo    { background: rgba(79,142,247,0.1); border-color: rgba(79,142,247,0.25); color: var(--info); }
+
+/* ── Search ─────────────────────────────────────────────── */
+.searchWrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 0 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.searchWrap:focus-within {
+  border-color: rgba(245,196,0,0.35);
+  box-shadow: 0 0 0 3px rgba(245,196,0,0.06);
+}
+.searchInput {
+  flex: 1; background: none; border: none; color: var(--text-primary);
+  font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
+  padding: 12px 0; min-width: 0;
+}
+.searchInput:focus { outline: none; }
+.searchInput::placeholder { color: var(--text-muted); }
+.searchClearBtn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 4px; transition: color 0.2s; flex-shrink: 0;
+  display: flex; align-items: center;
+}
+.searchClearBtn:hover { color: var(--text-primary); }
+
+/* ── Sort row ───────────────────────────────────────────── */
+.sortRow {
+  display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+  padding-bottom: 2px; scrollbar-width: none;
+}
+.sortRow::-webkit-scrollbar { display: none; }
+.sortBtn {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; color: var(--text-muted); cursor: pointer;
+  font-family: var(--font-body); font-size: 0.7rem; font-weight: 700;
+  padding: 5px 12px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.sortBtn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.sortBtnActive { background: rgba(245,196,0,0.1); border-color: rgba(245,196,0,0.4); color: var(--yellow); }
+
+/* ── Per-card extras ────────────────────────────────────── */
+.rankBadge {
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  flex-shrink: 0;
+}
+.sinRegBadge {
+  font-family: var(--font-body); font-size: 0.56rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px;
+  border-radius: 4px; background: rgba(232,25,44,0.12);
+  border: 1px solid rgba(232,25,44,0.2); color: var(--red); flex-shrink: 0;
+}
+.paceStrip {
+  font-family: var(--font-body); font-size: 0.72rem; font-weight: 600;
+  padding: 7px 12px; border-top: 1px solid var(--border);
+  margin: 8px -18px -16px; text-align: center;
+  background: rgba(232,25,44,0.05);
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }

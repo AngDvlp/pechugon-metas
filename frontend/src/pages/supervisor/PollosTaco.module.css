@@ -33,7 +33,7 @@
 /* ── KPIs ── */
 .kpiRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
 }
 .kpiCard {
@@ -124,6 +124,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.sucCardRightInner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.coberturaBadge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
 }
 .stockBig { display: flex; align-items: baseline; gap: 2px; }
 .stockNum {
@@ -438,4 +453,19 @@
   font-size: 0.78rem;
   color: var(--text-muted);
   padding: 12px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .kpiRow { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .kpiVal { font-size: 1.4rem; }
+  .kpiLabel { font-size: 0.58rem; }
+  .loteItem { grid-template-columns: 1fr 76px 64px 44px; gap: 5px; padding: 8px 10px; }
+  .addFormRow { grid-template-columns: 1fr; }
+  .stockNum { font-size: 1.3rem; }
+}
+@media (min-width: 600px) {
+  .sucCardHeader { padding: 18px 22px; }
+  .sucCardBody   { padding: 16px 22px 20px; }
+  .kpiVal        { font-size: 2rem; }
 }

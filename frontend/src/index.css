@@ -170,3 +170,13 @@ body {
   50%  { transform: translateX(250%); }
   100% { transform: translateX(250%); }
 }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive helpers ─────────────────────────────────── */
+@media (min-width: 600px) {
+  :root { --radius-lg: 24px; --radius-md: 18px; }
+}

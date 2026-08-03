@@ -8,6 +8,13 @@
   position: relative;
 }
 
+@media (min-width: 600px) {
+  .shell { max-width: 560px; }
+}
+@media (min-width: 900px) {
+  .shell { max-width: 640px; }
+}
+
 /* ── Header ─────────────────────────────────────────────── */
 .header {
   position: sticky;
@@ -143,6 +150,13 @@
   display: flex;
   padding-bottom: var(--safe-bottom);
   z-index: 100;
+}
+
+@media (min-width: 600px) {
+  .bottomNav { max-width: 560px; }
+}
+@media (min-width: 900px) {
+  .bottomNav { max-width: 640px; }
 }
 
 /* Subtle top glow on nav */

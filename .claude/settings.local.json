@@ -29,7 +29,12 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\OneDrive\\\\Documentos\\\\pechugon-metas\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(grep -E \"\\\\.\\(jsx|ts|tsx\\)$\")",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(Select-String \"recharts|lucide|date-fns\")",
+      "Bash(Get-ChildItem -Recurse -File)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\" -Recurse -Directory)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\thewe\\\\Downloads\\\\pechugon-metas\\\\frontend\" -Recurse -ErrorAction SilentlyContinue)"
     ]
   }
 }

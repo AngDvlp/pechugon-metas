@@ -7,15 +7,34 @@ import {
   Search, X, ChevronRight, AlertTriangle, CheckCircle, Clock
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import { getCached, setCached } from '../../lib/pageCache'
+import PageSkeleton from '../../components/PageSkeleton'
 import PrediccionesPanel from '../../components/PrediccionesPanel'
 
 const fmt = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v ?? 0)
 const fmtNum = v => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(v ?? 0)
 
+function calcPace(res) {
+  if (!res || !res.meta_mensual) return null
+  const meta = res.meta_mensual
+  const acumulado = res.venta_acumulada ?? 0
+  const hoyD = new Date()
+  const diaActual = hoyD.getDate()
+  const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth() + 1, 0).getDate()
+  const diasRestantes = diasEnMes - diaActual
+  const paceEsperadoPct = (diaActual / diasEnMes) * 100
+  const avancePct = meta > 0 ? (acumulado / meta) * 100 : 0
+  const onTrack = avancePct >= paceEsperadoPct * 0.92
+  const falta = Math.max(0, meta - acumulado)
+  const necesitaPorDia = diasRestantes > 0 ? falta / diasRestantes : 0
+  return { onTrack, necesitaPorDia, diasRestantes }
+}
+
 export default function GerenteDashboard() {
   const navigate = useNavigate()
   const [sucursales,    setSucursales]    = useState([])
   const [resumenes,     setResumenes]     = useState({})
+  const [ventasHoy,     setVentasHoy]     = useState({})
   const [rutas,         setRutas]         = useState([])
   const [rutaSucMap,    setRutaSucMap]    = useState({})
   const [rangos,        setRangos]        = useState({})
@@ -27,39 +46,60 @@ export default function GerenteDashboard() {
   const [filtroTiempo,  setFiltroTiempo]  = useState('periodo')
   const [customDesde,   setCustomDesde]   = useState('')
   const [customHasta,   setCustomHasta]   = useState('')
+  const [ordenarPor,    setOrdenarPor]    = useState('default')
 
-  useEffect(() => { load() }, [])
+  const hoy = format(new Date(), 'yyyy-MM-dd')
+
+  useEffect(() => {
+    const cached = getCached('ger-dash')
+    if (cached) {
+      applyData(cached)
+      setLoading(false)
+      load(true)
+    } else {
+      load()
+    }
+  }, [])
+
+  function applyData(d) {
+    setSucursales(d.sucursales)
+    setRutas(d.rutas)
+    setRutaSucMap(d.rutaSucMap)
+    setVentasHoy(d.ventasHoy)
+    setResumenes(d.resumenes)
+  }
 
   useEffect(() => {
     if (filtroTiempo === 'periodo' || !sucursales.length) return
-    const hoy = new Date()
+    const hoyD = new Date()
     let desde, hasta
-    if (filtroTiempo === 'hoy')   { desde = hasta = format(hoy, 'yyyy-MM-dd') }
-    else if (filtroTiempo === 'semana') { desde = format(startOfWeek(hoy, { weekStartsOn: 1 }), 'yyyy-MM-dd'); hasta = format(hoy, 'yyyy-MM-dd') }
-    else if (filtroTiempo === 'mes')    { desde = format(startOfMonth(hoy), 'yyyy-MM-dd'); hasta = format(hoy, 'yyyy-MM-dd') }
+    if (filtroTiempo === 'hoy')   { desde = hasta = format(hoyD, 'yyyy-MM-dd') }
+    else if (filtroTiempo === 'semana') { desde = format(startOfWeek(hoyD, { weekStartsOn: 1 }), 'yyyy-MM-dd'); hasta = format(hoyD, 'yyyy-MM-dd') }
+    else if (filtroTiempo === 'mes')    { desde = format(startOfMonth(hoyD), 'yyyy-MM-dd'); hasta = format(hoyD, 'yyyy-MM-dd') }
     else if (filtroTiempo === 'custom' && customDesde && customHasta) { desde = customDesde; hasta = customHasta }
     else return
     loadRangos(desde, hasta)
   }, [filtroTiempo, customDesde, customHasta, sucursales.length])
 
-  async function load() {
-    setLoading(true)
+  async function load(bg = false) {
+    if (!bg) setLoading(true)
     try {
-      const [{ data: sucs }, { data: rutasData }, { data: rs }] = await Promise.all([
+      const [{ data: sucs }, { data: rutasData }, { data: rs }, { data: hoyData }] = await Promise.all([
         supabase.from('sucursales').select('*').eq('activa', true).order('nombre'),
         supabase.from('rutas').select('id, nombre').eq('activa', true).order('nombre'),
         supabase.from('ruta_sucursales').select('ruta_id, sucursal_id'),
+        supabase.from('ventas_diarias').select('sucursal_id, venta_total').eq('fecha', hoy),
       ])
-      setSucursales(sucs ?? [])
-      setRutas(rutasData ?? [])
       const map = {}
       rs?.forEach(r => {
         if (!map[r.ruta_id]) map[r.ruta_id] = []
         map[r.ruta_id].push(r.sucursal_id)
       })
-      setRutaSucMap(map)
+      const hoyMap = {}
+      hoyData?.forEach(v => { hoyMap[v.sucursal_id] = v })
+      const rmap = {}
       if (sucs?.length) {
-        const sids   = sucs.map(s => s.id)
+        const sids    = sucs.map(s => s.id)
         const desde90 = (() => {
           const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10)
         })()
@@ -67,9 +107,7 @@ export default function GerenteDashboard() {
           Promise.all(sucs.map(s => supabase.rpc('resumen_sucursal', { p_sucursal_id: s.id }).maybeSingle())),
           supabase.from('ventas_diarias').select('fecha, venta_total, pollos_vendidos').in('sucursal_id', sids).gte('fecha', desde90).order('fecha', { ascending: true }),
         ])
-        const rmap = {}
         sucs.forEach((s, i) => { rmap[s.id] = results[i].data ?? null })
-        setResumenes(rmap)
 
         // Agregar histórico por fecha
         const aggHist = {}
@@ -80,6 +118,9 @@ export default function GerenteDashboard() {
         })
         setHistorialPred(Object.values(aggHist).sort((a, b) => a.fecha.localeCompare(b.fecha)))
       }
+      const d = { sucursales: sucs ?? [], rutas: rutasData ?? [], rutaSucMap: map, ventasHoy: hoyMap, resumenes: rmap }
+      applyData(d)
+      setCached('ger-dash', d)
     } catch (e) {
       console.error('Error loading gerente dashboard:', e)
     } finally {
@@ -113,11 +154,23 @@ export default function GerenteDashboard() {
   const esRango = filtroTiempo !== 'periodo'
   const fmtDec  = v => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:2, maximumFractionDigits:2 }).format(v ?? 0)
   const RANGO_LABELS = { hoy:'Hoy', semana:'Esta semana', mes:'Este mes', custom:'Personalizado' }
+  const fmtDif = v => (v >= 0 ? '+' : '−') + fmt(Math.abs(v))
 
-  const sucursalesFiltradas = sucursales.filter(s => {
+  const sucursalesBase = sucursales.filter(s => {
     const matchBusqueda = s.nombre.toLowerCase().includes(busqueda.toLowerCase())
     const matchSup = filtroRuta === 'todas' || (rutaSucMap[filtroRuta] ?? []).includes(s.id)
     return matchBusqueda && matchSup
+  })
+
+  const sucursalesFiltradas = [...sucursalesBase].sort((a, b) => {
+    if (ordenarPor === 'ranking') return (resumenes[b.id]?.avance_porcentaje ?? 0) - (resumenes[a.id]?.avance_porcentaje ?? 0)
+    if (ordenarPor === 'riesgo')  return (resumenes[a.id]?.avance_porcentaje ?? 100) - (resumenes[b.id]?.avance_porcentaje ?? 100)
+    if (ordenarPor === 'sinreg')  {
+      const aReg = ventasHoy[a.id] ? 1 : 0
+      const bReg = ventasHoy[b.id] ? 1 : 0
+      return aReg - bReg
+    }
+    return 0
   })
 
   // Resumen agregado para motor de predicciones (todas las sucursales filtradas)
@@ -135,21 +188,25 @@ export default function GerenteDashboard() {
     }
   })()
 
-  const totalMeta = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_mensual ?? 0), 0)
+  const totalMeta      = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_mensual ?? 0), 0)
   const totalAcumulado = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_acumulada ?? 0), 0)
-  const totalPollos = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.pollos_totales ?? 0), 0)
-  const avanceGlobal = totalMeta > 0 ? (totalAcumulado / totalMeta) * 100 : 0
-  const encaminadas = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70).length
-  const metaSemanalGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
-  const ventaSemanaGrupo = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
+  const totalPollos    = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.pollos_totales ?? 0), 0)
+  const avanceGlobal   = totalMeta > 0 ? (totalAcumulado / totalMeta) * 100 : 0
+  const encaminadas    = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 70).length
+  const metaSemanalGrupo   = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.meta_venta ?? 0), 0)
+  const ventaSemanaGrupo   = sucursalesFiltradas.reduce((a, s) => a + (resumenes[s.id]?.venta_semana_actual ?? 0), 0)
   const avanceSemanalGrupo = metaSemanalGrupo > 0 ? (ventaSemanaGrupo / metaSemanalGrupo) * 100 : 0
-  const rutaSeleccionada = rutas.find(r => r.id === filtroRuta)
+  const rutaSeleccionada   = rutas.find(r => r.id === filtroRuta)
+
+  // Global health metrics
+  const sinRegistroHoy = sucursalesFiltradas.filter(s => !ventasHoy[s.id]).length
+  const enRiesgo       = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje < 70).length
+  const cumplidas      = sucursalesFiltradas.filter(s => resumenes[s.id] && resumenes[s.id].avance_porcentaje >= 100).length
 
   // Range aggregates
   const rangoVentaTotal  = sucursalesFiltradas.reduce((a, s) => a + (rangos[s.id]?.venta  ?? 0), 0)
   const rangoPollosTotal = sucursalesFiltradas.reduce((a, s) => a + (rangos[s.id]?.pollos ?? 0), 0)
-  const rangoTicket      = rangoPollosTotal > 0 ? rangoVentaTotal / rangoPollosTotal : 0
-  const fmtDif = v => (v >= 0 ? '+' : '−') + fmt(Math.abs(v))
+
   function calcMetaEsperada(res) {
     if (!res) return null
     const m = res.meta_mensual ?? 0
@@ -164,14 +221,50 @@ export default function GerenteDashboard() {
     } else return null
     return v > 0 ? v : null
   }
+
   const totalMetaEsperada = sucursalesFiltradas.reduce((a, s) => a + (calcMetaEsperada(resumenes[s.id]) ?? 0), 0)
   const totalDiferencia   = rangoVentaTotal - totalMetaEsperada
   const avancePctRango    = totalMetaEsperada > 0 ? (rangoVentaTotal / totalMetaEsperada) * 100 : null
 
-  if (loading) return <div className={styles.empty}>Cargando…</div>
+  if (loading) return <PageSkeleton rows={5} />
 
   return (
     <div className={styles.page}>
+
+      {/* ── Global health KPI chips ── */}
+      {!esRango && sucursales.length > 0 && (
+        <div className={styles.healthRow}>
+          <div className={`${styles.healthChip} ${sinRegistroHoy > 0 ? styles.healthChipDanger : styles.healthChipNeutral}`}>
+            <AlertTriangle size={12} strokeWidth={2.5} />
+            <div>
+              <span className={styles.healthChipVal}>{sinRegistroHoy}</span>
+              <span className={styles.healthChipLabel}>Sin registro</span>
+            </div>
+          </div>
+          <div className={`${styles.healthChip} ${enRiesgo > 0 ? styles.healthChipWarn : styles.healthChipNeutral}`}>
+            <TrendingDown size={12} strokeWidth={2.5} />
+            <div>
+              <span className={styles.healthChipVal}>{enRiesgo}</span>
+              <span className={styles.healthChipLabel}>En riesgo</span>
+            </div>
+          </div>
+          <div className={`${styles.healthChip} ${styles.healthChipInfo}`}>
+            <TrendingUp size={12} strokeWidth={2.5} />
+            <div>
+              <span className={styles.healthChipVal}>{encaminadas - cumplidas}</span>
+              <span className={styles.healthChipLabel}>En camino</span>
+            </div>
+          </div>
+          <div className={`${styles.healthChip} ${cumplidas > 0 ? styles.healthChipOk : styles.healthChipNeutral}`}>
+            <CheckCircle size={12} strokeWidth={2.5} />
+            <div>
+              <span className={styles.healthChipVal}>{cumplidas}</span>
+              <span className={styles.healthChipLabel}>Cumplidas</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Periodo KPI card ── */}
       {!esRango && <div className={styles.globalCard}>
         <div className={styles.globalTop}>
@@ -308,7 +401,7 @@ export default function GerenteDashboard() {
         </div>
       )}
 
-      {/* Filtro supervisor */}
+      {/* Filtro ruta */}
       <div className={styles.filtroRow}>
         <button className={`${styles.filtroBtn} ${filtroRuta === 'todas' ? styles.filtroBtnActive : ''}`}
           onClick={() => setFiltroRuta('todas')}>Todas</button>
@@ -342,6 +435,23 @@ export default function GerenteDashboard() {
         titulo="Predicciones ML — Global"
       />
 
+      {/* Sort row */}
+      <div className={styles.sortRow}>
+        <span className={styles.sortLabel}>Ordenar:</span>
+        {[
+          { key: 'default', label: 'Posición' },
+          { key: 'ranking', label: 'Ranking' },
+          { key: 'riesgo',  label: 'En riesgo' },
+          { key: 'sinreg',  label: 'Sin registro' },
+        ].map(o => (
+          <button key={o.key}
+            className={`${styles.sortBtn} ${ordenarPor === o.key ? styles.sortBtnActive : ''}`}
+            onClick={() => setOrdenarPor(o.key)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
       <p className={styles.secTitle}>
         {sucursalesFiltradas.length} sucursal{sucursalesFiltradas.length !== 1 ? 'es' : ''}
         {rutaSeleccionada ? ` — ${rutaSeleccionada.nombre}` : ''}
@@ -355,11 +465,13 @@ export default function GerenteDashboard() {
           {sucursalesFiltradas.length === 0 && (
             <div className={styles.noResults}>Sin resultados</div>
           )}
-          {sucursalesFiltradas.map(s => {
+          {sucursalesFiltradas.map((s, idx) => {
             if (!esRango) {
               const r = resumenes[s.id]
+              const hv = ventasHoy[s.id]
               const avanceMes = r?.avance_porcentaje ?? 0
               const avanceSem = r?.avance_semanal ?? 0
+              const pace = calcPace(r)
               let barColor = 'var(--text-muted)'
               let StatusIcon = Clock
               let statusTag = 'Sin meta'
@@ -369,12 +481,23 @@ export default function GerenteDashboard() {
                 else if (avanceMes >= 70) { barColor = 'var(--yellow)'; statusTag = 'En camino'; tagClass = styles.tagWarn; StatusIcon = TrendingUp }
                 else { barColor = 'var(--red)'; statusTag = 'En riesgo'; tagClass = styles.tagDanger; StatusIcon = AlertTriangle }
               }
+              const showRank = ordenarPor === 'ranking'
               return (
                 <div key={s.id} className={styles.sucRow} onClick={() => navigate(`/gerente/sucursal/${s.id}`)}>
                   <div className={styles.sucInfo}>
                     <div className={styles.sucNombreRow}>
-                      <p className={styles.sucNombre}>{s.nombre}</p>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0 }}>
+                        {showRank && (
+                          <span className={styles.rankNum} style={{
+                            color: idx === 0 ? '#F5C400' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : 'var(--text-muted)'
+                          }}>#{idx+1}</span>
+                        )}
+                        <p className={styles.sucNombre}>{s.nombre}</p>
+                      </div>
                       <div className={styles.sucNombreRight}>
+                        {!hv && (
+                          <span className={styles.sinRegBadge}>Sin reg.</span>
+                        )}
                         <span className={`${styles.tag} ${tagClass}`}>
                           <StatusIcon size={10} strokeWidth={2.5} />
                           {statusTag}
@@ -409,6 +532,9 @@ export default function GerenteDashboard() {
                       <span>{r ? fmt(r.venta_acumulada) : '—'}</span>
                       <span className={styles.de}>de</span>
                       <span>{r ? fmt(r.meta_mensual ?? r.meta_venta) : '—'}</span>
+                      {pace && !pace.onTrack && (
+                        <span className={styles.paceHint}>· Necesita {fmt(pace.necesitaPorDia)}/día</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -458,22 +584,10 @@ export default function GerenteDashboard() {
                         </div>
                       )}
                       <div className={styles.rangoMiniStats}>
-                        <div className={styles.rangoMiniStat}>
-                          <span className={styles.rangoMiniLabel}>Pollos</span>
-                          <span className={styles.rangoMiniVal}>{fmtNum(rango.pollos)}</span>
-                        </div>
-                        <div className={styles.rangoMiniStat}>
-                          <span className={styles.rangoMiniLabel}>Ticket</span>
-                          <span className={styles.rangoMiniVal}>{fmtDec(rango.ticket)}</span>
-                        </div>
-                        <div className={styles.rangoMiniStat}>
-                          <span className={styles.rangoMiniLabel}>Días</span>
-                          <span className={styles.rangoMiniVal}>{rango.dias}</span>
-                        </div>
-                        <div className={styles.rangoMiniStat}>
-                          <span className={styles.rangoMiniLabel}>Prom/día</span>
-                          <span className={styles.rangoMiniVal}>{fmt(rango.promDia)}</span>
-                        </div>
+                        <div className={styles.rangoMiniStat}><span className={styles.rangoMiniLabel}>Pollos</span><span className={styles.rangoMiniVal}>{fmtNum(rango.pollos)}</span></div>
+                        <div className={styles.rangoMiniStat}><span className={styles.rangoMiniLabel}>Ticket</span><span className={styles.rangoMiniVal}>{fmtDec(rango.ticket)}</span></div>
+                        <div className={styles.rangoMiniStat}><span className={styles.rangoMiniLabel}>Días</span><span className={styles.rangoMiniVal}>{rango.dias}</span></div>
+                        <div className={styles.rangoMiniStat}><span className={styles.rangoMiniLabel}>Prom/día</span><span className={styles.rangoMiniVal}>{fmt(rango.promDia)}</span></div>
                       </div>
                     </>
                   )}

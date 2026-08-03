@@ -184,6 +184,24 @@ export default function GerenteMetas() {
     setApplyingKey(null)
   }
 
+  // ── Actualizar pollos/ticket de una meta individual ─────────────
+  async function handleUpdateMetaValues(metaId, pollos, ticket) {
+    const metaVenta = pollos * ticket
+    const { error } = await supabase.from('metas').update({
+      pollos_meta:          pollos,
+      ticket_promedio_meta: ticket,
+      meta_venta:           metaVenta,
+    }).eq('id', metaId)
+    if (!error) {
+      setMetas(prev => prev.map(m =>
+        m.id === metaId
+          ? { ...m, pollos_meta: pollos, ticket_promedio_meta: ticket, meta_venta: metaVenta }
+          : m
+      ))
+    }
+    return error
+  }
+
   // ── Actualizar periodo de una meta individual ────────────────────
   async function handleUpdateMetaPeriod(metaId, periodoKey) {
     const [fechaInicio, fechaFin] = periodoKey.split('|')
@@ -660,6 +678,7 @@ export default function GerenteMetas() {
                   <MetaCard key={m.id} m={m} hoyStr={hoyStr}
                     onDelete={handleDelete}
                     onUpdatePeriod={handleUpdateMetaPeriod}
+                    onUpdateValues={handleUpdateMetaValues}
                     periodosDisponibles={periodosDisponibles} />
                 ))}
               </div>
@@ -677,6 +696,7 @@ export default function GerenteMetas() {
                   <MetaCard key={m.id} m={m} hoyStr={hoyStr}
                     onDelete={handleDelete}
                     onUpdatePeriod={handleUpdateMetaPeriod}
+                    onUpdateValues={handleUpdateMetaValues}
                     periodosDisponibles={periodosDisponibles} />
                 ))}
               </div>
@@ -711,10 +731,15 @@ export default function GerenteMetas() {
 // ══════════════════════════════════════════════════════
 //   TARJETA DE META — con edición de periodo inline
 // ══════════════════════════════════════════════════════
-function MetaCard({ m, hoyStr, onDelete, onUpdatePeriod, periodosDisponibles }) {
+function MetaCard({ m, hoyStr, onDelete, onUpdatePeriod, onUpdateValues, periodosDisponibles }) {
   const [editingPeriod,  setEditingPeriod]  = useState(false)
   const [editPeriodoKey, setEditPeriodoKey] = useState('')
   const [savingPeriod,   setSavingPeriod]   = useState(false)
+
+  const [editingValues, setEditingValues] = useState(false)
+  const [editPollos,    setEditPollos]    = useState('')
+  const [editTicket,    setEditTicket]    = useState('')
+  const [savingValues,  setSavingValues]  = useState(false)
 
   const vigente  = m.fecha_inicio <= hoyStr && m.fecha_fin >= hoyStr
   const expirada = m.fecha_fin < hoyStr
@@ -735,6 +760,22 @@ function MetaCard({ m, hoyStr, onDelete, onUpdatePeriod, periodosDisponibles }) 
     const error = await onUpdatePeriod(m.id, editPeriodoKey)
     if (!error) setEditingPeriod(false)
     setSavingPeriod(false)
+  }
+
+  function startEditValues() {
+    setEditPollos(m.pollos_meta != null ? String(m.pollos_meta) : '')
+    setEditTicket(m.ticket_promedio_meta != null ? String(m.ticket_promedio_meta) : '')
+    setEditingValues(true)
+  }
+
+  async function saveEditValues() {
+    const pollos = parseFloat(editPollos)
+    const ticket = parseFloat(editTicket)
+    if (isNaN(pollos) || isNaN(ticket) || pollos <= 0 || ticket <= 0) return
+    setSavingValues(true)
+    const error = await onUpdateValues(m.id, pollos, ticket)
+    if (!error) setEditingValues(false)
+    setSavingValues(false)
   }
 
   return (
@@ -766,11 +807,64 @@ function MetaCard({ m, hoyStr, onDelete, onUpdatePeriod, periodosDisponibles }) 
         </div>
       </div>
 
-      <div className={styles.metaKpis}>
-        {m.pollos_meta != null && <span className={styles.metaKpi}>{fmtNum(m.pollos_meta)} pollos/sem</span>}
-        {m.ticket_promedio_meta != null && <span className={styles.metaKpi}>TP {fmtDec(m.ticket_promedio_meta)}</span>}
-        <span className={styles.metaKpi}>{m.semanas_mes ?? 4} semanas</span>
-      </div>
+      {editingValues ? (
+        <div className={styles.valuesEdit}>
+          <div className={styles.valuesEditInputs}>
+            <label className={styles.valuesEditLabel}>
+              <span>Pollos/sem</span>
+              <input
+                type="number"
+                className={styles.valuesEditInput}
+                value={editPollos}
+                onChange={e => setEditPollos(e.target.value)}
+                min="1"
+                step="1"
+                placeholder="0"
+                autoFocus
+              />
+            </label>
+            <label className={styles.valuesEditLabel}>
+              <span>Ticket prom.</span>
+              <input
+                type="number"
+                className={styles.valuesEditInput}
+                value={editTicket}
+                onChange={e => setEditTicket(e.target.value)}
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </label>
+          </div>
+          <div className={styles.metaPeriodEditBtns}>
+            <button
+              className={styles.metaPeriodSaveBtn}
+              onClick={saveEditValues}
+              disabled={savingValues || !editPollos || !editTicket}>
+              {savingValues ? 'Guardando…' : 'Guardar'}
+            </button>
+            <button
+              className={styles.metaPeriodCancelBtn}
+              onClick={() => setEditingValues(false)}
+              disabled={savingValues}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.metaKpisRow}>
+          <div className={styles.metaKpis}>
+            {m.pollos_meta != null && <span className={styles.metaKpi}>{fmtNum(m.pollos_meta)} pollos/sem</span>}
+            {m.ticket_promedio_meta != null && <span className={styles.metaKpi}>TP {fmtDec(m.ticket_promedio_meta)}</span>}
+            <span className={styles.metaKpi}>{m.semanas_mes ?? 4} semanas</span>
+          </div>
+          {onUpdateValues && (
+            <button className={styles.editPeriodBtn} onClick={startEditValues} title="Editar objetivos">
+              <Pencil size={11} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Periodo: modo lectura o edición ── */}
       {editingPeriod ? (

@@ -271,12 +271,33 @@
 }
 .delBtn:hover { color:var(--red); background:var(--danger-dim); }
 
-.metaKpis { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+.metaKpisRow { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.metaKpis { display:flex; gap:6px; flex-wrap:wrap; }
 .metaKpi  {
   font-family:var(--font-body); font-size:0.66rem; font-weight:600;
   color:var(--text-secondary); background:var(--bg-elevated);
   border:1px solid var(--border); padding:3px 8px; border-radius:5px;
 }
+
+.valuesEdit {
+  display:flex; flex-direction:column; gap:8px;
+  padding:10px 12px; margin-bottom:6px;
+  background:rgba(245,196,0,0.04); border:1px solid rgba(245,196,0,0.2);
+  border-radius:var(--radius-sm);
+}
+.valuesEditInputs { display:flex; gap:10px; }
+.valuesEditLabel {
+  display:flex; flex-direction:column; gap:4px; flex:1; min-width:0;
+  font-family:var(--font-body); font-size:0.65rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);
+}
+.valuesEditInput {
+  background:var(--bg-elevated); border:1px solid rgba(245,196,0,0.3);
+  border-radius:var(--radius-sm); color:var(--text-primary);
+  font-family:var(--font-mono); font-size:0.85rem; font-weight:500;
+  padding:7px 10px; width:100%; outline:none; transition:border-color 0.2s;
+}
+.valuesEditInput:focus { border-color:rgba(245,196,0,0.6); }
 .metaDates { font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); }
 
 /* ── Banners ─────────────────────────────────────────────── */
